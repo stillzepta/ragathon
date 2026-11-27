@@ -26,6 +26,24 @@ Without `VITE_API_URL`, Vite runs Studio simulation. With the API connected, ent
 
 ## Data and deployment
 
+### Host the backend separately
+
+Deploy this repository's root `Dockerfile` as a single Docker web service on a host that supports persistent storage. The service listens on the host-provided `PORT` (default 8000). Keep the Vite frontend on Vercel; no folder moves are required.
+
+Set these variables on the backend host (not in Vercel's browser variables):
+
+```env
+RAGATHON_PUBLIC=true
+RAGATHON_API_TOKEN=<a-random-secret-at-least-32-characters>
+ALLOWED_ORIGINS=https://<your-vercel-domain>
+RUN_DB_PATH=/data/runs.sqlite3
+RUN_RETENTION_HOURS=24
+```
+
+Mount a persistent volume at `/data`; without one, reports and events can disappear on restart or redeploy. Use one service instance and one worker: the queue and concurrency controls are process-local. Supply model/search keys and enable those features only if needed. In Vercel, set `VITE_API_URL` to the deployed backend's HTTPS origin, redeploy the frontend, and enter the backend access token in the dashboard. Add each actual Vercel origin to `ALLOWED_ORIGINS` as a comma-separated list.
+
+Verify `https://<backend-host>/health`, then submit a question from the Vercel frontend and check progress and the report. The local `.env` is not uploaded to Vercel or the backend host. Supabase OAuth still requires its provider and redirect URLs to be configured separately.
+
 - Local mode uses the included SBA guide summaries and any supported attachment. A source excerpt confirms what was retrieved. The checklist score is a measure of memo structure and citation consistency.
 - Web search is independently opt-in through `WEB_SEARCH_ENABLED=true`. It sends the question to Tavily when configured, with DuckDuckGo as a fallback. Model generation is separately opt-in. Set `MODEL_PROVIDER=gemini` or `MODEL_PROVIDER=groq` and configure the corresponding API key. If both keys are configured, the other provider can be tried after a failure. Runs with attachments stay local for model generation unless `ALLOW_EXTERNAL_UPLOADS=true`.
 - The API keeps results and events, including cited attachment excerpts, in `RUN_DB_PATH` for `RUN_RETENTION_HOURS` (24 by default). The API uses in-memory graph checkpoints. Direct Python calls can still use local SQLite checkpoints through `CHECKPOINT_DB_PATH`.
