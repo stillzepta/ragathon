@@ -71,3 +71,18 @@
 .animate-wave-fast {
   animation: wave-slide 2.4s linear infinite reverse;
 }
+
+@keyframes fade-slide {
+  0% {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-slide {
+  animation: fade-slide 0.35s cubic-bezier(0.22, 1, 0.36, 1) both;
+}

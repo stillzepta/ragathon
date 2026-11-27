@@ -126,6 +126,7 @@ export default function App() {
 
   const [activeShowcaseIdx, setActiveShowcaseIdx] = useState(0);
   const [activeToneIdx, setActiveToneIdx] = useState(0);
+  const [isPreviewPaused, setIsPreviewPaused] = useState(false);
   const [heroInput, setHeroInput] = useState('');
 
   const [input, setInput] = useState('');
@@ -138,6 +139,16 @@ export default function App() {
 
   const activeThread = threads.find((t) => t.id === activeThreadId) ?? null;
   const activeShowcase = SHOWCASE_ITEMS[activeShowcaseIdx] ?? SHOWCASE_ITEMS[0];
+  const isEmptyChat = !activeThread || activeThread.messages.length === 0;
+
+  useEffect(() => {
+    if (!isEmptyChat || isPreviewPaused || heroInput.trim()) return;
+    const timer = setInterval(() => {
+      setActiveShowcaseIdx((prev) => (prev + 1) % SHOWCASE_ITEMS.length);
+      setActiveToneIdx(0);
+    }, 2000);
+    return () => clearInterval(timer);
+  }, [isEmptyChat, isPreviewPaused, heroInput]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -497,8 +508,6 @@ export default function App() {
     setAttachedFile(null);
   };
 
-  const isEmptyChat = !activeThread || activeThread.messages.length === 0;
-
   return (
     <div className="relative h-screen w-screen overflow-hidden kraft-bg text-[#111113] flex">
       <ChatSidebar
@@ -580,7 +589,11 @@ export default function App() {
                 </div>
 
                 {/* Right Interactive Window Preview */}
-                <div className="lg:col-span-6 relative">
+                <div
+                  className="lg:col-span-6 relative"
+                  onMouseEnter={() => setIsPreviewPaused(true)}
+                  onMouseLeave={() => setIsPreviewPaused(false)}
+                >
                   <div className="relative rounded-2xl dia-glass overflow-hidden">
                     {/* Subtle indigo top-edge highlight */}
                     <div className="h-[1.5px] w-full indigo-top-glow" />
@@ -635,7 +648,10 @@ export default function App() {
                       </div>
 
                       {/* Preview Output Box */}
-                      <div className="rounded-xl bg-[#F7F8FC] border border-indigo-100/80 p-4 min-h-[150px] space-y-2">
+                      <div
+                        key={activeShowcase.num}
+                        className="rounded-xl bg-[#F7F8FC] border border-indigo-100/80 p-4 min-h-[150px] space-y-2 animate-fade-slide"
+                      >
                         <p className="text-xs font-medium text-[#111113]">
                           {activeShowcase.subject}
                         </p>
