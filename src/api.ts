@@ -1,4 +1,4 @@
-export const API_URL = import.meta.env.VITE_API_URL?.replace(/\/$/, '') as string | undefined;
+export const API_URL = import.meta.env.VITE_API_URL?.replace(/\/$/, '') ?? '';
 
 export async function api(path: string, token: string, options: RequestInit = {}) {
   const headers = new Headers(options.headers);

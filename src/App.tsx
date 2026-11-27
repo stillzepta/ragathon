@@ -356,29 +356,18 @@ export default function App() {
         formData.append('domain', 'bizintel');
         if (currentFile) formData.append('file', currentFile);
 
-        const response = await api('/api/runs', apiToken, {
+        const response = await api('/api/run', apiToken, {
           method: 'POST', body: formData, signal,
         });
-        const { id } = await response.json() as { id: string };
-        await watchRun(id, apiToken, signal, (event) => {
-          const agent = event.stage && STAGE_IDS[event.stage];
-          if (agent) {
-            patchAgentInMessage(targetThreadId, assistantMsgId, agent, {
-              status: event.action === 'started' ? 'running' : 'done',
-              summary: event.message,
-              memorySnapshot: { stage: event.stage, action: event.action, message: event.message },
-            });
-          }
-        });
-        const result = await api(`/api/runs/${id}`, apiToken, { signal });
-        const record = await result.json() as {
-          status: string; result?: MissionResult & { error?: string };
-        };
-        if (record.status !== 'completed' || !record.result) {
-          throw new Error(record.result?.error ?? 'The run did not finish.');
+        const missionResult = await response.json() as MissionResult & { error?: string };
+        if (missionResult.error) {
+          throw new Error(missionResult.error);
         }
         updateAssistantMessage(targetThreadId, assistantMsgId, (m) => ({
-          ...m, isStreaming: false, result: record.result,
+          ...m,
+          isStreaming: false,
+          result: missionResult,
+          agents: m.agents?.map((a) => ({ ...a, status: 'done' })),
         }));
       } catch (error) {
         updateAssistantMessage(targetThreadId, assistantMsgId, (m) => ({
