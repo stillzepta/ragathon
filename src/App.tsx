@@ -429,7 +429,28 @@ export default function App() {
   const isEmptyChat = !activeThread || activeThread.messages.length === 0;
 
   return (
-    <div className="h-screen flex overflow-hidden bg-[#F8F8F7]">
+    <div className="relative h-screen flex overflow-hidden bg-[#F4F6F5]">
+      {/* Ambient Aurora Backdrop so every clear-glass card refracts soft color */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none fixed inset-0 overflow-hidden"
+      >
+        <div
+          className="absolute -top-24 -left-20 w-[520px] h-[520px] rounded-full opacity-55 blur-3xl animate-aurora"
+          style={{
+            background:
+              'radial-gradient(circle, rgba(167, 243, 208, 0.55) 0%, rgba(186, 230, 253, 0.35) 55%, transparent 75%)',
+          }}
+        />
+        <div
+          className="absolute bottom-[-120px] right-[-80px] w-[540px] h-[540px] rounded-full opacity-50 blur-3xl animate-aurora"
+          style={{
+            background:
+              'radial-gradient(circle, rgba(186, 230, 253, 0.55) 0%, rgba(254, 243, 199, 0.45) 55%, transparent 75%)',
+          }}
+        />
+      </div>
+
       <ChatSidebar
         open={sidebarOpen}
         threads={threads}
@@ -439,7 +460,7 @@ export default function App() {
         onCloseMobile={() => setSidebarOpen(false)}
       />
 
-      <div className="flex-1 flex flex-col min-w-0 relative">
+      <div className="relative flex-1 flex flex-col min-w-0">
         <TopBar
           sidebarOpen={sidebarOpen}
           onToggleSidebar={() => setSidebarOpen((v) => !v)}
@@ -502,8 +523,8 @@ export default function App() {
         </div>
 
         {/* Sticky Bottom Dia-Glass Chat Input */}
-        <div className="px-4 sm:px-6 pb-5 pt-2 bg-gradient-to-t from-[#F8F8F7] via-[#F8F8F7]/95 to-transparent">
-          <div className="max-w-3xl mx-auto dia-glass rounded-3xl p-2.5 sm:p-3">
+        <div className="px-4 sm:px-6 pb-5 pt-2">
+          <div className="max-w-3xl mx-auto dia-glass rounded-full px-3 py-2">
             {attachedFile && (
               <div className="mb-2 px-1">
                 <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs bg-emerald-50 text-emerald-900 border border-emerald-200">

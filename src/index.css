@@ -3,7 +3,7 @@
 @layer base {
   body {
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-    background-color: #F8F8F7;
+    background-color: #F4F6F5;
     color: #141413;
   }
 }
@@ -16,19 +16,25 @@
   font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
 }
 
+/* Clear Liquid-Glass Surface */
 .dia-glass {
-  background: rgba(255, 255, 255, 0.78);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(20, 20, 19, 0.07);
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.035);
+  background: rgba(255, 255, 255, 0.52);
+  backdrop-filter: blur(28px) saturate(165%);
+  -webkit-backdrop-filter: blur(28px) saturate(165%);
+  border: 1px solid rgba(255, 255, 255, 0.78);
+  box-shadow:
+    0 12px 36px rgba(15, 23, 42, 0.05),
+    inset 0 1px 0 rgba(255, 255, 255, 0.92);
 }
 
 .dia-glass-subtle {
-  background: rgba(255, 255, 255, 0.56);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
-  border: 1px solid rgba(20, 20, 19, 0.06);
+  background: rgba(255, 255, 255, 0.42);
+  backdrop-filter: blur(20px) saturate(150%);
+  -webkit-backdrop-filter: blur(20px) saturate(150%);
+  border: 1px solid rgba(255, 255, 255, 0.72);
+  box-shadow:
+    0 6px 20px rgba(15, 23, 42, 0.035),
+    inset 0 1px 0 rgba(255, 255, 255, 0.85);
 }
 
 @keyframes aurora-float {
@@ -36,12 +42,12 @@
     transform: translate3d(0, 0, 0) scale(1);
   }
   50% {
-    transform: translate3d(14px, -10px, 0) scale(1.04);
+    transform: translate3d(18px, -12px, 0) scale(1.05);
   }
 }
 
 .animate-aurora {
-  animation: aurora-float 10s ease-in-out infinite;
+  animation: aurora-float 12s ease-in-out infinite;
 }
 
 @keyframes orb-breathe {
