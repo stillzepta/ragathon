@@ -1,13 +1,11 @@
 import {
   Clock,
-  GraduationCap,
   LayoutGrid,
   LogIn,
   LogOut,
   MessageSquare,
   Search,
   Settings,
-  Shield,
   Sparkles,
   SquarePen,
   X,
@@ -194,16 +192,6 @@ export function ChatSidebar({
             <LayoutGrid className="w-4 h-4" />
           </button>
 
-          {/* Security Quick Run */}
-          <button
-            type="button"
-            onClick={() => onSelectPreset(DEMO_PRESETS[0])}
-            title="Security Audit"
-            className="w-9 h-9 rounded-full hover:bg-white/60 text-[#22243a] hover:text-[#111113] flex items-center justify-center transition cursor-pointer"
-          >
-            <Shield className="w-4 h-4" />
-          </button>
-
           {/* Recent History */}
           <button
             type="button"
@@ -216,16 +204,6 @@ export function ChatSidebar({
             }`}
           >
             <Clock className="w-4 h-4" />
-          </button>
-
-          {/* Career / Campus Quick Run */}
-          <button
-            type="button"
-            onClick={() => onSelectPreset(DEMO_PRESETS[2])}
-            title="Career & Campus"
-            className="w-9 h-9 rounded-full hover:bg-white/60 text-[#22243a] hover:text-[#111113] flex items-center justify-center transition cursor-pointer"
-          >
-            <GraduationCap className="w-4 h-4" />
           </button>
         </div>
 
