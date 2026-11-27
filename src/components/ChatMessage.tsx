@@ -5,12 +5,16 @@ import { ThinkingOrb } from './ThinkingOrb';
 interface ChatMessageProps {
   message: ChatMessageItem;
   isSelected?: boolean;
+  locked?: boolean;
+  onUnlock?: () => void;
   onSelectArtifact?: (messageId: string) => void;
 }
 
 export function ChatMessage({
   message,
   isSelected,
+  locked,
+  onUnlock,
   onSelectArtifact,
 }: ChatMessageProps) {
   if (message.role === 'user') {
@@ -47,40 +51,57 @@ export function ChatMessage({
         {message.isStreaming && <ThinkingOrb statusText={orbStatusText} />}
         {message.error && <p role="alert" className="rounded-xl bg-rose-50 p-3 text-sm text-rose-900">{message.error}</p>}
 
-        {!result && message.text && (
-          <p className="dia-glass-blend rounded-[26px] p-4 whitespace-pre-wrap break-words text-sm leading-relaxed">
-            {message.text}
-          </p>
-        )}
-
-        {result && (
-          <div className="dia-glass-blend rounded-[26px] p-4 space-y-2.5 animate-fade-slide">
-            <p className="whitespace-pre-wrap break-words text-sm text-[#1E1E26] leading-relaxed">
-              {result.briefSections[0]?.body ?? result.criticNote}
-            </p>
-
-            {onSelectArtifact && (
-              <button
-                type="button"
-                onClick={() => onSelectArtifact(message.id)}
-                className={`w-full flex items-center justify-between gap-2 px-3.5 py-2.5 rounded-2xl text-xs font-medium transition cursor-pointer border ${
-                  isSelected
-                    ? 'bg-[#111113] text-white border-[#111113]'
-                    : 'bg-white/65 hover:bg-white text-[#111113] border-white/85'
-                }`}
-              >
-                <span className="inline-flex items-center gap-2 truncate">
-                  <CheckCircle2
-                    className={`w-3.5 h-3.5 shrink-0 ${
-                      isSelected ? 'text-indigo-300' : 'text-indigo-600'
-                    }`}
-                  />
-                  <span className="truncate">{result.briefTitle}</span>
-                </span>
-                <ArrowUpRight className="w-3.5 h-3.5 shrink-0 opacity-75" />
-              </button>
+        {locked && ((!result && message.text) || result) ? (
+          <button
+            type="button"
+            onClick={onUnlock}
+            className="w-full text-left dia-glass-blend rounded-[26px] p-4 flex items-center justify-between gap-3 cursor-pointer hover:bg-white/85 transition animate-fade-slide"
+          >
+            <span className="text-sm text-[#4A4A58]">
+              Answer ready — sign in to view
+            </span>
+            <span className="px-3 py-1 rounded-full bg-[#111113] text-white text-xs font-medium shrink-0">
+              Sign in
+            </span>
+          </button>
+        ) : (
+          <>
+            {!result && message.text && (
+              <p className="dia-glass-blend rounded-[26px] p-4 whitespace-pre-wrap break-words text-sm leading-relaxed">
+                {message.text}
+              </p>
             )}
-          </div>
+
+            {result && (
+              <div className="dia-glass-blend rounded-[26px] p-4 space-y-2.5 animate-fade-slide">
+                <p className="whitespace-pre-wrap break-words text-sm text-[#1E1E26] leading-relaxed">
+                  {result.briefSections[0]?.body ?? result.criticNote}
+                </p>
+
+                {onSelectArtifact && (
+                  <button
+                    type="button"
+                    onClick={() => onSelectArtifact(message.id)}
+                    className={`w-full flex items-center justify-between gap-2 px-3.5 py-2.5 rounded-2xl text-xs font-medium transition cursor-pointer border ${
+                      isSelected
+                        ? 'bg-[#111113] text-white border-[#111113]'
+                        : 'bg-white/65 hover:bg-white text-[#111113] border-white/85'
+                    }`}
+                  >
+                    <span className="inline-flex items-center gap-2 truncate">
+                      <CheckCircle2
+                        className={`w-3.5 h-3.5 shrink-0 ${
+                          isSelected ? 'text-indigo-300' : 'text-indigo-600'
+                        }`}
+                      />
+                      <span className="truncate">{result.briefTitle}</span>
+                    </span>
+                    <ArrowUpRight className="w-3.5 h-3.5 shrink-0 opacity-75" />
+                  </button>
+                )}
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>

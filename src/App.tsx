@@ -201,7 +201,6 @@ export default function App() {
         name: sessionUser.user_metadata?.full_name || sessionUser.email?.split('@')[0] || 'User',
         email: sessionUser.email ?? '',
       } : null);
-      setLoginOpen(!sessionUser);
       setAuthReady(true);
     });
     const { data: listener } = client.auth.onAuthStateChange((_event, session) => {
@@ -218,7 +217,7 @@ export default function App() {
         name: sessionUser.user_metadata?.full_name || sessionUser.email?.split('@')[0] || 'User',
         email: sessionUser.email ?? '',
       } : null);
-      setLoginOpen(!sessionUser);
+      if (sessionUser) setLoginOpen(false);
     });
     return () => {
       mounted = false;
@@ -487,6 +486,9 @@ export default function App() {
           updateAssistantMessage(targetThreadId, assistantMsgId, (m) => ({
             ...m, text: reply, isStreaming: false,
           }));
+          if (!hasUnlocked && !user) {
+            setLoginOpen(true);
+          }
           if (supabase && signedInUser) {
             const { error: saveError } = await supabase.from('chat_messages').insert({
               id: assistantMsgId, thread_id: targetThreadId, user_id: signedInUser.id,
@@ -621,7 +623,7 @@ export default function App() {
     }));
     setSelectedArtifactMsgId(assistantMsgId);
     setIsRunning(false);
-    if (!hasUnlocked) {
+    if (!hasUnlocked && !user) {
       setLoginOpen(true);
     }
   };
@@ -1014,6 +1016,8 @@ export default function App() {
                       key={msg.id}
                       message={msg}
                       isSelected={activeArtifactMsg?.id === msg.id}
+                      locked={!hasUnlocked && !user}
+                      onUnlock={() => setLoginOpen(true)}
                       onSelectArtifact={(id) => setSelectedArtifactMsgId(id)}
                     />
                   ))}
