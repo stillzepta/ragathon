@@ -1,4 +1,4 @@
-import { MessageSquare, Plus, ShieldCheck, X } from 'lucide-react';
+import { MessageSquare, Plus, X } from 'lucide-react';
 import { ChatThread } from '../types';
 
 interface ChatSidebarProps {
@@ -81,13 +81,6 @@ export function ChatSidebar({
               );
             })
           )}
-        </div>
-
-        <div className="p-3 border-t border-white/[0.07]">
-          <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-[#111414] border border-white/[0.07] text-[11px] text-neutral-300">
-            <ShieldCheck className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-            <span className="truncate">5 Agents · Rule #6 Active</span>
-          </div>
         </div>
       </aside>
     </>
