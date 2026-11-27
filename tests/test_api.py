@@ -105,3 +105,44 @@ def test_store_keeps_results_and_expires_old_runs(tmp_path, monkeypatch):
     reopened.prune(100)
     assert reopened.get("finished") is None
     assert not reopened.events("finished", 0)
+
+
+def test_chat_uses_one_model_with_fallback_and_no_workflow(client, monkeypatch):
+    from app.providers.gemini import ModelProvider
+
+    monkeypatch.setenv("MODEL_PROVIDER", "gemini")
+    monkeypatch.setenv("GEMINI_API_KEY", "test-key")
+    monkeypatch.setenv("GROQ_API_KEY", "test-key")
+    calls = []
+
+    def gemini(self, system, prompt):
+        calls.append(("gemini", prompt))
+        return " " if prompt == "hello" else "RAG retrieves evidence before answering."
+
+    def groq(self, system, prompt):
+        calls.append(("groq", prompt))
+        return "Hello! How can I help?"
+
+    def unexpected_workflow(*args, **kwargs):
+        pytest.fail("Chat should not start the due-diligence workflow")
+
+    monkeypatch.setattr(ModelProvider, "_generate_gemini", gemini)
+    monkeypatch.setattr(ModelProvider, "_generate_groq", groq)
+    monkeypatch.setattr("app.api.main.run_due_diligence", unexpected_workflow)
+
+    assert client.post("/api/chat", data={"prompt": " hello "}).json() == {
+        "reply": "Hello! How can I help?"
+    }
+    assert client.post("/api/chat", data={"prompt": "What is RAG?"}).json() == {
+        "reply": "RAG retrieves evidence before answering."
+    }
+    assert calls == [("gemini", "hello"), ("groq", "hello"), ("gemini", "What is RAG?")]
+
+
+def test_chat_validates_access_and_reports_model_unavailability(client):
+    assert client.post(
+        "/api/chat", data={"prompt": "hello"}, headers={"Authorization": ""}
+    ).status_code == 401
+    for prompt in (" ", "a" * 4001):
+        assert client.post("/api/chat", data={"prompt": prompt}).status_code == 422
+    assert client.post("/api/chat", data={"prompt": "hello"}).status_code == 503

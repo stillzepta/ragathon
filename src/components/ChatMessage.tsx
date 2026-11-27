@@ -47,6 +47,12 @@ export function ChatMessage({
         {message.isStreaming && <ThinkingOrb statusText={orbStatusText} />}
         {message.error && <p role="alert" className="rounded-xl bg-rose-50 p-3 text-sm text-rose-900">{message.error}</p>}
 
+        {!result && message.text && (
+          <p className="dia-glass-blend rounded-[26px] p-4 whitespace-pre-wrap break-words text-sm leading-relaxed">
+            {message.text}
+          </p>
+        )}
+
         {result && (
           <div className="dia-glass-blend rounded-[26px] p-4 space-y-2.5 animate-fade-slide">
             <p className="whitespace-pre-wrap break-words text-sm text-[#1E1E26] leading-relaxed">

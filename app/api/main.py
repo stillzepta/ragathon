@@ -21,6 +21,7 @@ from starlette.concurrency import run_in_threadpool
 import jwt
 
 from app.orchestrator.graph import run_due_diligence
+from app.providers.gemini import provider
 from app.rag.retriever import default_retriever
 from app.rag.uploads import MAX_UPLOAD_BYTES, extract_text
 from app.storage.runs import RunStore
@@ -210,6 +211,15 @@ def retrieve(payload: dict) -> dict:
     return {"query": query, "chunks": chunks}
 
 
+def reserve_submission(state):
+    now = time.monotonic()
+    while state.submissions and now - state.submissions[0] >= 60:
+        state.submissions.popleft()
+    if len(state.jobs) >= MAX_CONCURRENT_RUNS or len(state.submissions) >= 10:
+        raise HTTPException(429, "The workspace is busy. Try again shortly.", headers={"Retry-After": "60"})
+    state.submissions.append(now)
+
+
 async def queue_run(request, prompt, domain, file):
     data = await file.read(MAX_UPLOAD_BYTES + 1) if file else None
     if data is not None and len(data) > MAX_UPLOAD_BYTES:
@@ -221,12 +231,7 @@ async def queue_run(request, prompt, domain, file):
         raise HTTPException(422, "Enter a due-diligence question.")
     if domain not in {"auto", "bizintel"}:
         raise HTTPException(422, "The connected workspace supports startup due diligence.")
-    now = time.monotonic()
-    while state.submissions and now - state.submissions[0] >= 60:
-        state.submissions.popleft()
-    if len(state.jobs) >= MAX_CONCURRENT_RUNS or len(state.submissions) >= 10:
-        raise HTTPException(429, "The workspace is busy. Try again shortly.", headers={"Retry-After": "60"})
-    state.submissions.append(now)
+    reserve_submission(state)
     run_id = f"run-{uuid.uuid4().hex}"
     ready = asyncio.get_running_loop().create_future()
     job = asyncio.create_task(run_job(state, run_id, prompt, data, filename, ready))
@@ -248,6 +253,32 @@ async def run_job(state, run_id, prompt, data, filename, ready):
 
 Prompt = Annotated[str, Form(min_length=1, max_length=4000)]
 Attachment = Annotated[UploadFile | None, File()]
+
+
+@app.post("/api/chat", dependencies=[Auth])
+async def chat(request: Request, prompt: Prompt) -> dict[str, str]:
+    prompt = prompt.strip()
+    if not prompt:
+        raise HTTPException(422, "Enter a message.")
+    model = provider()
+    if not model.live:
+        raise HTTPException(503, "Chat model access is not configured.")
+
+    state = request.app.state
+    reserve_submission(state)
+    job = asyncio.create_task(run_in_threadpool(
+        model.generate,
+        "You are AgentVerse, a helpful conversational assistant. Reply directly to the "
+        "user's message. Be concise and never claim you ran tools or reviewed evidence.",
+        prompt,
+        accept=lambda answer: bool(answer.strip()),
+    ))
+    state.jobs.add(job)
+    job.add_done_callback(state.jobs.discard)
+    reply = await asyncio.shield(job)
+    if not reply:
+        raise HTTPException(503, "The chat model is unavailable. Try again shortly.")
+    return {"reply": reply.strip()}
 
 
 @app.post("/api/runs", dependencies=[Auth], status_code=202)
