@@ -35,9 +35,9 @@ export function ChatMessage({
   if (message.role === 'user') {
     return (
       <div className="flex justify-end">
-        <div className="max-w-[82%] sm:max-w-[70%] rounded-[24px] bg-[#141413]/92 backdrop-blur-md text-white px-4 py-3 text-sm leading-relaxed shadow-[0_8px_24px_rgba(20,20,19,0.12)] border border-white/15">
+        <div className="max-w-[82%] sm:max-w-[70%] rounded-[24px] bg-indigo-50/90 backdrop-blur-md text-[#141413] px-4 py-3 text-sm leading-relaxed shadow-[0_6px_20px_rgba(99,102,241,0.08)] border border-indigo-200/70">
           {message.attachedFileName && (
-            <div className="mb-1.5 inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-white/15 text-[11px] text-neutral-100">
+            <div className="mb-1.5 inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-white/80 text-[11px] text-indigo-900">
               <Paperclip className="w-3 h-3" />
               <span>{message.attachedFileName}</span>
             </div>

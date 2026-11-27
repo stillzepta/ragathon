@@ -121,12 +121,12 @@ export function ModelConstellationBg() {
           const dy = p.y - q.y;
           const dist = Math.hypot(dx, dy);
           if (dist < 135) {
-            const alpha = (1 - dist / 135) * 0.18;
+            const alpha = (1 - dist / 135) * 0.12;
             ctx.beginPath();
             ctx.moveTo(p.x, p.y);
             ctx.lineTo(q.x, q.y);
-            ctx.strokeStyle = `rgba(71, 85, 105, ${alpha})`;
-            ctx.lineWidth = 0.85;
+            ctx.strokeStyle = `rgba(148, 163, 184, ${alpha})`;
+            ctx.lineWidth = 0.8;
             ctx.stroke();
           }
         }
@@ -171,22 +171,22 @@ export function ModelConstellationBg() {
   return (
     <div
       aria-hidden="true"
-      className="fixed inset-0 overflow-hidden pointer-events-none select-none bg-[#F6F8FB]"
+      className="fixed inset-0 overflow-hidden pointer-events-none select-none bg-[#FCFCFD]"
     >
-      {/* Smooth multi-tone aurora wash */}
+      {/* Smooth multi-tone pastel aurora wash */}
       <div
-        className="absolute -top-32 -left-24 w-[620px] h-[620px] rounded-full opacity-60 blur-3xl animate-float-gentle"
+        className="absolute -top-32 -left-24 w-[620px] h-[620px] rounded-full opacity-45 blur-3xl animate-float-gentle"
         style={{
           background:
-            'radial-gradient(circle, rgba(167, 243, 208, 0.55) 0%, rgba(186, 230, 253, 0.38) 55%, transparent 75%)',
+            'radial-gradient(circle, rgba(167, 243, 208, 0.45) 0%, rgba(186, 230, 253, 0.3) 55%, transparent 75%)',
         }}
       />
       <div
-        className="absolute -bottom-32 -right-24 w-[640px] h-[640px] rounded-full opacity-55 blur-3xl animate-float-gentle"
+        className="absolute -bottom-32 -right-24 w-[640px] h-[640px] rounded-full opacity-45 blur-3xl animate-float-gentle"
         style={{
           animationDelay: '-3s',
           background:
-            'radial-gradient(circle, rgba(199, 210, 254, 0.6) 0%, rgba(254, 243, 199, 0.4) 55%, transparent 75%)',
+            'radial-gradient(circle, rgba(199, 210, 254, 0.45) 0%, rgba(254, 243, 199, 0.32) 55%, transparent 75%)',
         }}
       />
 
