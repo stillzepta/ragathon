@@ -466,7 +466,7 @@ export default function App() {
           {isEmptyChat ? (
             <div className="h-full" />
           ) : (
-            <div className="max-w-3xl mx-auto py-6 space-y-6">
+            <div className="max-w-3xl mx-auto py-6 space-y-6 pointer-events-auto">
               {activeThread.messages.map((msg) => (
                 <ChatMessage
                   key={msg.id}
