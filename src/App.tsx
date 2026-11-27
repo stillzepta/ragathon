@@ -577,13 +577,13 @@ export default function App() {
       </button>
       <div className="relative flex-1 flex flex-col min-w-0">
         {/* Main Viewport */}
-        <div className="flex-1 overflow-y-auto px-5 sm:px-8 pt-4">
+        <div className="flex-1 overflow-y-auto px-4 sm:px-8 pt-16 md:pt-4 pb-20 md:pb-4">
           {isEmptyChat ? (
-            <div className="max-w-6xl mx-auto min-h-full flex items-center py-12">
-              <div className="w-full grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-center">
+            <div className="max-w-6xl mx-auto min-h-full flex items-center py-4 sm:py-12">
+              <div className="w-full grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-16 items-center">
                 {/* Left Editorial Column */}
-                <div className="lg:col-span-6 space-y-9">
-                  <h1 className="font-display text-5xl sm:text-6xl font-bold tracking-[-0.04em] leading-[1.03] text-[#111113]">
+                <div className="lg:col-span-6 space-y-6 sm:space-y-9">
+                  <h1 className="font-display text-[34px] sm:text-5xl lg:text-6xl font-bold tracking-[-0.04em] leading-[1.06] text-[#111113]">
                     One workspace
                     <br />
                     for the work that{' '}
@@ -721,13 +721,13 @@ export default function App() {
                       </div>
 
                       {/* Bottom Tone / Suggestion Chips */}
-                      <div className="flex items-center gap-2 pt-1">
+                      <div className="flex flex-wrap items-center gap-2 pt-1">
                         {activeShowcase.tones.map((tone, tIdx) => (
                           <button
                             key={tone}
                             type="button"
                             onClick={() => setActiveToneIdx(tIdx)}
-                            className={`px-3.5 py-1.5 rounded-full text-xs font-medium transition cursor-pointer ${
+                            className={`whitespace-nowrap px-3.5 py-1.5 rounded-full text-xs font-medium transition cursor-pointer ${
                               tIdx === activeToneIdx
                                 ? 'bg-[#111113] text-white'
                                 : 'bg-[#F1F2F8] text-[#4A4A58] hover:text-[#111113] border border-black/[0.05]'
