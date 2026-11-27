@@ -5,7 +5,7 @@ import { ChatMessage } from './components/ChatMessage';
 import { ChatSidebar } from './components/ChatSidebar';
 import { AuthUser, LoginModal } from './components/LoginModal';
 import SplitText from './components/SplitText';
-import { api, API_URL, watchRun } from './api';
+import { api, API_URL } from './api';
 import { supabase } from './lib/supabase';
 import { DEMO_PRESETS } from './data/presets';
 import {
@@ -24,10 +24,6 @@ const CONNECTED_AGENTS: AgentNode[] = [
   { id: 'planner', name: 'Analyst', role: 'Memo writing', status: 'idle', summary: 'Queued' },
   { id: 'critic', name: 'Evaluator', role: 'Memo review', status: 'idle', summary: 'Queued' },
 ];
-const STAGE_IDS: Record<string, AgentNode['id']> = {
-  planner: 'orchestrator', researcher: 'rag', analyst: 'planner',
-  evaluator: 'critic', revision: 'orchestrator',
-};
 
 interface ShowcaseItem {
   num: string;
