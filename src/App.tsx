@@ -3,7 +3,6 @@ import { ChangeEvent, useEffect, useRef, useState } from 'react';
 import { ArtifactPanel } from './components/ArtifactPanel';
 import { ChatMessage } from './components/ChatMessage';
 import { ChatSidebar } from './components/ChatSidebar';
-import { TopBar } from './components/TopBar';
 import { DEMO_PRESETS } from './data/presets';
 import {
   AgentNode,
@@ -519,25 +518,9 @@ export default function App() {
 
   return (
     <div className="relative h-screen w-screen overflow-hidden kraft-bg text-[#111113] flex">
-      <ChatSidebar
-        open={sidebarOpen}
-        threads={threads}
-        activeThreadId={activeThreadId}
-        onSelectThread={(id) => setActiveThreadId(id)}
-        onNewChat={handleNewChat}
-        onCloseMobile={() => setSidebarOpen(false)}
-      />
-
       <div className="relative flex-1 flex flex-col min-w-0">
-        <TopBar
-          sidebarOpen={sidebarOpen}
-          onToggleSidebar={() => setSidebarOpen((v) => !v)}
-          onNewChat={handleNewChat}
-          isLiveBackend={Boolean(API_URL)}
-        />
-
         {/* Main Viewport */}
-        <div className="flex-1 overflow-y-auto px-5 sm:px-8">
+        <div className="flex-1 overflow-y-auto px-5 sm:px-8 pt-4">
           {isEmptyChat ? (
             <div className="max-w-6xl mx-auto min-h-full flex items-center py-12">
               <div className="w-full grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-center">
@@ -795,6 +778,18 @@ export default function App() {
           )}
         </div>
       </div>
+
+      {/* Gemini-Style Slim Icon Rail on Right Side */}
+      <ChatSidebar
+        open={sidebarOpen}
+        threads={threads}
+        activeThreadId={activeThreadId}
+        onSelectThread={(id) => setActiveThreadId(id)}
+        onNewChat={handleNewChat}
+        onSelectPreset={(preset) => void sendMessage(preset)}
+        onToggleDrawer={() => setSidebarOpen((v) => !v)}
+        onCloseDrawer={() => setSidebarOpen(false)}
+      />
     </div>
   );
 }
