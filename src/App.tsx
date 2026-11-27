@@ -540,7 +540,7 @@ export default function App() {
       {!splashHidden && (
         <div
           aria-hidden="true"
-          className={`fixed inset-0 z-40 kraft-bg transition-opacity duration-700 ease-out ${
+          className={`fixed inset-0 z-[45] kraft-bg transition-opacity duration-700 ease-out ${
             introDocked ? 'opacity-0 pointer-events-none' : 'opacity-100'
           }`}
         />
@@ -870,27 +870,29 @@ export default function App() {
         </div>
       </div>
 
-      {/* Gemini-Style Slim Icon Rail on Right Side */}
-      <ChatSidebar
-        open={sidebarOpen}
-        threads={threads}
-        activeThreadId={activeThreadId}
-        user={user}
-        onSelectThread={(id) => setActiveThreadId(id)}
-        onNewChat={handleNewChat}
-        onSelectPreset={(preset) => void sendMessage(preset)}
-        onToggleDrawer={() => setSidebarOpen((v) => !v)}
-        onCloseDrawer={() => setSidebarOpen(false)}
-        onOpenLogin={() => setLoginOpen(true)}
-        onLogout={() => {
-          void supabase?.auth.signOut().finally(() => {
-            setUser(null);
-            setHasUnlocked(false);
-            setApiToken('');
-            localStorage.removeItem('agentverse_user');
-          });
-        }}
-      />
+      {/* Gemini-Style Slim Icon Rail on Right Side (hidden during splash) */}
+      {introDocked && (
+        <ChatSidebar
+          open={sidebarOpen}
+          threads={threads}
+          activeThreadId={activeThreadId}
+          user={user}
+          onSelectThread={(id) => setActiveThreadId(id)}
+          onNewChat={handleNewChat}
+          onSelectPreset={(preset) => void sendMessage(preset)}
+          onToggleDrawer={() => setSidebarOpen((v) => !v)}
+          onCloseDrawer={() => setSidebarOpen(false)}
+          onOpenLogin={() => setLoginOpen(true)}
+          onLogout={() => {
+            void supabase?.auth.signOut().finally(() => {
+              setUser(null);
+              setHasUnlocked(false);
+              setApiToken('');
+              localStorage.removeItem('agentverse_user');
+            });
+          }}
+        />
+      )}
 
       {authReady && (
         <LoginModal
