@@ -131,8 +131,8 @@ const INITIAL_AGENTS: AgentNode[] = [
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 export default function App() {
-  const [showIntro, setShowIntro] = useState(true);
-  const [introFading, setIntroFading] = useState(false);
+  const [introDocked, setIntroDocked] = useState(false);
+  const [splashHidden, setSplashHidden] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [user, setUser] = useState<AuthUser | null>(null);
   const [loginOpen, setLoginOpen] = useState(false);
@@ -536,34 +536,46 @@ export default function App() {
 
   return (
     <div className="relative h-screen w-screen overflow-hidden kraft-bg text-[#111113] flex">
-      {/* Diablo SplitText Splash Intro */}
-      {showIntro && (
+      {/* Splash backdrop that fades away to reveal main page */}
+      {!splashHidden && (
         <div
-          className={`fixed inset-0 z-50 kraft-bg flex flex-col items-center justify-center transition-all duration-700 ease-out ${
-            introFading
-              ? 'opacity-0 scale-105 blur-md pointer-events-none'
-              : 'opacity-100 scale-100 blur-0'
+          aria-hidden="true"
+          className={`fixed inset-0 z-40 kraft-bg transition-opacity duration-700 ease-out ${
+            introDocked ? 'opacity-0 pointer-events-none' : 'opacity-100'
           }`}
-        >
-          <SplitText
-            text="diablo"
-            tag="h1"
-            className="font-display text-6xl sm:text-8xl font-bold tracking-[-0.04em] text-[#111113]"
-            effect="rise"
-            splitType="chars"
-            delay={65}
-            duration={1.05}
-            staggerFrom="start"
-            trigger="load"
-            accentColor="#4f56b8"
-            textAlign="center"
-            onLetterAnimationComplete={() => {
-              setTimeout(() => setIntroFading(true), 420);
-              setTimeout(() => setShowIntro(false), 1120);
-            }}
-          />
-        </div>
+        />
       )}
+
+      {/* Morphing "diablo" logo: starts upper-center, shrinks & glides to top-left corner */}
+      <button
+        type="button"
+        onClick={handleNewChat}
+        title="Diablo Home"
+        style={{ transformOrigin: 'center center' }}
+        className={`fixed z-50 -translate-x-1/2 -translate-y-1/2 transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] cursor-pointer ${
+          introDocked
+            ? 'top-7 left-16 sm:left-20 scale-[0.28]'
+            : 'top-[38%] left-1/2 scale-100'
+        }`}
+      >
+        <SplitText
+          text="diablo"
+          tag="h1"
+          className="font-display text-6xl sm:text-8xl font-bold tracking-[-0.04em] text-[#111113]"
+          effect="rise"
+          splitType="chars"
+          delay={60}
+          duration={1.0}
+          staggerFrom="start"
+          trigger="load"
+          accentColor="#4f56b8"
+          textAlign="center"
+          onLetterAnimationComplete={() => {
+            setTimeout(() => setIntroDocked(true), 380);
+            setTimeout(() => setSplashHidden(true), 1100);
+          }}
+        />
+      </button>
       <div className="relative flex-1 flex flex-col min-w-0">
         {API_URL && (
           <div className="flex items-center justify-between gap-3 px-5 pt-3 text-xs text-indigo-950">
