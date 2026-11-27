@@ -1,8 +1,10 @@
 """Model adapter with Gemini-first, Groq-fallback, and mock support."""
 
-import os
-from urllib import request
 import json
+import os
+from collections.abc import Callable
+from urllib import request
+
 try:
     from dotenv import load_dotenv
 except ImportError:  # Keep tests and minimal installs usable; production installs the declared dependency.
@@ -29,11 +31,16 @@ class ModelProvider:
     def live(self) -> bool:
         return self.requested and bool(self.gemini_api_key or self.groq_api_key)
 
-    def generate(self, system: str, prompt: str) -> str:
+    def generate(
+        self, system: str, prompt: str, *,
+        preferred_provider: str | None = None,
+        accept: Callable[[str], bool] = bool,
+    ) -> str:
+        self.used_provider = None
         if not self.live:
             return ""
 
-        providers = [self.provider_name] if self.provider_name in {"gemini", "groq"} else []
+        providers = [preferred_provider or self.provider_name]
         if self.gemini_api_key and "gemini" not in providers:
             providers.append("gemini")
         if self.groq_api_key and "groq" not in providers:
@@ -42,10 +49,10 @@ class ModelProvider:
         for provider_name in providers:
             try:
                 response = self._generate_gemini(system, prompt) if provider_name == "gemini" else self._generate_groq(system, prompt)
-                if response:
+                if response and accept(response):
                     self.used_provider = provider_name
                     return response
-            except Exception:
+            except Exception:  # noqa: BLE001, S112 - Provider SDK failures should trigger failover.
                 continue
         return ""
 

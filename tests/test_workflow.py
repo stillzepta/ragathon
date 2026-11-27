@@ -1,5 +1,44 @@
 from app.agents.evaluator import evaluate_node
 from app.orchestrator.graph import run_due_diligence
+from app.providers.gemini import ModelProvider
+
+
+def test_high_score_triggers_second_critic_and_revises_after_backup_verdict(monkeypatch):
+    monkeypatch.setenv("MODEL_PROVIDER", "gemini")
+    monkeypatch.setenv("GEMINI_API_KEY", "test-key")
+    monkeypatch.setenv("GROQ_API_KEY", "test-key")
+    monkeypatch.setenv("WEB_SEARCH_ENABLED", "false")
+    calls = []
+
+    def gemini(self, system, prompt):
+        if system.startswith("Review"):
+            calls.append("gemini review")
+            return '{"verdict":"revise","reason":"Ask for customer cohort evidence."}'
+        calls.append("gemini analyst")
+        if len(calls) > 2:
+            assert "Ask for customer cohort evidence." in prompt
+        return "What is the retention rate?"
+
+    def groq(self, system, prompt):
+        assert system.startswith("Review")
+        calls.append("groq review")
+        if calls.count("groq review") == 1:
+            return "Unusable verdict"
+        return '{"verdict":"approve","reason":"The claims are supported."}'
+
+    monkeypatch.setattr(ModelProvider, "_generate_gemini", gemini)
+    monkeypatch.setattr(ModelProvider, "_generate_groq", groq)
+    state = run_due_diligence(
+        "Should we invest in an AI accounting startup?", persist_checkpoint=False
+    )
+
+    assert state["drafts"][0]["score"] < 90 <= state["drafts"][1]["score"]
+    assert state["revision_count"] == 2
+    assert state["second_review_verdict"] == "approve"
+    assert calls == [
+        "gemini analyst", "gemini analyst", "groq review", "gemini review",
+        "gemini analyst", "groq review",
+    ]
 
 
 def test_due_diligence_applies_review_feedback(tmp_path, monkeypatch):
