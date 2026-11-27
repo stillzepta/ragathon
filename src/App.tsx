@@ -136,8 +136,15 @@ const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 export default function App() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [user, setUser] = useState<AuthUser | null>(null);
-  const [loginOpen, setLoginOpen] = useState(true);
+  const [loginOpen, setLoginOpen] = useState(false);
   const [authReady, setAuthReady] = useState(false);
+  const [hasUnlocked, setHasUnlocked] = useState<boolean>(() => {
+    try {
+      return Boolean(localStorage.getItem('agentverse_user'));
+    } catch {
+      return false;
+    }
+  });
   const [threads, setThreads] = useState<ChatThread[]>([]);
   const [activeThreadId, setActiveThreadId] = useState<string | null>(null);
   const [selectedArtifactMsgId, setSelectedArtifactMsgId] = useState<string | null>(null);
@@ -467,6 +474,9 @@ export default function App() {
     }));
     setSelectedArtifactMsgId(assistantMsgId);
     setIsRunning(false);
+    if (!hasUnlocked) {
+      setLoginOpen(true);
+    }
   };
 
   const handleDecision = async (
@@ -534,21 +544,10 @@ export default function App() {
     setAttachedFile(null);
   };
 
-  if (!authReady || loginOpen) {
-    return (
-      <LoginModal
-        open={loginOpen}
-        onClose={() => setLoginOpen(false)}
-        onLogin={(loggedInUser) => {
-          setUser(loggedInUser);
-          setLoginOpen(false);
-        }}
-      />
-    );
-  }
+  const showArtifact = Boolean(activeArtifactMsg && (hasUnlocked || user));
 
   return (
-    <div className="relative h-screen w-screen overflow-hidden kraft-bg text-[#111113] flex animate-fade-slide">
+    <div className="relative h-screen w-screen overflow-hidden kraft-bg text-[#111113] flex">
       <div className="relative flex-1 flex flex-col min-w-0">
         {API_URL && (
           <div className="flex items-center justify-between gap-3 px-5 pt-3 text-xs text-indigo-950">
@@ -746,7 +745,7 @@ export default function App() {
           ) : (
             <div className="max-w-7xl mx-auto h-full py-2 grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
               {/* Left Document & Code Panel */}
-              {activeArtifactMsg && (
+              {showArtifact && activeArtifactMsg && (
                 <div className="lg:col-span-7 min-h-[420px] pb-3 order-2 lg:order-1">
                   <ArtifactPanel
                     message={activeArtifactMsg}
@@ -760,7 +759,7 @@ export default function App() {
               {/* Right Chat & Typing Column */}
               <div
                 className={`${
-                  activeArtifactMsg ? 'lg:col-span-5 order-1 lg:order-2' : 'lg:col-span-8 lg:col-start-3'
+                  showArtifact ? 'lg:col-span-5 order-1 lg:order-2' : 'lg:col-span-8 lg:col-start-3'
                 } flex flex-col min-h-0`}
               >
                 <div className="flex-1 overflow-y-auto pr-1 space-y-4 pb-4">
@@ -858,11 +857,28 @@ export default function App() {
         onLogout={() => {
           void supabase?.auth.signOut().finally(() => {
             setUser(null);
+            setHasUnlocked(false);
             setApiToken('');
-            setLoginOpen(true);
+            localStorage.removeItem('agentverse_user');
           });
         }}
       />
+
+      {authReady && (
+        <LoginModal
+          open={loginOpen}
+          onClose={() => {
+            setHasUnlocked(true);
+            setLoginOpen(false);
+          }}
+          onLogin={(loggedInUser) => {
+            setUser(loggedInUser);
+            setHasUnlocked(true);
+            localStorage.setItem('agentverse_user', JSON.stringify(loggedInUser));
+            setLoginOpen(false);
+          }}
+        />
+      )}
     </div>
   );
 }

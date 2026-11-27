@@ -112,7 +112,13 @@ export function LoginModal({ open, onClose, onLogin }: LoginModalProps) {
   };
 
   return (
-    <div className="min-h-screen w-screen kraft-bg flex items-center justify-center p-4 animate-backdrop-fade relative overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-backdrop-fade">
+      {/* Blurred backdrop over workspace */}
+      <div
+        onClick={onClose}
+        className="absolute inset-0 bg-[#141738]/28 backdrop-blur-md"
+      />
+
       {/* Soft ambient indigo halo behind card */}
       <div
         aria-hidden="true"
