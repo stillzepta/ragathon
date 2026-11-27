@@ -39,13 +39,14 @@
 }
 
 .dia-glass-blend {
-  background: rgba(255, 255, 255, 0.62);
+  background: rgba(255, 255, 255, 0.72);
   backdrop-filter: blur(34px) saturate(180%);
   -webkit-backdrop-filter: blur(34px) saturate(180%);
-  border: 1px solid rgba(255, 255, 255, 0.78);
+  border: 1px solid rgba(255, 255, 255, 0.88);
   box-shadow:
-    0 24px 60px rgba(38, 43, 102, 0.14),
-    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+    0 30px 75px rgba(30, 34, 90, 0.18),
+    0 10px 28px rgba(30, 34, 90, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.95);
 }
 
 .dia-glass-subtle {

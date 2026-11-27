@@ -681,11 +681,22 @@ export default function App() {
               </div>
             </div>
           ) : (
-            <div className="max-w-7xl mx-auto h-full py-2 grid grid-cols-1 lg:grid-cols-12 gap-5 items-stretch">
-              {/* Left Chat Column */}
+            <div className="max-w-7xl mx-auto h-full py-2 grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
+              {/* Left Document & Code Panel */}
+              {activeArtifactMsg && (
+                <div className="lg:col-span-7 min-h-[420px] pb-3 order-2 lg:order-1">
+                  <ArtifactPanel
+                    message={activeArtifactMsg}
+                    onApproveAction={(id, edited) => void handleApproveAction(id, edited)}
+                    onRejectAction={handleRejectAction}
+                  />
+                </div>
+              )}
+
+              {/* Right Chat & Typing Column */}
               <div
                 className={`${
-                  activeArtifactMsg ? 'lg:col-span-5' : 'lg:col-span-8 lg:col-start-3'
+                  activeArtifactMsg ? 'lg:col-span-5 order-1 lg:order-2' : 'lg:col-span-8 lg:col-start-3'
                 } flex flex-col min-h-0`}
               >
                 <div className="flex-1 overflow-y-auto pr-1 space-y-4 pb-4">
@@ -763,17 +774,6 @@ export default function App() {
                   </div>
                 </div>
               </div>
-
-              {/* Right Document & Code Panel */}
-              {activeArtifactMsg && (
-                <div className="lg:col-span-7 min-h-[420px] pb-3">
-                  <ArtifactPanel
-                    message={activeArtifactMsg}
-                    onApproveAction={(id, edited) => void handleApproveAction(id, edited)}
-                    onRejectAction={handleRejectAction}
-                  />
-                </div>
-              )}
             </div>
           )}
         </div>

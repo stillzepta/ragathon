@@ -63,9 +63,12 @@ export function ArtifactPanel({
   const selectedCitation = result.citations.find((c) => c.id === selectedCitationId);
 
   return (
-    <div className="h-full flex flex-col dia-glass-blend rounded-[32px] overflow-hidden animate-fade-slide">
+    <div className="h-full flex flex-col dia-glass-blend rounded-[34px] overflow-hidden animate-fade-slide">
+      {/* Subtle indigo top-edge highlight */}
+      <div className="h-[1.5px] w-full indigo-top-glow shrink-0" />
+
       {/* Panel Header */}
-      <div className="px-5 sm:px-6 pt-5 pb-3.5 flex flex-col gap-3 border-b border-black/[0.05]">
+      <div className="px-5 sm:px-6 pt-5 pb-3.5 flex flex-col gap-3">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             <div className="flex items-center gap-2">
@@ -155,7 +158,7 @@ export function ArtifactPanel({
         <div key={tab} className="animate-fade-slide">
           {tab === 'document' && (
             <div className="space-y-4">
-              <div className="rounded-3xl bg-white/60 border border-white/80 px-4 py-3 text-xs text-indigo-950 leading-relaxed">
+              <div className="rounded-3xl bg-white/75 border border-white/90 shadow-[0_6px_20px_rgba(38,43,102,0.06)] px-4 py-3 text-xs text-indigo-950 leading-relaxed">
                 <span className="font-semibold">Self-Correction: </span>
                 {result.criticNote}
               </div>
@@ -236,7 +239,7 @@ export function ArtifactPanel({
 
         {/* Docked Action Approval Pod */}
         {action && (
-          <div className="rounded-[28px] bg-white/55 border border-white/80 p-4 sm:p-5 space-y-3">
+          <div className="rounded-[28px] bg-white/75 border border-white/90 shadow-[0_10px_28px_rgba(38,43,102,0.08)] p-4 sm:p-5 space-y-3">
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-2 text-xs font-medium text-amber-950">
                 <ShieldCheck className="w-4 h-4 text-amber-600" />
