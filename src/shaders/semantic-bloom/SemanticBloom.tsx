@@ -38,6 +38,7 @@ function buildFocusedDocument(mode: "dark" | "light") {
 }
 html, body { background: ${surface}; cursor: auto !important; }
 * { cursor: auto !important; }
+canvas { filter: blur(4px) contrast(14) !important; transform: translateZ(0); }
 .query-container, .status-hud { display: none !important; }
 .interface-layer {
   display: flex;
