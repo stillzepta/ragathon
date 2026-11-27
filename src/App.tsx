@@ -865,7 +865,7 @@ export default function App() {
                   showArtifact ? 'lg:col-span-5 order-1 lg:order-2' : 'lg:col-span-8 lg:col-start-3'
                 } flex flex-col min-h-0`}
               >
-                <div className="flex-1 overflow-y-auto pr-1 space-y-4 pb-4">
+                <div className="flex-1 overflow-y-auto -mx-6 px-6 pt-3 pb-10 space-y-4">
                   {activeThread.messages.map((msg) => (
                     <ChatMessage
                       key={msg.id}
