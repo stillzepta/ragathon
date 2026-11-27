@@ -605,7 +605,13 @@ export default function App() {
                     {/* Window Body */}
                     <div className="p-6 sm:p-7 space-y-5">
                       {/* Prompt Input Bar inside Card */}
-                      <div className="flex items-center gap-2 rounded-full bg-[#F5F6FA] border border-black/[0.07] pl-5 pr-2 py-2">
+                      <div
+                        className={`flex items-center gap-2 rounded-full pl-5 pr-2 py-2 transition-all duration-300 ease-out focus-within:bg-white focus-within:scale-[1.03] focus-within:-translate-y-0.5 focus-within:border-indigo-200/90 focus-within:shadow-[0_18px_40px_rgba(38,43,102,0.18),0_4px_12px_rgba(79,86,184,0.12)] ${
+                          heroInput.trim()
+                            ? 'bg-white scale-[1.03] -translate-y-0.5 border border-indigo-200/90 shadow-[0_18px_40px_rgba(38,43,102,0.18),0_4px_12px_rgba(79,86,184,0.12)]'
+                            : 'bg-[#F5F6FA] border border-black/[0.07]'
+                        }`}
+                      >
                         <input
                           type="text"
                           value={heroInput}
@@ -713,7 +719,7 @@ export default function App() {
 
                 {/* Chat Input Bar */}
                 <div className="pt-2 pb-3">
-                  <div className="rounded-full bg-white/90 backdrop-blur-xl border border-white px-3 py-2 shadow-[0_14px_36px_rgba(38,43,102,0.14)]">
+                  <div className="rounded-full bg-white/90 backdrop-blur-xl border border-white px-3 py-2 shadow-[0_14px_36px_rgba(38,43,102,0.14)] transition-all duration-300 ease-out focus-within:bg-white focus-within:scale-[1.02] focus-within:-translate-y-0.5 focus-within:shadow-[0_20px_48px_rgba(38,43,102,0.22)]">
                     {attachedFile && (
                       <div className="mb-2 px-2">
                         <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs bg-indigo-50 text-indigo-900 border border-indigo-200">
