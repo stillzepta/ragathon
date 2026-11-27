@@ -27,7 +27,7 @@ export function ChatSidebar({
         className="fixed inset-0 z-30 bg-black/15 backdrop-blur-[2px] md:hidden"
       />
 
-      <aside className="fixed md:static inset-y-0 left-0 z-40 w-60 shrink-0 bg-white/75 backdrop-blur-2xl border-r border-black/[0.05] flex flex-col transition-all duration-200">
+      <aside className="fixed md:static inset-y-0 left-0 z-40 w-60 shrink-0 bg-white/55 backdrop-blur-2xl border-r border-black/[0.06] flex flex-col transition-all duration-200">
         {/* Top New Chat */}
         <div className="p-3 flex items-center justify-between gap-2">
           <button

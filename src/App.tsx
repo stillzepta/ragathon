@@ -432,12 +432,12 @@ export default function App() {
   return (
     <AuroraBackground
       palette="dimaac"
-      theme="auto"
-      position="center"
-      intensity={0.72}
-      blur={95}
-      speed={1.2}
-      className="h-screen w-screen bg-[#FCFCFD] dark:bg-[#0d0f12]"
+      theme="light"
+      position="bottom"
+      intensity={0.48}
+      blur={105}
+      speed={1.1}
+      className="h-screen w-screen bg-[#FAFBFD]"
     >
       <div className="relative h-full w-full flex overflow-hidden">
         <ChatSidebar
