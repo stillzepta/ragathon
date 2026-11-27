@@ -72,10 +72,8 @@ export function ChatMessage({
       </div>
 
       <div className="flex-1 min-w-0 space-y-3">
-        {/* Liquid Plasma Thinking Orb while streaming */}
-        {message.isStreaming && (
-          <ThinkingOrb statusText={orbStatusText} agents={message.agents} />
-        )}
+        {/* Minimalist Wave Thinking Animation while streaming */}
+        {message.isStreaming && <ThinkingOrb statusText={orbStatusText} />}
 
         {/* Unified Clear-Glass Intelligence Window (after completion) */}
         {result && (

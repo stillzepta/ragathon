@@ -50,48 +50,23 @@
   animation: float-gentle 6s ease-in-out infinite;
 }
 
-/* Liquid Plasma Orb Animations */
-@keyframes plasma-morph {
-  0%, 100% {
-    border-radius: 58% 42% 62% 38% / 44% 56% 44% 56%;
-    transform: rotate(0deg) scale(1);
+@keyframes wave-slide {
+  0% {
+    transform: translateX(0);
   }
-  33% {
-    border-radius: 42% 58% 48% 52% / 58% 40% 60% 42%;
-    transform: rotate(120deg) scale(1.06);
-  }
-  66% {
-    border-radius: 52% 48% 38% 62% / 46% 62% 38% 54%;
-    transform: rotate(240deg) scale(0.97);
+  100% {
+    transform: translateX(-50%);
   }
 }
 
-@keyframes spin-slow {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+.animate-wave-slow {
+  animation: wave-slide 4.5s linear infinite;
 }
 
-@keyframes spin-reverse {
-  from {
-    transform: rotate(360deg);
-  }
-  to {
-    transform: rotate(0deg);
-  }
+.animate-wave-mid {
+  animation: wave-slide 3.2s linear infinite;
 }
 
-.animate-plasma {
-  animation: plasma-morph 5.5s ease-in-out infinite;
-}
-
-.animate-spin-slow {
-  animation: spin-slow 9s linear infinite;
-}
-
-.animate-spin-reverse {
-  animation: spin-reverse 6.5s linear infinite;
+.animate-wave-fast {
+  animation: wave-slide 2.4s linear infinite reverse;
 }
