@@ -1,0 +1,107 @@
+import json
+from io import BytesIO
+
+import pytest
+from fastapi.testclient import TestClient
+from reportlab.pdfgen.canvas import Canvas
+
+from app.api.main import MAX_BODY_BYTES, app
+
+TOKEN = "local-test-token-" + "a" * 24
+
+
+@pytest.fixture
+def client(tmp_path, monkeypatch):
+    monkeypatch.setenv("RAGATHON_PUBLIC", "true")
+    monkeypatch.setenv("RAGATHON_API_TOKEN", TOKEN)
+    monkeypatch.setenv("RUN_DB_PATH", str(tmp_path / "runs.sqlite3"))
+    monkeypatch.setenv("MODEL_PROVIDER", "mock")
+    monkeypatch.setenv("WEB_SEARCH_ENABLED", "false")
+    with TestClient(app, headers={"Authorization": f"Bearer {TOKEN}"}) as test_client:
+        yield test_client
+
+
+def test_results_events_decision_and_exports(client):
+    queued = client.post("/api/runs", data={"prompt": "Assess the accounting startup market"})
+    assert queued.status_code == 202
+    route = f"/api/runs/{queued.json()['id']}"
+    stream = client.get(f"{route}/events")
+    assert stream.status_code == 200
+    events = [json.loads(line[6:]) for line in stream.text.splitlines() if line.startswith("data: ")]
+    assert events[0]["status"] == "queued"
+    assert events[-1]["status"] == "completed"
+    assert {event.get("stage") for event in events} >= {"planner", "researcher", "analyst", "evaluator", "revision"}
+    cursor = next(line[4:] for line in stream.text.splitlines() if line.startswith("id: "))
+    resumed = client.get(f"{route}/events", headers={"Last-Event-ID": cursor})
+    assert '"status": "queued"' not in resumed.text
+    assert '"status": "completed"' in resumed.text
+    result = client.get(route).json()["result"]
+    first, revised = result["drafts"]
+    assert result["criticInitialScore"] == first["score"]
+    assert result["criticFinalScore"] == revised["score"]
+    assert first["body"] != revised["body"]
+    decision = {"mission_id": result["id"], "payload": "Ask for retention data.", "status": "approved"}
+    assert client.post("/api/approve", json=decision).json()["action"]["status"] == "approved"
+    assert client.post("/api/approve", json=decision).status_code == 200
+    assert client.post("/api/approve", json={**decision, "status": "rejected"}).status_code == 409
+    assert client.get(route).json()["result"]["proposedAction"]["payloadPreview"] == decision["payload"]
+    assert client.get(f"{route}/report/md").text.startswith("# AgentVerse")
+    assert client.get(f"{route}/report/pdf").content.startswith(b"%PDF")
+    assert client.get("/api/runs/missing/events").status_code == 404
+
+
+def test_access_body_and_scope_limits(client):
+    assert client.get("/api/runs/missing", headers={"Authorization": ""}).status_code == 401
+    assert client.post("/api/runs", content=b"x" * (MAX_BODY_BYTES + 1)).status_code == 413
+    assert client.post("/api/runs", data={"prompt": "Assess a company", "domain": "career"}).status_code == 422
+
+
+def test_upload_formats(client):
+    pdf = BytesIO()
+    drawing = Canvas(pdf)
+    drawing.drawString(40, 700, "Accounting startup market evidence from a PDF.")
+    drawing.save()
+    for filename, content in (
+        ("accounting.pdf", pdf.getvalue()),
+        ("accounting.csv", b"market,evidence\naccounting,startup"),
+        ("accounting.json", b'{"market": "accounting startup"}'),
+    ):
+        response = client.post(
+            "/api/run", data={"prompt": "Assess the accounting startup market"},
+            files={"file": (filename, content)},
+        )
+        assert response.status_code == 200
+        assert any(item["title"] == filename for item in response.json()["citations"])
+
+
+def test_invalid_attachment_and_origin_have_clear_errors(client):
+    bad_file = client.post(
+        "/api/run", data={"prompt": "Assess the market"},
+        files={"file": ("accounting.json", b"{bad json")},
+    )
+    assert bad_file.status_code == 422
+    assert "JSON could not be read" in bad_file.json()["detail"]
+    assert client.post(
+        "/api/runs", data={"prompt": "Assess the market"},
+        headers={"Origin": "https://untrusted.example"},
+    ).status_code == 403
+
+
+def test_store_keeps_results_and_expires_old_runs(tmp_path, monkeypatch):
+    from app.storage.runs import RunStore
+
+    path = str(tmp_path / "runs.sqlite3")
+    store = RunStore(path)
+    monkeypatch.setattr("app.storage.runs.time.time", lambda: 100)
+    store.create("finished")
+    store.finish("finished", "completed", {"proposedAction": {"status": "pending"}})
+    store.decide("finished", "rejected", None)
+    store.create("interrupted")
+    reopened = RunStore(path)
+    reopened.recover()
+    assert reopened.get("finished")["result"]["proposedAction"]["status"] == "rejected"
+    assert reopened.get("interrupted")["status"] == "failed"
+    monkeypatch.setattr("app.storage.runs.time.time", lambda: 201)
+    reopened.prune(100)
+    assert reopened.get("finished") is None
+    assert not reopened.events("finished", 0)

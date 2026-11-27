@@ -11,9 +11,9 @@ def research_node(state: AgentState, retriever: HybridRetriever) -> AgentState:
     hits = retriever.search(state["user_goal"] + " competitors market risks financials", top_k=6)
     state["research_data"] = hits
     state["citations"] = [
-        {"id": index + 1, "title": hit["title"], "source": hit["source_url"], "snippet": hit["text"]}
+        {"id": index + 1, "title": hit["title"], "source": hit["source_url"], "snippet": hit["text"], "chunkId": hit["chunk_id"], "locator": hit["locator"]}
         for index, hit in enumerate(hits)
     ]
-    state["agent_logs"].append({"agent_name": "researcher", "action": "retrieve", "message": f"Retrieved {len(hits)} grounded chunks."})
+    state["agent_logs"].append({"agent_name": "researcher", "action": "retrieve", "message": f"Retrieved {len(hits)} candidate evidence chunks."})
     return state
 

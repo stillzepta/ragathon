@@ -13,6 +13,8 @@ dependencies = [
   "langgraph>=0.2",
   "langgraph-checkpoint-sqlite>=2.0",
   "pydantic>=2.9",
+  "pypdf>=6.0",
+  "reportlab>=4.4",
   "python-dotenv>=1.0",
   "python-multipart>=0.0.9",
   "ddgs>=9.0",
@@ -30,6 +32,7 @@ dev = [
 [tool.pytest.ini_options]
 pythonpath = ["."]
 testpaths = ["tests"]
+asyncio_default_fixture_loop_scope = "function"
 
 [tool.ruff]
 line-length = 100

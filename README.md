@@ -1,48 +1,42 @@
-# RAGathon Multi-Agent Workspace
+# Ragathon
 
-A parallel-friendly hackathon project for a multi-agent, RAG-grounded workflow engine.
+AgentVerse turns a startup due-diligence question into a memo with source excerpts, reviewed drafts, and a recorded follow-up decision. The connected workflow runs planning, research, analysis, and review in sequence. The separate Studio simulation showcases additional example workflows.
 
-The system decomposes a user goal, retrieves evidence, delegates work to specialist agents, stores shared state, and evaluates/revises the final artifact.
+## Run locally
 
-## Team lanes
+Use Python 3.12 and Node.js 22 for the same dependency setup as CI.
 
-| Lane | Directory | Owns |
-|---|---|---|
-| Platform | `app/orchestrator/`, `app/storage/` | State machine, task queue, persistence, event log |
-| RAG | `app/rag/` | Ingestion, chunking, embeddings, retrieval, reranking |
-| Agents | `app/agents/`, `app/providers/` | Prompts, agent runners, model adapter |
-| Product | `app/api/`, `app/ui/` | API, run controls, timeline and evidence UI |
-| Quality | `app/evaluation/`, `tests/`, `.github/` | Critic loop, tests, CI, release/demo readiness |
-
-See [TEAM_ACCESS.md](TEAM_ACCESS.md) for writable boundaries and coordination rules.
-
-## Local setup
-
-```bash
-python -m venv .venv
+```sh
+python3.12 -m venv .venv
 source .venv/bin/activate
-pip install -e '.[dev]'
+python -m pip install -r requirements-ci.txt
+python -m pip install --no-deps -e '.[dev]'
 cp .env.example .env
-pytest
+uvicorn app.api.main:app --env-file .env --host 127.0.0.1 --port 8000
 ```
 
-Run the API and point the existing Vite dashboard at it:
+In another terminal:
 
-```bash
-uvicorn app.api.main:app --reload --port 8000
+```sh
+npm ci
 VITE_API_URL=http://localhost:8000 npm run dev
 ```
 
-`MODEL_PROVIDER=mock` runs offline with the local RAG corpus. Set `GEMINI_API_KEY` and `MODEL_PROVIDER=gemini` to enable Gemini generation. Set `TAVILY_API_KEY` to enable live web research; without credentials the search tool safely falls back to the seeded corpus. The workflow preserves structured state, citations, and the critic loop.
+Without `VITE_API_URL`, Vite runs Studio simulation. With the API connected, enter a startup question. The dashboard shows real stage updates, earlier drafts, and downloads. It records approval or rejection for the suggested follow-up.
 
-## Architecture
+## Data and deployment
 
-See [ARCHITECTURE.md](ARCHITECTURE.md) for the system design and RAG pipeline.
+- Local mode uses the included SBA guide summaries and any supported attachment. A source excerpt confirms what was retrieved. The checklist score is a measure of memo structure and citation consistency.
+- Web search is independently opt-in through `WEB_SEARCH_ENABLED=true`. It sends the question to Tavily when configured, with DuckDuckGo as a fallback. Model generation is separately opt-in. Set `MODEL_PROVIDER=gemini` or `MODEL_PROVIDER=groq` and configure the corresponding API key. If both keys are configured, the other provider can be tried after a failure. Runs with attachments stay local for model generation unless `ALLOW_EXTERNAL_UPLOADS=true`.
+- The API keeps results and events, including cited attachment excerpts, in `RUN_DB_PATH` for `RUN_RETENTION_HOURS` (24 by default). The API uses in-memory graph checkpoints. Direct Python calls can still use local SQLite checkpoints through `CHECKPOINT_DB_PATH`.
+- The hosted configuration is for a single trusted group sharing one access token. Run one API worker with `RAGATHON_PUBLIC=true`, a private `RAGATHON_API_TOKEN` of at least 32 characters, and `ALLOWED_ORIGINS` set to the dashboard origin. Terminate TLS at the hosting proxy and apply request timeouts and resource limits there. Enter the token in the dashboard. The browser keeps it in memory for the open page. The API caps concurrent runs, minute submissions, and attachment size.
+- A restart keeps completed results and decisions. In-flight runs are marked failed so they can be submitted again. The event endpoint supports reconnecting with `Last-Event-ID`.
 
-## Implementation status
+## Checks
 
-See [IMPLEMENTATION_STATUS.md](IMPLEMENTATION_STATUS.md) for completed steps and remaining work.
+```sh
+python -m pytest
+npm run build
+```
 
-## Existing frontend
-
-The current demo frontend lives in `src/` and is built with Vite. The backend and RAG lanes are scaffolded under `app/`; see [TEAM_ACCESS.md](TEAM_ACCESS.md) before changing shared contracts.
+CI runs the same checks on pull requests and pushes to `main`. See [implementation status](IMPLEMENTATION_STATUS.md) and [the target architecture](ARCHITECTURE.md).

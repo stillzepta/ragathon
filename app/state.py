@@ -17,6 +17,9 @@ class AgentState(TypedDict, total=False):
     final_output: str
     citations: list[dict[str, Any]]
     quality_criteria: list[str]
+    drafts: list[dict[str, Any]]
+    generation_mode: str
+    allow_external_analysis: bool
     run_id: str
 
 
@@ -35,6 +38,8 @@ def initial_state(goal: str, criteria: list[str], run_id: str) -> AgentState:
         "final_output": "",
         "citations": [],
         "quality_criteria": criteria,
+        "drafts": [],
+        "generation_mode": "local",
         "run_id": run_id,
     }
 

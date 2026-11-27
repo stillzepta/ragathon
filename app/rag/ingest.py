@@ -4,22 +4,35 @@ import hashlib
 import re
 from typing import Any
 
+SBA_GUIDE = "https://www.sba.gov/counseling/plan-your-business/"
 SEED_DOCUMENTS = [
-    {"title": "Startup Due Diligence Playbook", "url": "https://example.org/agentverse/due-diligence-playbook", "text": "A diligence memo should separate observed facts, model assumptions, and open questions. Review market size, competitors, distribution, retention, unit economics, cash needs, and execution risks."},
-    {"title": "Market Sizing Notes", "url": "https://example.org/agentverse/market-sizing", "text": "TAM is the broad revenue opportunity, SAM is the reachable segment, and SOM is the realistically capturable share. A bottom-up estimate should show customers, price, adoption, and a time horizon."},
-    {"title": "Investment Risk Checklist", "url": "https://example.org/agentverse/risk-checklist", "text": "Key risks include weak differentiation, concentrated acquisition channels, regulatory exposure, high burn, unproven retention, dependency on a platform, and claims that lack primary evidence. Each risk should have an impact, likelihood, and mitigation."},
+    {
+        "title": "SBA market research and competitive analysis (summary)",
+        "url": SBA_GUIDE,
+        "text": "The SBA suggests evaluating demand, market size, available alternatives, and customer pricing. Interviewing potential customers can help test assumptions about demand and competition.",
+    },
+    {
+        "title": "SBA business planning guide (summary)",
+        "url": SBA_GUIDE,
+        "text": "The SBA business plan guide recommends describing the target market, competitive advantages, and financial projections such as income, cash flow, and capital expenditure.",
+    },
+    {
+        "title": "SBA startup costs guide (summary)",
+        "url": SBA_GUIDE,
+        "text": "The SBA recommends separating one-time startup costs from recurring monthly expenses before estimating how much capital the business needs.",
+    },
 ]
 
 
-def chunk_document(document: dict[str, Any], size: int = 500) -> list[dict[str, Any]]:
-    words = re.findall(r"\S+", document["text"])
+def chunk_document(document: dict[str, Any], size: int = 200) -> list[dict[str, Any]]:
+    words = re.findall(r"\S{1,200}", document["text"])
     chunks = []
     for index in range(0, len(words), size):
         text = " ".join(words[index : index + size])
-        digest = hashlib.sha1(f"{document['url']}:{index}:{text}".encode()).hexdigest()[:12]
+        digest = hashlib.sha1(f"{document['url']}:{document['title']}:{index}:{text}".encode()).hexdigest()[:12]
         chunks.append({
             "chunk_id": f"chunk-{digest}",
-            "document_id": hashlib.sha1(document["url"].encode()).hexdigest()[:12],
+            "document_id": hashlib.sha1(f"{document['url']}:{document['title']}".encode()).hexdigest()[:12],
             "text": text,
             "source_url": document["url"],
             "title": document["title"],

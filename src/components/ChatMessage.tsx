@@ -45,10 +45,11 @@ export function ChatMessage({
 
       <div className="flex-1 min-w-0 space-y-2.5">
         {message.isStreaming && <ThinkingOrb statusText={orbStatusText} />}
+        {message.error && <p role="alert" className="rounded-xl bg-rose-50 p-3 text-sm text-rose-900">{message.error}</p>}
 
         {result && (
           <div className="dia-glass-blend rounded-[26px] p-4 space-y-2.5 animate-fade-slide">
-            <p className="text-sm text-[#1E1E26] leading-relaxed">
+            <p className="whitespace-pre-wrap break-words text-sm text-[#1E1E26] leading-relaxed">
               {result.briefSections[0]?.body ?? result.criticNote}
             </p>
 

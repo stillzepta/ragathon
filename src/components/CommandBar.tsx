@@ -89,7 +89,7 @@ export function CommandBar({
             <input
               ref={fileInputRef}
               type="file"
-              accept=".pdf,.txt,.csv,.log,.json,.eml"
+              accept=".pdf,.txt,.md,.csv,.log,.json,.eml"
               onChange={handleFileChange}
               className="hidden"
             />

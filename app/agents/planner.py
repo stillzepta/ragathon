@@ -8,6 +8,6 @@ def plan_node(state: AgentState) -> AgentState:
         "Analyze differentiation, risks, unit economics, and assumptions",
         "Write an investment memo with citations and recommendation",
     ]
-    state["agent_logs"].append({"agent_name": "orchestrator", "action": "plan", "message": "Created due-diligence task graph."})
+    state["agent_logs"].append({"agent_name": "orchestrator", "action": "plan", "message": "Prepared the startup due-diligence checklist."})
     return state
 

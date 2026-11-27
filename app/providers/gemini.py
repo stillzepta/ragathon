@@ -15,14 +15,19 @@ if load_dotenv:
 class ModelProvider:
     def __init__(self) -> None:
         self.provider_name = os.getenv("MODEL_PROVIDER", "mock").lower()
-        self.gemini_model = os.getenv("MODEL_NAME", "gemini-2.0-flash")
+        self.gemini_model = os.getenv("MODEL_NAME", "gemini-2.5-flash")
         self.groq_model = os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile")
         self.gemini_api_key = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
+        self.used_provider = None
         self.groq_api_key = os.getenv("GROQ_API_KEY")
 
     @property
+    def requested(self) -> bool:
+        return self.provider_name in {"gemini", "groq"}
+
+    @property
     def live(self) -> bool:
-        return self.provider_name != "mock" and bool(self.gemini_api_key or self.groq_api_key)
+        return self.requested and bool(self.gemini_api_key or self.groq_api_key)
 
     def generate(self, system: str, prompt: str) -> str:
         if not self.live:
@@ -38,6 +43,7 @@ class ModelProvider:
             try:
                 response = self._generate_gemini(system, prompt) if provider_name == "gemini" else self._generate_groq(system, prompt)
                 if response:
+                    self.used_provider = provider_name
                     return response
             except Exception:
                 continue
@@ -48,11 +54,11 @@ class ModelProvider:
             return ""
         from google import genai
 
-        client = genai.Client(api_key=self.gemini_api_key)
-        response = client.models.generate_content(
-            model=self.gemini_model,
-            contents=f"SYSTEM:\n{system}\n\nUSER:\n{prompt}",
-        )
+        with genai.Client(api_key=self.gemini_api_key, http_options={"timeout": 12000}) as client:
+            response = client.models.generate_content(
+                model=self.gemini_model, contents=prompt,
+                config={"system_instruction": system, "max_output_tokens": 600},
+            )
         return response.text or ""
 
     def _generate_groq(self, system: str, prompt: str) -> str:
@@ -69,7 +75,7 @@ class ModelProvider:
             headers={"Authorization": f"Bearer {self.groq_api_key}", "Content-Type": "application/json"},
             method="POST",
         )
-        with request.urlopen(req, timeout=45) as response:
+        with request.urlopen(req, timeout=12) as response:
             data = json.loads(response.read().decode())
         return data.get("choices", [{}])[0].get("message", {}).get("content", "")
 

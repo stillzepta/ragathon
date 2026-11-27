@@ -14,12 +14,14 @@ import { AgentNode } from '../types';
 
 interface AgentPipelineProps {
   agents: AgentNode[];
+  isSimulation?: boolean;
   criticInitialScore?: number;
   criticFinalScore?: number;
 }
 
 export function AgentPipeline({
   agents,
+  isSimulation = true,
   criticInitialScore,
   criticFinalScore,
 }: AgentPipelineProps) {
@@ -146,7 +148,7 @@ export function AgentPipeline({
             {agent.memorySnapshot && (
               <div className="rounded-xl bg-white text-[#111113] p-3 overflow-x-auto border border-black/[0.05]">
                 <span className="text-[10px] uppercase tracking-wider text-[#6E6E77] block mb-1">
-                  Shared Memory Snapshot
+                  {isSimulation ? 'Shared Memory Snapshot' : 'Recorded Progress'}
                 </span>
                 <pre className="font-mono-code text-[11px] leading-relaxed">
                   {JSON.stringify(agent.memorySnapshot, null, 2)}
@@ -163,7 +165,7 @@ export function AgentPipeline({
     <div className="space-y-2.5 pt-2">
       <div className="flex items-center justify-between px-1">
         <p className="text-[11px] text-[#6E6E77]">
-          Click any completed agent to inspect Shared Memory & tool calls
+          {isSimulation ? 'Inspect example agent outputs' : 'Open a stage to inspect its recorded progress'}
         </p>
 
         {criticInitialScore !== undefined && criticFinalScore !== undefined && (
@@ -176,6 +178,7 @@ export function AgentPipeline({
 
       {orchestrator && renderCard(orchestrator)}
 
+      {isSimulation ? (
       <div className="relative pl-3 border-l border-indigo-200 space-y-2">
         <span className="inline-block text-[10px] uppercase tracking-widest text-[#7A7A85]">
           Parallel Fan-Out (asyncio)
@@ -184,6 +187,8 @@ export function AgentPipeline({
           {parallelAgents.map(renderCard)}
         </div>
       </div>
+
+      ) : parallelAgents.map(renderCard)}
 
       {downstreamAgents.map(renderCard)}
     </div>

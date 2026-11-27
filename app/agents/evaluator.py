@@ -1,24 +1,29 @@
+import re
+
 from app.state import AgentState
+
+EVIDENCE_LINE = re.compile(r'^> (.+) \[(\d+)\]$', re.MULTILINE)
 
 
 def evaluate_node(state: AgentState) -> AgentState:
-    draft = state.get("draft_deliverable", "")
-    citations = state.get("citations", [])
-    checks = {
-        "completeness": all(term in draft.lower() for term in ["market", "risk", "recommendation"]),
-        "grounding": bool(citations),
-        "actionability": any(term in draft.lower() for term in ["validate", "assess", "proceed"]),
-        "uncertainty": any(term in draft.lower() for term in ["unproven", "assumptions", "evidence"]),
-    }
-    # Force the first pass to surface a concrete improvement opportunity in the
-    # demo; subsequent passes use the real rubric score.
-    score = 76 if state["revision_count"] == 0 else min(100, 55 + sum(11 for passed in checks.values() if passed))
+    draft = state["draft_deliverable"]
+    sources = {item["id"]: item["snippet"] for item in state["citations"]}
+    quotes = EVIDENCE_LINE.findall(draft)
+    lower = draft.lower()
+    checks = [
+        (15, "## market and risks" in lower, "Cover market and risks."),
+        (15, "## recommendation" in lower, "Add a recommendation."),
+        (15, "## unknowns" in lower, "Explain what remains unknown."),
+        (20, "## competitor comparison" in lower, "Add a competitor comparison."),
+        (20, "## financial assumptions" in lower, "Add financial assumptions."),
+        (15, bool(quotes) and all(
+            quote in sources.get(int(source), "") for quote, source in quotes
+        ), "Quote supporting evidence with valid citation IDs."),
+    ]
+    score = sum(weight for weight, passed, _ in checks if passed)
+    missing = [feedback for _, passed, feedback in checks if not passed]
     state["quality_score"] = score
-    state["critique_feedback"] = (
-        "Add an explicit competitor comparison and financial-assumption section before approval."
-        if state["revision_count"] == 0
-        else "All rubric checks passed."
-    )
-    state["agent_logs"].append({"agent_name": "critic", "action": "evaluate", "message": f"Scored draft {score}/100."})
+    state["critique_feedback"] = " ".join(missing) if missing else "All rubric checks passed."
+    state["drafts"] = [*state["drafts"], {"body": draft, "score": score, "feedback": state["critique_feedback"]}]
+    state["agent_logs"].append({"agent_name": "critic", "action": "evaluate", "message": f"Scored draft {score}/100. {state['critique_feedback']}"})
     return state
-

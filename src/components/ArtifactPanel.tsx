@@ -16,6 +16,7 @@ interface ArtifactPanelProps {
   message: ChatMessageItem;
   onApproveAction: (messageId: string, editedPayload?: string) => void;
   onRejectAction: (messageId: string) => void;
+  onDownloadReport: (runId: string, format: 'md' | 'pdf') => Promise<void>;
   onClose?: () => void;
 }
 
@@ -25,10 +26,12 @@ export function ArtifactPanel({
   message,
   onApproveAction,
   onRejectAction,
+  onDownloadReport,
   onClose,
 }: ArtifactPanelProps) {
   const [tab, setTab] = useState<PanelTab>('document');
   const [selectedCitationId, setSelectedCitationId] = useState<number | null>(null);
+  const [downloadError, setDownloadError] = useState('');
   const [copied, setCopied] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editedPayload, setEditedPayload] = useState('');
@@ -37,6 +40,7 @@ export function ArtifactPanel({
   if (!result) return null;
 
   const action = result.proposedAction;
+  const simulation = !result.mode || result.mode === 'simulation';
   const sharedMemory = (message.agents ?? []).reduce<Record<string, unknown>>((acc, a) => {
     if (a.memorySnapshot) acc[a.id] = a.memorySnapshot;
     return acc;
@@ -47,7 +51,7 @@ export function ArtifactPanel({
       mission_id: result.id,
       domain: result.domain,
       critic_score: `${result.criticInitialScore} -> ${result.criticFinalScore}`,
-      shared_memory: Object.keys(sharedMemory).length > 0 ? sharedMemory : { status: 'verified' },
+      shared_memory: Object.keys(sharedMemory).length > 0 ? sharedMemory : {},
       proposed_action: action.payloadPreview,
     },
     null,
@@ -67,6 +71,7 @@ export function ArtifactPanel({
       {/* Subtle indigo top-edge highlight */}
       <div className="h-[1.5px] w-full indigo-top-glow shrink-0" />
 
+      {message.actionError && <p role="alert" className="px-5 pt-3 text-xs text-rose-800">{message.actionError}</p>}
       {/* Panel Header */}
       <div className="px-5 sm:px-6 pt-5 pb-3.5 flex flex-col gap-3">
         <div className="flex items-start justify-between gap-3">
@@ -74,12 +79,38 @@ export function ArtifactPanel({
             <div className="flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-indigo-500 shadow-[0_0_8px_rgba(99,102,241,0.55)]" />
               <span className="text-[11px] font-medium uppercase tracking-[0.12em] text-[#4A4A58]">
-                Verified Document · 5 Agents
+                {simulation ? 'Studio simulation' : result.mode === 'fallback'
+                  ? 'Local fallback · model unavailable' : result.mode === 'local'
+                    ? 'Local due-diligence run' : `${result.mode === 'groq' ? 'Groq' : 'Gemini'}-assisted run`}
               </span>
             </div>
             <h2 className="text-base sm:text-lg font-semibold tracking-tight text-[#111113] mt-1 truncate">
               {result.briefTitle}
             </h2>
+            {!simulation && (
+              <div className="mt-2 flex flex-wrap gap-3 text-xs text-indigo-900">
+                {(['md', 'pdf'] as const).map((format) => (
+                  <button key={format} type="button" className="underline" onClick={() => {
+                    setDownloadError('');
+                    void onDownloadReport(result.id, format).catch((error: Error) => setDownloadError(error.message));
+                  }}>Download {format === 'md' ? 'Markdown' : 'PDF'}</button>
+                ))}
+                {downloadError && <span role="alert">{downloadError}</span>}
+              </div>
+            )}
+            {result.drafts && result.drafts.length > 1 && (
+              <details className="mt-2 text-xs text-indigo-950">
+                <summary className="cursor-pointer">Review earlier drafts</summary>
+                {result.drafts.slice(0, -1).map((draft, index) => (
+                  <div key={index} className="mt-2 max-h-40 overflow-auto rounded-xl bg-white/70 p-3">
+                    <p className="font-semibold">Draft {index + 1} · {draft.score}/100</p>
+                    <p>{draft.feedback}</p>
+                    <p className="mt-2 whitespace-pre-wrap break-words">{draft.body}</p>
+                  </div>
+                ))}
+              </details>
+            )}
+
           </div>
 
           <div className="flex items-center gap-2 shrink-0">
@@ -169,7 +200,7 @@ export function ArtifactPanel({
                     <h4 className="text-[11px] font-semibold uppercase tracking-wider text-[#555565]">
                       {sec.heading}
                     </h4>
-                    <p className="mt-1 text-sm text-[#1E1E26] leading-relaxed">
+                    <p className="mt-1 whitespace-pre-wrap break-words text-sm text-[#1E1E26] leading-relaxed">
                       {sec.body}
                     </p>
                   </div>
@@ -223,6 +254,7 @@ export function ArtifactPanel({
           {tab === 'trace' && message.agents && (
             <AgentPipeline
               agents={message.agents}
+                isSimulation={simulation}
               criticInitialScore={result.criticInitialScore}
               criticFinalScore={result.criticFinalScore}
             />
@@ -267,6 +299,7 @@ export function ArtifactPanel({
               <div className="flex flex-wrap items-center gap-2">
                 <button
                   type="button"
+                  disabled={message.actionPending}
                   onClick={() => {
                     onApproveAction(message.id, isEditing ? editedPayload : undefined);
                     setIsEditing(false);
@@ -274,7 +307,7 @@ export function ArtifactPanel({
                   className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-medium bg-[#111113] text-white hover:bg-[#2A2A32] transition cursor-pointer shadow-sm"
                 >
                   <Check className="w-3.5 h-3.5" />
-                  <span>{isEditing ? 'Save & Approve' : 'Approve & Execute'}</span>
+                  <span>{isEditing ? 'Save & Approve' : 'Approve'}</span>
                 </button>
                 <button
                   type="button"
@@ -289,7 +322,8 @@ export function ArtifactPanel({
                 </button>
                 <button
                   type="button"
-                  onClick={() => onRejectAction(message.id)}
+                  disabled={message.actionPending}
+                      onClick={() => onRejectAction(message.id)}
                   className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full text-xs font-medium text-rose-700 hover:bg-rose-50/80 transition cursor-pointer ml-auto"
                 >
                   <X className="w-3.5 h-3.5" />

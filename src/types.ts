@@ -34,6 +34,8 @@ export interface Citation {
   title: string;
   source: string;
   snippet: string;
+  locator?: string;
+  chunkId?: string;
 }
 
 export interface ProposedAction {
@@ -53,6 +55,8 @@ export interface MissionResult {
   criticInitialScore: number;
   criticFinalScore: number;
   criticNote: string;
+  mode?: 'simulation' | 'local' | 'gemini' | 'groq' | 'fallback';
+  drafts?: { body: string; score: number; feedback: string }[];
   briefTitle: string;
   briefSections: { heading: string; body: string }[];
   citations: Citation[];
@@ -69,6 +73,9 @@ export interface ChatMessageItem {
   agents?: AgentNode[];
   result?: MissionResult;
   isStreaming?: boolean;
+  error?: string;
+  actionError?: string;
+  actionPending?: boolean;
   createdAt: string;
 }
 

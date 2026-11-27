@@ -4,6 +4,7 @@ import { ArtifactPanel } from './components/ArtifactPanel';
 import { ChatMessage } from './components/ChatMessage';
 import { ChatSidebar } from './components/ChatSidebar';
 import { AuthUser, LoginModal } from './components/LoginModal';
+import { api, API_URL, watchRun } from './api';
 import { DEMO_PRESETS } from './data/presets';
 import {
   AgentNode,
@@ -11,9 +12,20 @@ import {
   ChatThread,
   DemoPreset,
   MissionResult,
+  ProposedAction,
 } from './types';
 
-const API_URL = import.meta.env.VITE_API_URL as string | undefined;
+const DILIGENCE_EXAMPLE = 'Assess the market for a fictional accounting startup';
+const CONNECTED_AGENTS: AgentNode[] = [
+  { id: 'orchestrator', name: 'Planner', role: 'Planning', status: 'idle', summary: 'Queued' },
+  { id: 'rag', name: 'Researcher', role: 'Evidence retrieval', status: 'idle', summary: 'Queued' },
+  { id: 'planner', name: 'Analyst', role: 'Memo writing', status: 'idle', summary: 'Queued' },
+  { id: 'critic', name: 'Evaluator', role: 'Memo review', status: 'idle', summary: 'Queued' },
+];
+const STAGE_IDS: Record<string, AgentNode['id']> = {
+  planner: 'orchestrator', researcher: 'rag', analyst: 'planner',
+  evaluator: 'critic', revision: 'orchestrator',
+};
 
 interface ShowcaseItem {
   num: string;
@@ -149,6 +161,8 @@ export default function App() {
   const [input, setInput] = useState('');
   const [attachedFile, setAttachedFile] = useState<File | null>(null);
   const [isRunning, setIsRunning] = useState(false);
+  const [apiToken, setApiToken] = useState('');
+  const activeRequest = useRef<AbortController | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -165,7 +179,7 @@ export default function App() {
     latestArtifactMsg;
 
   useEffect(() => {
-    if (!isEmptyChat || isPreviewPaused || heroInput.trim()) return;
+    if (API_URL || !isEmptyChat || isPreviewPaused || heroInput.trim()) return;
     const timer = setInterval(() => {
       setActiveShowcaseIdx((prev) => (prev + 1) % SHOWCASE_ITEMS.length);
       setActiveToneIdx(0);
@@ -356,30 +370,58 @@ export default function App() {
     setIsRunning(true);
 
     if (API_URL && !presetOverride) {
+      const controller = new AbortController();
+      activeRequest.current = controller;
+      const timer = window.setTimeout(() => controller.abort('timeout'), 120_000);
+      const signal = controller.signal;
+      updateAssistantMessage(targetThreadId, assistantMsgId, (m) => ({
+        ...m, agents: CONNECTED_AGENTS,
+      }));
       try {
         const formData = new FormData();
         formData.append('prompt', text);
-        formData.append('domain', 'auto');
+        formData.append('domain', 'bizintel');
         if (currentFile) formData.append('file', currentFile);
 
-        const res = await fetch(`${API_URL}/api/run`, {
-          method: 'POST',
-          body: formData,
+        const response = await api('/api/runs', apiToken, {
+          method: 'POST', body: formData, signal,
         });
-        if (res.ok) {
-          const data = (await res.json()) as MissionResult;
-          updateAssistantMessage(targetThreadId, assistantMsgId, (m) => ({
-            ...m,
-            isStreaming: false,
-            agents: INITIAL_AGENTS.map((a) => ({ ...a, status: 'done' })),
-            result: data,
-          }));
-          setIsRunning(false);
-          return;
+        const { id } = await response.json() as { id: string };
+        await watchRun(id, apiToken, signal, (event) => {
+          const agent = event.stage && STAGE_IDS[event.stage];
+          if (agent) {
+            patchAgentInMessage(targetThreadId, assistantMsgId, agent, {
+              status: event.action === 'started' ? 'running' : 'done',
+              summary: event.message,
+              memorySnapshot: { stage: event.stage, action: event.action, message: event.message },
+            });
+          }
+        });
+        const result = await api(`/api/runs/${id}`, apiToken, { signal });
+        const record = await result.json() as {
+          status: string; result?: MissionResult & { error?: string };
+        };
+        if (record.status !== 'completed' || !record.result) {
+          throw new Error(record.result?.error ?? 'The run did not finish.');
         }
-      } catch {
-        // Fallback to Studio simulation
+        updateAssistantMessage(targetThreadId, assistantMsgId, (m) => ({
+          ...m, isStreaming: false, result: record.result,
+        }));
+      } catch (error) {
+        updateAssistantMessage(targetThreadId, assistantMsgId, (m) => ({
+          ...m, isStreaming: false,
+          error: signal.reason === 'timeout' ? 'The run took too long to display.'
+            : signal.aborted ? 'Stopped watching this run.'
+              : error instanceof Error ? error.message : 'Could not connect to the workspace.',
+        }));
+      } finally {
+        window.clearTimeout(timer);
+        if (runTokenRef.current === token) {
+          activeRequest.current = null;
+          setIsRunning(false);
+        }
       }
+      return;
     }
 
     const matchedPreset =
@@ -451,6 +493,7 @@ export default function App() {
 
     const finalResult: MissionResult = {
       ...matchedPreset.result,
+      mode: 'simulation',
       id: `mission-${Date.now()}`,
       createdAt: nowLabel,
     };
@@ -464,59 +507,54 @@ export default function App() {
     setIsRunning(false);
   };
 
-  const handleApproveAction = async (messageId: string, editedPayload?: string) => {
+  const handleDecision = async (
+    messageId: string, status: 'approved' | 'rejected', payload?: string,
+  ) => {
     if (!activeThreadId) return;
     const msg = activeThread?.messages.find((m) => m.id === messageId);
-    if (!msg?.result) return;
-
-    const finalPayload = editedPayload ?? msg.result.proposedAction.payloadPreview;
-    if (API_URL) {
-      try {
-        await fetch(`${API_URL}/api/approve`, {
+    if (!msg?.result || msg.actionPending) return;
+    const threadId = activeThreadId;
+    updateAssistantMessage(threadId, messageId, (m) => ({
+      ...m, actionPending: true, actionError: undefined,
+    }));
+    try {
+      let action: ProposedAction = {
+        ...msg.result.proposedAction,
+        status,
+        payloadPreview: payload ?? msg.result.proposedAction.payloadPreview,
+        executionNote: `Simulation decision: ${status}.`,
+      };
+      if (msg.result.mode !== 'simulation') {
+        const response = await api('/api/approve', apiToken, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ mission_id: msg.result.id, payload: finalPayload }),
+          body: JSON.stringify({ mission_id: msg.result.id, payload, status }),
+          signal: AbortSignal.timeout(15_000),
         });
-      } catch {
-        // Continue local confirmation
+        ({ action } = await response.json() as { action: ProposedAction });
       }
+      updateAssistantMessage(threadId, messageId, (m) => ({
+        ...m, actionPending: false,
+        result: m.result && { ...m.result, proposedAction: action },
+      }));
+    } catch (error) {
+      updateAssistantMessage(threadId, messageId, (m) => ({
+        ...m, actionPending: false,
+        actionError: error instanceof Error ? error.message : 'Could not save your decision.',
+      }));
     }
-
-    updateAssistantMessage(activeThreadId, messageId, (m) =>
-      !m.result
-        ? m
-        : {
-            ...m,
-            result: {
-              ...m.result,
-              proposedAction: {
-                ...m.result.proposedAction,
-                payloadPreview: finalPayload,
-                status: 'approved',
-                executionNote: 'Approved — action executed & saved to memory.',
-              },
-            },
-          }
-    );
   };
 
-  const handleRejectAction = (messageId: string) => {
-    if (!activeThreadId) return;
-    updateAssistantMessage(activeThreadId, messageId, (m) =>
-      !m.result
-        ? m
-        : {
-            ...m,
-            result: {
-              ...m.result,
-              proposedAction: {
-                ...m.result.proposedAction,
-                status: 'rejected',
-                executionNote: 'Rejected — no external action was taken.',
-              },
-            },
-          }
-    );
+  const downloadReport = async (runId: string, format: 'md' | 'pdf') => {
+    const response = await api(`/api/runs/${runId}/report/${format}`, apiToken, {
+      signal: AbortSignal.timeout(15_000),
+    });
+    const url = URL.createObjectURL(await response.blob());
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `diligence.${format}`;
+    link.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
   };
 
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
@@ -525,6 +563,8 @@ export default function App() {
 
   const handleNewChat = () => {
     runTokenRef.current++;
+    activeRequest.current?.abort();
+    activeRequest.current = null;
     setIsRunning(false);
     setActiveThreadId(null);
     setInput('');
@@ -535,6 +575,12 @@ export default function App() {
   return (
     <div className="relative h-screen w-screen overflow-hidden kraft-bg text-[#111113] flex">
       <div className="relative flex-1 flex flex-col min-w-0">
+        <div className="flex items-center justify-between gap-3 px-5 pt-3 text-xs text-indigo-950">
+          <span>{API_URL ? 'Connected due diligence' : 'Studio simulation'}</span>
+          {API_URL && <input type="password" aria-label="API access token" placeholder="API token (if required)"
+            autoComplete="off" value={apiToken} onChange={(event) => setApiToken(event.target.value)}
+            className="w-36 rounded-full border border-black/10 bg-white/85 px-3 py-2" />}
+        </div>
         {/* Main Viewport */}
         <div className="flex-1 overflow-y-auto px-5 sm:px-8 pt-4">
           {isEmptyChat ? (
@@ -543,16 +589,18 @@ export default function App() {
                 {/* Left Editorial Column */}
                 <div className="lg:col-span-6 space-y-9">
                   <h1 className="font-display text-5xl sm:text-6xl font-bold tracking-[-0.04em] leading-[1.03] text-[#111113]">
-                    One workspace
-                    <br />
-                    for the work that{' '}
-                    <span className="font-serif-accent italic font-semibold text-[1.03em]">
-                      slows
-                    </span>{' '}
-                    you down
+                    {API_URL ? <>Startup<br />due diligence</> : <>
+                      One workspace<br />for the work that{' '}
+                      <span className="font-serif-accent italic font-semibold text-[1.03em]">slows</span>{' '}
+                      you down
+                    </>}
                   </h1>
 
-                  <div className="space-y-5">
+                  {API_URL ? (
+                    <p className="max-w-md text-sm leading-relaxed text-[#24263b]">
+                      Ask about a startup, review the sources and draft changes, and save your follow-up decision.
+                    </p>
+                  ) : <div className="space-y-5">
                     {SHOWCASE_ITEMS.map((item, idx) => {
                       const isActive = idx === activeShowcaseIdx;
                       return (
@@ -593,7 +641,7 @@ export default function App() {
                         </button>
                       );
                     })}
-                  </div>
+                  </div>}
                 </div>
 
                 {/* Right Interactive Window Preview */}
@@ -614,7 +662,7 @@ export default function App() {
                         <span className="w-3 h-3 rounded-full bg-black/15" />
                       </div>
                       <span className="text-xs sm:text-[13px] text-[#6E6E77]">
-                        {activeShowcase.windowTitle}
+                        {API_URL ? 'New due-diligence run' : activeShowcase.windowTitle}
                       </span>
                     </div>
 
@@ -641,19 +689,24 @@ export default function App() {
                               e.preventDefault();
                               if (heroInput.trim()) {
                                 void sendMessage(undefined, heroInput);
+                              } else if (API_URL) {
+                                void sendMessage(undefined, DILIGENCE_EXAMPLE);
                               } else {
                                 void sendMessage(activeShowcase.preset);
                               }
                             }
                           }}
-                          placeholder={`Ask anything — ${activeShowcase.promptPreview}`}
-                          className="flex-1 min-w-0 bg-transparent text-sm text-[#111113] placeholder:text-[#7A7A8C] focus:outline-none"
+                          aria-label="Due-diligence question"
+                          placeholder={API_URL ? DILIGENCE_EXAMPLE : activeShowcase.promptPreview}
+                          className="flex-1 min-w-0 bg-transparent text-sm text-[#111113] placeholder:text-[#6E6E77] focus:outline-none"
                         />
                         <button
                           type="button"
                           onClick={() => {
                             if (heroInput.trim()) {
                               void sendMessage(undefined, heroInput);
+                            } else if (API_URL) {
+                              void sendMessage(undefined, DILIGENCE_EXAMPLE);
                             } else {
                               void sendMessage(activeShowcase.preset);
                             }
@@ -665,6 +718,7 @@ export default function App() {
                         </button>
                       </div>
 
+                      {!API_URL && <>
                       {/* Preview Output Box */}
                       <div
                         key={activeShowcase.num}
@@ -695,6 +749,7 @@ export default function App() {
                           </button>
                         ))}
                       </div>
+                      </>}
                     </div>
                   </div>
 
@@ -713,8 +768,9 @@ export default function App() {
                 <div className="lg:col-span-7 min-h-[420px] pb-3 order-2 lg:order-1">
                   <ArtifactPanel
                     message={activeArtifactMsg}
-                    onApproveAction={(id, edited) => void handleApproveAction(id, edited)}
-                    onRejectAction={handleRejectAction}
+                    onApproveAction={(id, edited) => void handleDecision(id, 'approved', edited)}
+                    onRejectAction={(id) => void handleDecision(id, 'rejected')}
+                    onDownloadReport={downloadReport}
                   />
                 </div>
               )}
@@ -760,7 +816,7 @@ export default function App() {
                       <input
                         ref={fileInputRef}
                         type="file"
-                        accept=".pdf,.txt,.csv,.log,.json,.eml"
+                        accept=".pdf,.txt,.md,.csv,.log,.json,.eml"
                         onChange={handleFileChange}
                         className="hidden"
                       />
