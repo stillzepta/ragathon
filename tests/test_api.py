@@ -10,6 +10,24 @@ from app.api.main import MAX_BODY_BYTES, app
 TOKEN = "local-test-token-" + "a" * 24
 
 
+def test_supabase_session_is_verified_by_auth_service(client, monkeypatch):
+    import httpx
+
+    monkeypatch.delenv('SUPABASE_JWT_SECRET', raising=False)
+    async def valid_session(self, url, **kwargs):
+        assert url.endswith('/auth/v1/user')
+        assert kwargs['headers']['Authorization'] == 'Bearer header.payload.signature'
+        return httpx.Response(200, json={'id': 'verified-user'})
+    monkeypatch.setattr(httpx.AsyncClient, 'get', valid_session)
+    headers = {'Authorization': 'Bearer header.payload.signature'}
+    assert client.get('/api/runs/missing', headers=headers).status_code == 404
+
+    async def invalid_session(self, url, **kwargs):
+        return httpx.Response(401, json={'error': 'invalid token'})
+    monkeypatch.setattr(httpx.AsyncClient, 'get', invalid_session)
+    assert client.get('/api/runs/missing', headers=headers).status_code == 401
+
+
 @pytest.fixture
 def client(tmp_path, monkeypatch):
     monkeypatch.setenv("RAGATHON_PUBLIC", "true")

@@ -117,6 +117,22 @@ async def authorize(request: Request, authorization: Annotated[str | None, Heade
     provided = (authorization or "").removeprefix("Bearer ").strip()
     supabase_secret = os.getenv("SUPABASE_JWT_SECRET", "")
     valid_supabase_token = False
+    if provided.count('.') == 2 and not supabase_secret:
+        # Validate against Auth rather than trusting decoded JWT claims.
+        import httpx
+
+        try:
+            async with httpx.AsyncClient(timeout=8) as client:
+                response = await client.get(
+                    os.getenv('SUPABASE_URL', 'https://qnoaezyqryizzblqxjmz.supabase.co').rstrip('/') + '/auth/v1/user',
+                    headers={
+                        'Authorization': f'Bearer {provided}',
+                        'apikey': os.getenv('SUPABASE_PUBLISHABLE_KEY', 'sb_publishable_UAGMGXkmbyE0WUA6vuO45w_SOIsD_c6'),
+                    },
+                )
+                valid_supabase_token = response.status_code == 200 and bool(response.json().get('id'))
+        except (httpx.HTTPError, ValueError):
+            valid_supabase_token = False
     if provided and supabase_secret:
         try:
             jwt.decode(provided, supabase_secret, algorithms=["HS256"], audience="authenticated")
