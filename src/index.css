@@ -25,13 +25,23 @@
 
 /* Frosted White Glass Surface */
 .dia-glass {
-  background: rgba(255, 255, 255, 0.86);
-  backdrop-filter: blur(24px) saturate(160%);
-  -webkit-backdrop-filter: blur(24px) saturate(160%);
-  border: 1px solid rgba(255, 255, 255, 0.96);
+  background: rgba(255, 255, 255, 0.84);
+  backdrop-filter: blur(26px) saturate(165%);
+  -webkit-backdrop-filter: blur(26px) saturate(165%);
+  border: 1px solid rgba(255, 255, 255, 0.94);
   box-shadow:
-    0 20px 50px rgba(38, 43, 102, 0.14),
+    0 20px 50px rgba(38, 43, 102, 0.12),
     inset 0 1px 0 rgba(255, 255, 255, 1);
+}
+
+.dia-glass-blend {
+  background: rgba(255, 255, 255, 0.62);
+  backdrop-filter: blur(34px) saturate(180%);
+  -webkit-backdrop-filter: blur(34px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.78);
+  box-shadow:
+    0 24px 60px rgba(38, 43, 102, 0.14),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
 }
 
 .dia-glass-subtle {

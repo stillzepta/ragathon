@@ -34,10 +34,10 @@ export function ChatMessage({
 
   if (message.role === 'user') {
     return (
-      <div className="flex justify-end">
-        <div className="max-w-[82%] sm:max-w-[70%] rounded-[24px] bg-white/90 backdrop-blur-md text-[#111113] px-4 py-3 text-sm leading-relaxed border border-white shadow-[0_8px_24px_rgba(38,43,102,0.1)]">
+      <div className="flex justify-end animate-fade-slide">
+        <div className="max-w-[82%] sm:max-w-[70%] rounded-full bg-white/80 backdrop-blur-2xl text-[#111113] px-5 py-3 text-sm leading-relaxed border border-white/90 shadow-[0_10px_30px_rgba(38,43,102,0.1)]">
           {message.attachedFileName && (
-            <div className="mb-1.5 inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-indigo-50 text-[11px] text-indigo-900">
+            <div className="mb-1.5 inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-indigo-50/80 text-[11px] text-indigo-900">
               <Paperclip className="w-3 h-3" />
               <span>{message.attachedFileName}</span>
             </div>
@@ -66,7 +66,7 @@ export function ChatMessage({
 
   return (
     <div className="flex items-start gap-3">
-      <div className="w-8 h-8 rounded-full dia-glass-subtle flex items-center justify-center shrink-0 mt-1">
+      <div className="w-8 h-8 rounded-full dia-glass-subtle flex items-center justify-center shrink-0 mt-1.5">
         <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
       </div>
 
@@ -74,34 +74,35 @@ export function ChatMessage({
         {message.isStreaming && <ThinkingOrb statusText={orbStatusText} />}
 
         {result && (
-          <div className="dia-glass rounded-[28px] overflow-hidden transition-all duration-300">
-            <div className="px-5 sm:px-6 pt-5 pb-3.5 border-b border-black/[0.06] flex flex-col gap-3">
+          <div className="dia-glass-blend rounded-[36px] p-5 sm:p-7 space-y-5 animate-fade-slide transition-all duration-500">
+            {/* Soft Header without hard divider cuts */}
+            <div className="flex flex-col gap-3.5">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
                   <div className="flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-indigo-500" />
-                    <span className="text-[11px] font-medium uppercase tracking-[0.12em] text-[#6E6E77]">
+                    <span className="w-2 h-2 rounded-full bg-indigo-500 shadow-[0_0_8px_rgba(99,102,241,0.55)]" />
+                    <span className="text-[11px] font-medium uppercase tracking-[0.12em] text-[#4A4A58]">
                       Verified by 5 Agents
                     </span>
                   </div>
-                  <h3 className="text-lg font-medium tracking-tight text-[#111113] mt-1">
+                  <h3 className="text-lg sm:text-xl font-medium tracking-tight text-[#111113] mt-1">
                     {result.briefTitle}
                   </h3>
                 </div>
 
-                <div className="px-3 py-1 rounded-full bg-indigo-50 border border-indigo-200/80 text-xs font-medium text-indigo-900 shrink-0">
+                <div className="px-3.5 py-1 rounded-full bg-white/65 backdrop-blur-md border border-white/80 text-xs font-medium text-indigo-950 shrink-0 shadow-2xs">
                   Critic {result.criticInitialScore} → {result.criticFinalScore}/100
                 </div>
               </div>
 
-              <div className="inline-flex items-center gap-1 p-1 rounded-full bg-[#F1F2F8] self-start">
+              <div className="inline-flex items-center gap-1 p-1 rounded-full bg-white/50 backdrop-blur-md border border-white/70 self-start">
                 <button
                   type="button"
                   onClick={() => setActiveTab('brief')}
-                  className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium transition cursor-pointer ${
+                  className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-medium transition-all duration-300 cursor-pointer ${
                     activeTab === 'brief'
-                      ? 'bg-[#111113] text-white shadow-2xs'
-                      : 'text-[#555562] hover:text-[#111113]'
+                      ? 'bg-[#111113] text-white shadow-sm'
+                      : 'text-[#4A4A58] hover:text-[#111113]'
                   }`}
                 >
                   <FileText className="w-3.5 h-3.5" />
@@ -110,10 +111,10 @@ export function ChatMessage({
                 <button
                   type="button"
                   onClick={() => setActiveTab('pipeline')}
-                  className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium transition cursor-pointer ${
+                  className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-medium transition-all duration-300 cursor-pointer ${
                     activeTab === 'pipeline'
-                      ? 'bg-[#111113] text-white shadow-2xs'
-                      : 'text-[#555562] hover:text-[#111113]'
+                      ? 'bg-[#111113] text-white shadow-sm'
+                      : 'text-[#4A4A58] hover:text-[#111113]'
                   }`}
                 >
                   <GitBranch className="w-3.5 h-3.5" />
@@ -122,10 +123,10 @@ export function ChatMessage({
                 <button
                   type="button"
                   onClick={() => setActiveTab('memory')}
-                  className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium transition cursor-pointer ${
+                  className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-medium transition-all duration-300 cursor-pointer ${
                     activeTab === 'memory'
-                      ? 'bg-[#111113] text-white shadow-2xs'
-                      : 'text-[#555562] hover:text-[#111113]'
+                      ? 'bg-[#111113] text-white shadow-sm'
+                      : 'text-[#4A4A58] hover:text-[#111113]'
                   }`}
                 >
                   <Database className="w-3.5 h-3.5" />
@@ -134,21 +135,22 @@ export function ChatMessage({
               </div>
             </div>
 
-            <div className="p-5 sm:p-6">
+            {/* Tab Content with smooth fade-slide transition */}
+            <div key={activeTab} className="animate-fade-slide">
               {activeTab === 'brief' && (
                 <div className="space-y-4">
-                  <div className="rounded-2xl bg-indigo-50/80 border border-indigo-200/70 px-3.5 py-2.5 text-xs text-indigo-950 leading-relaxed">
+                  <div className="rounded-3xl bg-white/55 backdrop-blur-md border border-white/75 px-4 py-3 text-xs text-indigo-950 leading-relaxed">
                     <span className="font-semibold">Self-Correction: </span>
                     {result.criticNote}
                   </div>
 
-                  <div className="space-y-3.5">
+                  <div className="space-y-4 px-1">
                     {result.briefSections.map((sec) => (
                       <div key={sec.heading}>
-                        <h4 className="text-[11px] font-semibold uppercase tracking-wider text-[#6E6E77]">
+                        <h4 className="text-[11px] font-semibold uppercase tracking-wider text-[#555565]">
                           {sec.heading}
                         </h4>
-                        <p className="mt-1 text-sm text-[#2A2A32] leading-relaxed">
+                        <p className="mt-1 text-sm text-[#1E1E26] leading-relaxed">
                           {sec.body}
                         </p>
                       </div>
@@ -156,9 +158,9 @@ export function ChatMessage({
                   </div>
 
                   {result.citations.length > 0 && (
-                    <div className="pt-3 border-t border-black/[0.06] space-y-2.5">
+                    <div className="pt-2 space-y-2.5">
                       <div className="flex flex-wrap items-center gap-1.5">
-                        <span className="text-[10px] uppercase tracking-wider text-[#7A7A85] mr-1">
+                        <span className="text-[10px] uppercase tracking-wider text-[#5A5A6B] mr-1">
                           Sources:
                         </span>
                         {result.citations.map((cite) => {
@@ -170,10 +172,10 @@ export function ChatMessage({
                               onClick={() =>
                                 setSelectedCitationId(isSelected ? null : cite.id)
                               }
-                              className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] transition cursor-pointer border ${
+                              className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-[11px] transition-all duration-200 cursor-pointer border ${
                                 isSelected
                                   ? 'bg-[#111113] text-white border-[#111113]'
-                                  : 'bg-[#F5F6FA] hover:bg-indigo-50 text-[#3A3A45] border-black/[0.06]'
+                                  : 'bg-white/60 hover:bg-white/85 text-[#2A2A35] border-white/80'
                               }`}
                             >
                               <span className="font-semibold">[{cite.id}]</span>
@@ -184,14 +186,14 @@ export function ChatMessage({
                       </div>
 
                       {selectedCitation && (
-                        <div className="rounded-2xl bg-[#F7F8FC] border border-indigo-100 p-3 text-xs text-[#3A3A45]">
+                        <div className="rounded-3xl bg-white/65 backdrop-blur-md border border-white/85 p-3.5 text-xs text-[#2A2A35] animate-fade-slide">
                           <div className="flex items-center justify-between text-[11px] font-medium text-[#111113] mb-1">
                             <span>{selectedCitation.title}</span>
-                            <span className="font-mono-code text-[#6E6E77]">
+                            <span className="font-mono-code text-[#555565]">
                               {selectedCitation.source}
                             </span>
                           </div>
-                          <p className="text-[#4A4A55]">{selectedCitation.snippet}</p>
+                          <p className="text-[#3A3A48]">{selectedCitation.snippet}</p>
                         </div>
                       )}
                     </div>
@@ -208,8 +210,8 @@ export function ChatMessage({
               )}
 
               {activeTab === 'memory' && (
-                <div className="rounded-2xl bg-[#F7F8FC] border border-indigo-100 p-4 overflow-x-auto">
-                  <span className="text-[10px] uppercase tracking-wider text-[#6E6E77] block mb-2">
+                <div className="rounded-3xl bg-white/60 backdrop-blur-md border border-white/80 p-4 overflow-x-auto">
+                  <span className="text-[10px] uppercase tracking-wider text-[#555565] block mb-2">
                     Live Shared State Across Agents
                   </span>
                   <pre className="font-mono-code text-xs text-[#111113] leading-relaxed">
@@ -225,14 +227,15 @@ export function ChatMessage({
               )}
             </div>
 
+            {/* Blended Rule #6 Approval Pod (no hard horizontal cut) */}
             {action && (
-              <div className="px-5 sm:px-6 py-4 bg-[#F7F8FC]/90 border-t border-black/[0.06] space-y-3">
+              <div className="rounded-[28px] bg-white/48 backdrop-blur-xl border border-white/75 p-4 sm:p-5 space-y-3 transition-all duration-300">
                 <div className="flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-2 text-xs font-medium text-amber-900">
+                  <div className="flex items-center gap-2 text-xs font-medium text-amber-950">
                     <ShieldCheck className="w-4 h-4 text-amber-600" />
                     <span>Approval Required (Rule #6): {action.title}</span>
                   </div>
-                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-medium bg-amber-100 border border-amber-200 text-amber-900">
+                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-medium bg-amber-100/80 border border-amber-200/80 text-amber-900">
                     {action.riskLevel} Risk
                   </span>
                 </div>
@@ -242,10 +245,10 @@ export function ChatMessage({
                     value={editedPayload}
                     onChange={(e) => setEditedPayload(e.target.value)}
                     rows={3}
-                    className="w-full rounded-2xl bg-white border border-black/15 p-3 font-mono-code text-xs text-[#111113] focus:outline-none"
+                    className="w-full rounded-3xl bg-white/85 border border-white p-3.5 font-mono-code text-xs text-[#111113] focus:outline-none"
                   />
                 ) : (
-                  <pre className="rounded-2xl bg-white border border-black/[0.07] text-[#2A2A32] p-3 font-mono-code text-[11px] whitespace-pre-wrap overflow-x-auto">
+                  <pre className="rounded-3xl bg-white/65 border border-white/85 text-[#22222A] p-3.5 font-mono-code text-[11px] whitespace-pre-wrap overflow-x-auto">
                     {action.payloadPreview}
                   </pre>
                 )}
@@ -269,7 +272,7 @@ export function ChatMessage({
                         if (!isEditing) setEditedPayload(action.payloadPreview);
                         setIsEditing(!isEditing);
                       }}
-                      className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full text-xs font-medium bg-white hover:bg-indigo-50 border border-black/[0.08] text-[#111113] transition cursor-pointer"
+                      className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full text-xs font-medium bg-white/75 hover:bg-white border border-white text-[#111113] transition cursor-pointer"
                     >
                       <Edit3 className="w-3.5 h-3.5" />
                       <span>{isEditing ? 'Cancel' : 'Edit'}</span>
@@ -277,7 +280,7 @@ export function ChatMessage({
                     <button
                       type="button"
                       onClick={() => onRejectAction(message.id)}
-                      className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full text-xs font-medium text-rose-700 hover:bg-rose-50 transition cursor-pointer ml-auto"
+                      className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full text-xs font-medium text-rose-700 hover:bg-rose-50/80 transition cursor-pointer ml-auto"
                     >
                       <X className="w-3.5 h-3.5" />
                       <span>Reject</span>
@@ -285,10 +288,10 @@ export function ChatMessage({
                   </div>
                 ) : (
                   <div
-                    className={`px-3.5 py-2 rounded-2xl text-xs font-medium ${
+                    className={`px-4 py-2.5 rounded-full text-xs font-medium animate-fade-slide ${
                       action.status === 'approved'
-                        ? 'bg-emerald-50 text-emerald-900 border border-emerald-200'
-                        : 'bg-rose-50 text-rose-900 border border-rose-200'
+                        ? 'bg-emerald-50/85 text-emerald-950 border border-emerald-200/80'
+                        : 'bg-rose-50/85 text-rose-950 border border-rose-200/80'
                     }`}
                   >
                     {action.executionNote}
