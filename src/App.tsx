@@ -5,6 +5,7 @@ import { ChatMessage } from './components/ChatMessage';
 import { ChatSidebar } from './components/ChatSidebar';
 import { AuthUser, LoginModal } from './components/LoginModal';
 import { api, API_URL, watchRun } from './api';
+import { supabase } from './lib/supabase';
 import { DEMO_PRESETS } from './data/presets';
 import {
   AgentNode,
@@ -134,21 +135,9 @@ const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 export default function App() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [user, setUser] = useState<AuthUser | null>(() => {
-    try {
-      const saved = localStorage.getItem('agentverse_user');
-      return saved ? (JSON.parse(saved) as AuthUser) : null;
-    } catch {
-      return null;
-    }
-  });
-  const [loginOpen, setLoginOpen] = useState<boolean>(() => {
-    try {
-      return !localStorage.getItem('agentverse_user');
-    } catch {
-      return true;
-    }
-  });
+  const [user, setUser] = useState<AuthUser | null>(null);
+  const [loginOpen, setLoginOpen] = useState(true);
+  const [authReady, setAuthReady] = useState(false);
   const [threads, setThreads] = useState<ChatThread[]>([]);
   const [activeThreadId, setActiveThreadId] = useState<string | null>(null);
   const [selectedArtifactMsgId, setSelectedArtifactMsgId] = useState<string | null>(null);
@@ -177,6 +166,53 @@ export default function App() {
   const activeArtifactMsg =
     activeThread?.messages.find((m) => m.id === selectedArtifactMsgId && m.result) ??
     latestArtifactMsg;
+
+  useEffect(() => {
+    const client = supabase;
+    if (!client) {
+      setAuthReady(true);
+      return;
+    }
+    let mounted = true;
+    client.auth.getSession().then(({ data }) => {
+      if (!mounted) return;
+      const sessionUser = data.session?.user;
+      setApiToken(data.session?.access_token ?? '');
+      if (sessionUser) {
+        void client.from('profiles').upsert({
+          id: sessionUser.id,
+          full_name: sessionUser.user_metadata?.full_name || sessionUser.email?.split('@')[0] || 'User',
+          avatar_url: sessionUser.user_metadata?.avatar_url ?? null,
+        }, { onConflict: 'id' });
+      }
+      setUser(sessionUser ? {
+        name: sessionUser.user_metadata?.full_name || sessionUser.email?.split('@')[0] || 'User',
+        email: sessionUser.email ?? '',
+      } : null);
+      setLoginOpen(!sessionUser);
+      setAuthReady(true);
+    });
+    const { data: listener } = client.auth.onAuthStateChange((_event, session) => {
+      const sessionUser = session?.user;
+      setApiToken(session?.access_token ?? '');
+      if (sessionUser) {
+        void client.from('profiles').upsert({
+          id: sessionUser.id,
+          full_name: sessionUser.user_metadata?.full_name || sessionUser.email?.split('@')[0] || 'User',
+          avatar_url: sessionUser.user_metadata?.avatar_url ?? null,
+        }, { onConflict: 'id' });
+      }
+      setUser(sessionUser ? {
+        name: sessionUser.user_metadata?.full_name || sessionUser.email?.split('@')[0] || 'User',
+        email: sessionUser.email ?? '',
+      } : null);
+      setLoginOpen(!sessionUser);
+    });
+    return () => {
+      mounted = false;
+      listener.subscription.unsubscribe();
+    };
+  }, []);
 
   useEffect(() => {
     if (API_URL || !isEmptyChat || isPreviewPaused || heroInput.trim()) return;
@@ -572,14 +608,14 @@ export default function App() {
     setAttachedFile(null);
   };
 
-  if (loginOpen) {
+  if (!authReady || loginOpen) {
     return (
       <LoginModal
-        open={true}
+        open={loginOpen}
         onClose={() => setLoginOpen(false)}
         onLogin={(loggedInUser) => {
           setUser(loggedInUser);
-          localStorage.setItem('agentverse_user', JSON.stringify(loggedInUser));
+          setLoginOpen(false);
         }}
       />
     );
@@ -889,9 +925,11 @@ export default function App() {
         onCloseDrawer={() => setSidebarOpen(false)}
         onOpenLogin={() => setLoginOpen(true)}
         onLogout={() => {
-          setUser(null);
-          localStorage.removeItem('agentverse_user');
-          setLoginOpen(true);
+          void supabase?.auth.signOut().finally(() => {
+            setUser(null);
+            setApiToken('');
+            setLoginOpen(true);
+          });
         }}
       />
     </div>

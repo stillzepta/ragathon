@@ -1,5 +1,6 @@
 import { ArrowRight, Lock, Mail, User, X } from 'lucide-react';
 import { FormEvent, useState } from 'react';
+import { supabase } from '../lib/supabase';
 
 export interface AuthUser {
   name: string;
@@ -48,24 +49,57 @@ export function LoginModal({ open, onClose, onLogin }: LoginModalProps) {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [busy, setBusy] = useState(false);
 
   if (!open) return null;
 
-  const handleSubmit = (e: FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    if (!email.trim()) return;
-    const displayName =
-      name.trim() || email.split('@')[0].replace(/[^a-zA-Z0-9]/g, ' ') || 'User';
-    onLogin({ name: displayName, email: email.trim() });
+    if (!supabase) {
+      setError('Supabase is not configured. Add VITE_SUPABASE_URL and VITE_SUPABASE_PUBLISHABLE_KEY.');
+      return;
+    }
+    setBusy(true);
+    setError('');
+    const result = mode === 'signin'
+      ? await supabase.auth.signInWithPassword({ email: email.trim(), password })
+      : await supabase.auth.signUp({
+          email: email.trim(),
+          password,
+          options: { data: { full_name: name.trim() || email.split('@')[0] } },
+        });
+    setBusy(false);
+    if (result.error) {
+      setError(result.error.message);
+      return;
+    }
+    if (result.data.user && (mode === 'signin' || result.data.session)) {
+      const profileName = result.data.user.user_metadata?.full_name || name.trim() || result.data.user.email?.split('@')[0] || 'User';
+      await supabase.from('profiles').upsert({ id: result.data.user.id, full_name: profileName }, { onConflict: 'id' });
+      onLogin({
+        name: profileName,
+        email: result.data.user.email ?? email.trim(),
+      });
+    }
+    if (mode === 'signup' && !result.data.session) {
+      setError('Account created. Check your email to confirm your account, then sign in.');
+      return;
+    }
     onClose();
   };
 
-  const handleQuickOAuth = (provider: 'Google' | 'GitHub') => {
-    onLogin({
-      name: `${provider} User`,
-      email: `demo@${provider.toLowerCase()}.com`,
+  const handleQuickOAuth = async (provider: 'google' | 'github') => {
+    if (!supabase) {
+      setError('Supabase is not configured.');
+      return;
+    }
+    setError('');
+    const { error: authError } = await supabase.auth.signInWithOAuth({
+      provider,
+      options: { redirectTo: window.location.origin },
     });
-    onClose();
+    if (authError) setError(authError.message);
   };
 
   return (
@@ -112,7 +146,7 @@ export function LoginModal({ open, onClose, onLogin }: LoginModalProps) {
           <div className="grid grid-cols-2 gap-2.5">
             <button
               type="button"
-              onClick={() => handleQuickOAuth('Google')}
+              onClick={() => void handleQuickOAuth('google')}
               className="flex items-center justify-center gap-2 py-2.5 px-3 rounded-2xl bg-[#F8F9FC] hover:bg-[#F0F2F9] border border-black/[0.08] text-xs font-medium text-[#111113] transition cursor-pointer"
             >
               <GoogleLogo />
@@ -120,7 +154,7 @@ export function LoginModal({ open, onClose, onLogin }: LoginModalProps) {
             </button>
             <button
               type="button"
-              onClick={() => handleQuickOAuth('GitHub')}
+              onClick={() => void handleQuickOAuth('github')}
               className="flex items-center justify-center gap-2 py-2.5 px-3 rounded-2xl bg-[#F8F9FC] hover:bg-[#F0F2F9] border border-black/[0.08] text-xs font-medium text-[#111113] transition cursor-pointer"
             >
               <GitHubLogo />
@@ -177,12 +211,15 @@ export function LoginModal({ open, onClose, onLogin }: LoginModalProps) {
 
             <button
               type="submit"
+              disabled={busy}
               className="w-full flex items-center justify-center gap-2 py-3 rounded-full bg-[#111113] hover:bg-indigo-600 text-white text-sm font-medium shadow-[0_12px_28px_rgba(17,17,19,0.2)] transition cursor-pointer"
             >
-              <span>{mode === 'signin' ? 'Sign in' : 'Create account'}</span>
+              <span>{busy ? 'Please wait…' : mode === 'signin' ? 'Sign in' : 'Create account'}</span>
               <ArrowRight className="w-4 h-4" />
             </button>
           </form>
+
+          {error && <p className="text-xs text-rose-700 bg-rose-50 border border-rose-200 rounded-xl px-3 py-2">{error}</p>}
 
           {/* Footer Toggle */}
           <div className="flex items-center justify-between text-xs text-[#4A4A58] pt-1">
