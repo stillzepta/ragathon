@@ -35,6 +35,11 @@ ALLOWED_ORIGINS = [
         "ALLOWED_ORIGINS", "http://localhost:5173,http://127.0.0.1:5173"
     ).split(",") if origin.strip()
 ]
+for _vercel_host in (os.getenv("VERCEL_URL"), os.getenv("VERCEL_PROJECT_PRODUCTION_URL")):
+    if _vercel_host:
+        _origin = f"https://{_vercel_host.strip()}"
+        if _origin not in ALLOWED_ORIGINS:
+            ALLOWED_ORIGINS.append(_origin)
 
 
 class BodyLimit:
@@ -81,7 +86,8 @@ async def lifespan(app: FastAPI):
     if os.getenv("RAGATHON_PUBLIC", "false").lower() == "true" and len(token) < 32:
         raise RuntimeError("Public mode requires a private API token of at least 32 characters.")
     app.state.token = token
-    app.state.store = RunStore(os.getenv("RUN_DB_PATH", "runs.sqlite3"))
+    default_db_path = "/tmp/runs.sqlite3" if os.getenv("VERCEL") else "runs.sqlite3"
+    app.state.store = RunStore(os.getenv("RUN_DB_PATH", default_db_path))
     app.state.store.recover()
     app.state.retention = int(os.getenv("RUN_RETENTION_HOURS", "24")) * 3600
     if app.state.retention <= 0:

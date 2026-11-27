@@ -57,15 +57,15 @@ export function ChatSidebar({
   };
 
   return (
-    <div className="relative z-40 flex h-full shrink-0">
-      {/* Expandable Glass Drawer (slides out to the left of the right rail) */}
+    <div className="relative z-40 flex lg:h-full shrink-0">
+      {/* Expandable Glass Drawer */}
       {open && (
         <>
           <div
             onClick={onCloseDrawer}
-            className="fixed inset-0 z-30 bg-black/10 backdrop-blur-[1px] md:hidden"
+            className="fixed inset-0 z-30 bg-black/15 backdrop-blur-[2px] lg:hidden"
           />
-          <div className="fixed md:static inset-y-3 right-[72px] md:my-3 md:mr-2 z-40 w-64 rounded-[28px] bg-white/72 backdrop-blur-2xl border border-white/85 shadow-[0_24px_60px_rgba(30,34,90,0.16)] flex flex-col overflow-hidden animate-fade-slide">
+          <div className="fixed inset-x-3 bottom-20 top-16 lg:static lg:inset-auto lg:my-3 lg:mr-2 z-40 lg:w-64 rounded-[28px] bg-white/85 lg:bg-white/72 backdrop-blur-2xl border border-white/90 shadow-[0_24px_60px_rgba(30,34,90,0.18)] flex flex-col overflow-hidden animate-fade-slide">
             <div className="p-3.5 flex items-center justify-between border-b border-black/[0.05]">
               <span className="text-xs font-semibold text-[#111113]">
                 {activeDrawerTab === 'history' ? 'Recent Chats' : 'Quick Launch'}
@@ -150,8 +150,8 @@ export function ChatSidebar({
         </>
       )}
 
-      {/* Floating Clear-Glass Icon Rail on Right */}
-      <aside className="relative z-40 my-3 mr-3 w-[56px] shrink-0 rounded-full bg-white/38 backdrop-blur-2xl border border-white/60 shadow-[0_16px_40px_rgba(30,34,90,0.12)] flex flex-col items-center justify-between py-3.5">
+      {/* Desktop: Floating Clear-Glass Icon Rail on Right */}
+      <aside className="hidden lg:flex relative z-40 my-3 mr-3 w-[56px] shrink-0 rounded-full bg-white/38 backdrop-blur-2xl border border-white/60 shadow-[0_16px_40px_rgba(30,34,90,0.12)] flex-col items-center justify-between py-3.5">
         {/* Top Icons */}
         <div className="flex flex-col items-center gap-2.5">
           {/* Glowing Brand Sparkle Ring */}
@@ -264,6 +264,58 @@ export function ChatSidebar({
           )}
         </div>
       </aside>
+
+      {/* Mobile: Sleek Bottom Floating Dock */}
+      <nav
+        aria-label="Mobile Navigation"
+        className="lg:hidden fixed bottom-3 left-1/2 -translate-x-1/2 z-40 flex items-center gap-1.5 px-2.5 py-1.5 rounded-full bg-white/80 backdrop-blur-2xl border border-white shadow-[0_14px_36px_rgba(30,34,90,0.18)]"
+      >
+        <button
+          type="button"
+          onClick={onNewChat}
+          title="New chat"
+          className="w-9 h-9 rounded-full bg-[#F2F3FA] text-[#111113] flex items-center justify-center cursor-pointer"
+        >
+          <SquarePen className="w-4 h-4" />
+        </button>
+        <button
+          type="button"
+          onClick={() => openTab('presets')}
+          title="Quick Scenarios"
+          className="w-9 h-9 rounded-full text-[#22243a] flex items-center justify-center cursor-pointer"
+        >
+          <LayoutGrid className="w-4 h-4" />
+        </button>
+        <button
+          type="button"
+          onClick={() => openTab('history')}
+          title="Recent Chats"
+          className={`w-9 h-9 rounded-full flex items-center justify-center cursor-pointer ${
+            open && activeDrawerTab === 'history' ? 'bg-[#111113] text-white' : 'text-[#22243a]'
+          }`}
+        >
+          <Clock className="w-4 h-4" />
+        </button>
+        {user ? (
+          <button
+            type="button"
+            onClick={onLogout}
+            title="Sign out"
+            className="w-9 h-9 rounded-full bg-[#111113] text-white text-xs font-semibold flex items-center justify-center cursor-pointer"
+          >
+            {user.name.charAt(0).toUpperCase()}
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={onOpenLogin}
+            title="Sign in"
+            className="w-9 h-9 rounded-full bg-[#111113] text-white flex items-center justify-center cursor-pointer"
+          >
+            <LogIn className="w-4 h-4" />
+          </button>
+        )}
+      </nav>
     </div>
   );
 }

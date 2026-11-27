@@ -4,7 +4,8 @@ import { ArtifactPanel } from './components/ArtifactPanel';
 import { ChatMessage } from './components/ChatMessage';
 import { ChatSidebar } from './components/ChatSidebar';
 import { AuthUser, LoginModal } from './components/LoginModal';
-import { api, API_URL, watchRun } from './api';
+import SplitText from './components/SplitText';
+import { api, API_URL } from './api';
 import { supabase } from './lib/supabase';
 import { DEMO_PRESETS } from './data/presets';
 import {
@@ -16,17 +17,12 @@ import {
   ProposedAction,
 } from './types';
 
-const DILIGENCE_EXAMPLE = 'Assess the market for a fictional accounting startup';
 const CONNECTED_AGENTS: AgentNode[] = [
   { id: 'orchestrator', name: 'Planner', role: 'Planning', status: 'idle', summary: 'Queued' },
   { id: 'rag', name: 'Researcher', role: 'Evidence retrieval', status: 'idle', summary: 'Queued' },
   { id: 'planner', name: 'Analyst', role: 'Memo writing', status: 'idle', summary: 'Queued' },
   { id: 'critic', name: 'Evaluator', role: 'Memo review', status: 'idle', summary: 'Queued' },
 ];
-const STAGE_IDS: Record<string, AgentNode['id']> = {
-  planner: 'orchestrator', researcher: 'rag', analyst: 'planner',
-  evaluator: 'critic', revision: 'orchestrator',
-};
 
 interface ShowcaseItem {
   num: string;
@@ -134,10 +130,19 @@ const INITIAL_AGENTS: AgentNode[] = [
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 export default function App() {
+  const [introDocked, setIntroDocked] = useState(false);
+  const [splashHidden, setSplashHidden] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [user, setUser] = useState<AuthUser | null>(null);
-  const [loginOpen, setLoginOpen] = useState(true);
+  const [loginOpen, setLoginOpen] = useState(false);
   const [authReady, setAuthReady] = useState(false);
+  const [hasUnlocked, setHasUnlocked] = useState<boolean>(() => {
+    try {
+      return Boolean(localStorage.getItem('agentverse_user'));
+    } catch {
+      return false;
+    }
+  });
   const [threads, setThreads] = useState<ChatThread[]>([]);
   const [activeThreadId, setActiveThreadId] = useState<string | null>(null);
   const [selectedArtifactMsgId, setSelectedArtifactMsgId] = useState<string | null>(null);
@@ -151,7 +156,7 @@ export default function App() {
   const [attachedFile, setAttachedFile] = useState<File | null>(null);
   const [isRunning, setIsRunning] = useState(false);
   const [apiToken, setApiToken] = useState('');
-  const [promptMode, setPromptMode] = useState<'chat' | 'diligence'>('chat');
+  const [promptMode] = useState<'chat' | 'diligence'>('chat');
   const activeRequest = useRef<AbortController | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -349,29 +354,18 @@ export default function App() {
         formData.append('domain', 'bizintel');
         if (currentFile) formData.append('file', currentFile);
 
-        const response = await api('/api/runs', apiToken, {
+        const response = await api('/api/run', apiToken, {
           method: 'POST', body: formData, signal,
         });
-        const { id } = await response.json() as { id: string };
-        await watchRun(id, apiToken, signal, (event) => {
-          const agent = event.stage && STAGE_IDS[event.stage];
-          if (agent) {
-            patchAgentInMessage(targetThreadId, assistantMsgId, agent, {
-              status: event.action === 'started' ? 'running' : 'done',
-              summary: event.message,
-              memorySnapshot: { stage: event.stage, action: event.action, message: event.message },
-            });
-          }
-        });
-        const result = await api(`/api/runs/${id}`, apiToken, { signal });
-        const record = await result.json() as {
-          status: string; result?: MissionResult & { error?: string };
-        };
-        if (record.status !== 'completed' || !record.result) {
-          throw new Error(record.result?.error ?? 'The run did not finish.');
+        const missionResult = await response.json() as MissionResult & { error?: string };
+        if (missionResult.error) {
+          throw new Error(missionResult.error);
         }
         updateAssistantMessage(targetThreadId, assistantMsgId, (m) => ({
-          ...m, isStreaming: false, result: record.result,
+          ...m,
+          isStreaming: false,
+          result: missionResult,
+          agents: m.agents?.map((a) => ({ ...a, status: 'done' })),
         }));
       } catch (error) {
         updateAssistantMessage(targetThreadId, assistantMsgId, (m) => ({
@@ -467,6 +461,9 @@ export default function App() {
     }));
     setSelectedArtifactMsgId(assistantMsgId);
     setIsRunning(false);
+    if (!hasUnlocked) {
+      setLoginOpen(true);
+    }
   };
 
   const handleDecision = async (
@@ -534,55 +531,69 @@ export default function App() {
     setAttachedFile(null);
   };
 
-  if (!authReady || loginOpen) {
-    return (
-      <LoginModal
-        open={loginOpen}
-        onClose={() => setLoginOpen(false)}
-        onLogin={(loggedInUser) => {
-          setUser(loggedInUser);
-          setLoginOpen(false);
-        }}
-      />
-    );
-  }
+  const showArtifact = Boolean(activeArtifactMsg && (hasUnlocked || user));
 
   return (
-    <div className="relative h-screen w-screen overflow-hidden kraft-bg text-[#111113] flex animate-fade-slide">
+    <div className="relative h-screen w-screen overflow-hidden kraft-bg text-[#111113] flex">
+      {/* Splash backdrop that fades away to reveal main page */}
+      {!splashHidden && (
+        <div
+          aria-hidden="true"
+          className={`fixed inset-0 z-[45] kraft-bg transition-opacity duration-700 ease-out ${
+            introDocked ? 'opacity-0 pointer-events-none' : 'opacity-100'
+          }`}
+        />
+      )}
+
+      {/* Morphing "diablo" bubble logo: starts upper-center, bounces & shrinks into top-left corner */}
+      <button
+        type="button"
+        onClick={handleNewChat}
+        title="Diablo Home"
+        style={{ transformOrigin: 'center center' }}
+        className={`fixed z-50 -translate-x-1/2 -translate-y-1/2 transition-all duration-[850ms] ease-[cubic-bezier(0.34,1.45,0.64,1)] cursor-pointer ${
+          introDocked
+            ? 'top-7 left-14 sm:left-16 scale-[0.3]'
+            : 'top-[38%] left-1/2 scale-100'
+        }`}
+      >
+        <SplitText
+          text="diablo"
+          tag="h1"
+          className="font-display text-6xl sm:text-8xl font-bold tracking-[-0.04em] text-[#111113]"
+          effect="pop"
+          splitType="chars"
+          delay={55}
+          duration={0.95}
+          staggerFrom="start"
+          trigger="load"
+          accentColor="#4f56b8"
+          textAlign="center"
+          onLetterAnimationComplete={() => {
+            setTimeout(() => setIntroDocked(true), 360);
+            setTimeout(() => setSplashHidden(true), 1200);
+          }}
+        />
+      </button>
       <div className="relative flex-1 flex flex-col min-w-0">
-        {API_URL && (
-          <div className="flex items-center justify-between gap-3 px-5 pt-3 text-xs text-indigo-950">
-            <select aria-label="Prompt mode" value={promptMode}
-              onChange={(event) => setPromptMode(event.target.value === 'diligence' ? 'diligence' : 'chat')}
-              className="rounded-full border border-black/10 bg-white/85 px-3 py-2">
-              <option value="chat">Chat</option>
-              <option value="diligence">Due diligence</option>
-            </select>
-            <input type="password" aria-label="API access token" placeholder="API token (if required)"
-              autoComplete="off" value={apiToken} onChange={(event) => setApiToken(event.target.value)}
-              className="w-36 rounded-full border border-black/10 bg-white/85 px-3 py-2" />
-          </div>
-        )}
         {/* Main Viewport */}
-        <div className="flex-1 overflow-y-auto px-5 sm:px-8 pt-4">
+        <div className="flex-1 overflow-y-auto px-4 sm:px-8 pt-20 lg:pt-4 pb-24 lg:pb-4">
           {isEmptyChat ? (
-            <div className="max-w-6xl mx-auto min-h-full flex items-center py-12">
-              <div className="w-full grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-center">
+            <div className="max-w-6xl mx-auto min-h-full flex items-start lg:items-center py-4 lg:py-12">
+              <div className="w-full grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-16 items-center">
                 {/* Left Editorial Column */}
-                <div className="lg:col-span-6 space-y-9">
-                  <h1 className="font-display text-5xl sm:text-6xl font-bold tracking-[-0.04em] leading-[1.03] text-[#111113]">
-                    {API_URL ? <>Startup<br />due diligence</> : <>
-                      One workspace<br />for the work that{' '}
-                      <span className="font-serif-accent italic font-semibold text-[1.03em]">slows</span>{' '}
-                      you down
-                    </>}
+                <div className="lg:col-span-6 space-y-6 sm:space-y-9">
+                  <h1 className="font-display text-[34px] sm:text-5xl lg:text-6xl font-bold tracking-[-0.04em] leading-[1.06] text-[#111113]">
+                    One workspace
+                    <br />
+                    for the work that{' '}
+                    <span className="font-serif-accent italic font-semibold text-[1.03em]">
+                      slows
+                    </span>{' '}
+                    you down
                   </h1>
 
-                  {API_URL ? (
-                    <p className="max-w-md text-sm leading-relaxed text-[#24263b]">
-                      Ask about a startup, review the sources and draft changes, and save your follow-up decision.
-                    </p>
-                  ) : <div className="space-y-5">
+                  <div className="space-y-5">
                     {SHOWCASE_ITEMS.map((item, idx) => {
                       const isActive = idx === activeShowcaseIdx;
                       return (
@@ -623,7 +634,7 @@ export default function App() {
                         </button>
                       );
                     })}
-                  </div>}
+                  </div>
                 </div>
 
                 {/* Right Interactive Window Preview */}
@@ -644,7 +655,7 @@ export default function App() {
                         <span className="w-3 h-3 rounded-full bg-black/15" />
                       </div>
                       <span className="text-xs sm:text-[13px] text-[#6E6E77]">
-                        {API_URL ? 'New due-diligence run' : activeShowcase.windowTitle}
+                        {activeShowcase.windowTitle}
                       </span>
                     </div>
 
@@ -671,15 +682,13 @@ export default function App() {
                               e.preventDefault();
                               if (heroInput.trim()) {
                                 void sendMessage(undefined, heroInput);
-                              } else if (API_URL) {
-                                void sendMessage(undefined, DILIGENCE_EXAMPLE, true);
                               } else {
                                 void sendMessage(activeShowcase.preset);
                               }
                             }
                           }}
                           aria-label="Message"
-                          placeholder={API_URL ? (promptMode === 'chat' ? 'Ask AgentVerse anything…' : DILIGENCE_EXAMPLE) : activeShowcase.promptPreview}
+                          placeholder={`Ask anything — ${activeShowcase.promptPreview}`}
                           className="flex-1 min-w-0 bg-transparent text-sm text-[#111113] placeholder:text-[#6E6E77] focus:outline-none"
                         />
                         <button
@@ -687,8 +696,6 @@ export default function App() {
                           onClick={() => {
                             if (heroInput.trim()) {
                               void sendMessage(undefined, heroInput);
-                            } else if (API_URL) {
-                              void sendMessage(undefined, DILIGENCE_EXAMPLE, true);
                             } else {
                               void sendMessage(activeShowcase.preset);
                             }
@@ -700,7 +707,6 @@ export default function App() {
                         </button>
                       </div>
 
-                      {!API_URL && <>
                       {/* Preview Output Box */}
                       <div
                         key={activeShowcase.num}
@@ -715,13 +721,13 @@ export default function App() {
                       </div>
 
                       {/* Bottom Tone / Suggestion Chips */}
-                      <div className="flex items-center gap-2 pt-1">
+                      <div className="flex flex-wrap items-center gap-2 pt-1">
                         {activeShowcase.tones.map((tone, tIdx) => (
                           <button
                             key={tone}
                             type="button"
                             onClick={() => setActiveToneIdx(tIdx)}
-                            className={`px-3.5 py-1.5 rounded-full text-xs font-medium transition cursor-pointer ${
+                            className={`whitespace-nowrap px-3.5 py-1.5 rounded-full text-xs font-medium transition cursor-pointer ${
                               tIdx === activeToneIdx
                                 ? 'bg-[#111113] text-white'
                                 : 'bg-[#F1F2F8] text-[#4A4A58] hover:text-[#111113] border border-black/[0.05]'
@@ -731,7 +737,6 @@ export default function App() {
                           </button>
                         ))}
                       </div>
-                      </>}
                     </div>
                   </div>
 
@@ -746,7 +751,7 @@ export default function App() {
           ) : (
             <div className="max-w-7xl mx-auto h-full py-2 grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
               {/* Left Document & Code Panel */}
-              {activeArtifactMsg && (
+              {showArtifact && activeArtifactMsg && (
                 <div className="lg:col-span-7 min-h-[420px] pb-3 order-2 lg:order-1">
                   <ArtifactPanel
                     message={activeArtifactMsg}
@@ -760,7 +765,7 @@ export default function App() {
               {/* Right Chat & Typing Column */}
               <div
                 className={`${
-                  activeArtifactMsg ? 'lg:col-span-5 order-1 lg:order-2' : 'lg:col-span-8 lg:col-start-3'
+                  showArtifact ? 'lg:col-span-5 order-1 lg:order-2' : 'lg:col-span-8 lg:col-start-3'
                 } flex flex-col min-h-0`}
               >
                 <div className="flex-1 overflow-y-auto pr-1 space-y-4 pb-4">
@@ -821,7 +826,7 @@ export default function App() {
                           }
                         }}
                         rows={1}
-                        placeholder="Ask AgentVerse anything..."
+                        placeholder="Ask Diablo anything..."
                         className="flex-1 resize-none bg-transparent py-1.5 text-sm text-[#111113] placeholder:text-[#7A7A85] focus:outline-none max-h-32"
                       />
 
@@ -843,26 +848,45 @@ export default function App() {
         </div>
       </div>
 
-      {/* Gemini-Style Slim Icon Rail on Right Side */}
-      <ChatSidebar
-        open={sidebarOpen}
-        threads={threads}
-        activeThreadId={activeThreadId}
-        user={user}
-        onSelectThread={(id) => setActiveThreadId(id)}
-        onNewChat={handleNewChat}
-        onSelectPreset={(preset) => void sendMessage(preset)}
-        onToggleDrawer={() => setSidebarOpen((v) => !v)}
-        onCloseDrawer={() => setSidebarOpen(false)}
-        onOpenLogin={() => setLoginOpen(true)}
-        onLogout={() => {
-          void supabase?.auth.signOut().finally(() => {
-            setUser(null);
-            setApiToken('');
-            setLoginOpen(true);
-          });
-        }}
-      />
+      {/* Gemini-Style Slim Icon Rail on Right Side (hidden during splash) */}
+      {introDocked && (
+        <ChatSidebar
+          open={sidebarOpen}
+          threads={threads}
+          activeThreadId={activeThreadId}
+          user={user}
+          onSelectThread={(id) => setActiveThreadId(id)}
+          onNewChat={handleNewChat}
+          onSelectPreset={(preset) => void sendMessage(preset)}
+          onToggleDrawer={() => setSidebarOpen((v) => !v)}
+          onCloseDrawer={() => setSidebarOpen(false)}
+          onOpenLogin={() => setLoginOpen(true)}
+          onLogout={() => {
+            void supabase?.auth.signOut().finally(() => {
+              setUser(null);
+              setHasUnlocked(false);
+              setApiToken('');
+              localStorage.removeItem('agentverse_user');
+            });
+          }}
+        />
+      )}
+
+      {authReady && (
+        <LoginModal
+          open={loginOpen}
+          onClose={() => {
+            setHasUnlocked(true);
+            setLoginOpen(false);
+          }}
+          onLogin={(loggedInUser) => {
+            setUser(loggedInUser);
+            setHasUnlocked(true);
+            localStorage.setItem('agentverse_user', JSON.stringify(loggedInUser));
+            setLoginOpen(false);
+          }}
+        />
+      )}
     </div>
   );
 }
