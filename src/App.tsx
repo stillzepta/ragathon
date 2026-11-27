@@ -2,7 +2,7 @@ import { ArrowUp, Paperclip, X } from 'lucide-react';
 import { ChangeEvent, useEffect, useRef, useState } from 'react';
 import { ChatMessage } from './components/ChatMessage';
 import { ChatSidebar } from './components/ChatSidebar';
-import { ModelConstellationBg } from './components/ModelConstellationBg';
+import { AuroraBackground } from './components/dimaac/aurora-background';
 import { TopBar } from './components/TopBar';
 import { DEMO_PRESETS } from './data/presets';
 import {
@@ -430,11 +430,17 @@ export default function App() {
   const isEmptyChat = !activeThread || activeThread.messages.length === 0;
 
   return (
-    <div className="relative h-screen flex overflow-hidden bg-[#F8F9FB]">
-      {/* Interactive Roaming AI Model Constellation Background */}
-      <ModelConstellationBg />
-
-      <ChatSidebar
+    <AuroraBackground
+      palette="dimaac"
+      theme="auto"
+      position="center"
+      intensity={0.72}
+      blur={95}
+      speed={1.2}
+      className="h-screen w-screen bg-[#FCFCFD] dark:bg-[#0d0f12]"
+    >
+      <div className="relative h-full w-full flex overflow-hidden">
+        <ChatSidebar
         open={sidebarOpen}
         threads={threads}
         activeThreadId={activeThreadId}
@@ -533,6 +539,7 @@ export default function App() {
           </div>
         </div>
       </div>
-    </div>
+      </div>
+    </AuroraBackground>
   );
 }
