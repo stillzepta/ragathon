@@ -18,6 +18,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, Response, StreamingResponse
 from pydantic import BaseModel, Field
 from starlette.concurrency import run_in_threadpool
+import jwt
 
 from app.orchestrator.graph import run_due_diligence
 from app.rag.uploads import MAX_UPLOAD_BYTES, extract_text
@@ -105,10 +106,19 @@ async def authorize(request: Request, authorization: Annotated[str | None, Heade
     if origin and origin not in ALLOWED_ORIGINS:
         raise HTTPException(403, "This dashboard origin is not allowed.")
     token = request.app.state.token
-    if not token and (request.client is None or request.client.host not in {"127.0.0.1", "::1"}):
-        raise HTTPException(403, "Configure an API access token for remote requests.")
-    if token and not secrets.compare_digest((authorization or "").encode(), f"Bearer {token}".encode()):
-        raise HTTPException(401, "Enter the API access token.", headers={"WWW-Authenticate": "Bearer"})
+    provided = (authorization or "").removeprefix("Bearer ").strip()
+    supabase_secret = os.getenv("SUPABASE_JWT_SECRET", "")
+    valid_supabase_token = False
+    if provided and supabase_secret:
+        try:
+            jwt.decode(provided, supabase_secret, algorithms=["HS256"], audience="authenticated")
+            valid_supabase_token = True
+        except jwt.PyJWTError:
+            valid_supabase_token = False
+    if not token and not valid_supabase_token and (request.client is None or request.client.host not in {"127.0.0.1", "::1"}):
+        raise HTTPException(403, "Sign in or configure an API access token for remote requests.")
+    if token and not valid_supabase_token and not secrets.compare_digest(provided.encode(), token.encode()):
+        raise HTTPException(401, "Sign in or enter the API access token.", headers={"WWW-Authenticate": "Bearer"})
 
 
 app = FastAPI(title="AgentVerse API", version="0.2.0", lifespan=lifespan)
