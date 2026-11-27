@@ -39,50 +39,50 @@ interface ShowcaseItem {
 const SHOWCASE_ITEMS: ShowcaseItem[] = [
   {
     num: '1',
-    title: 'One prompt, five specialists',
+    title: 'Chat with saved memory',
     description:
-      'Ask anything once. Five specialized agents split the work in parallel for fast, verified answers.',
-    windowTitle: 'Orchestrator',
-    promptPreview: 'Audit this internship link...',
-    subject: 'Parallel Answer · 1.2s (96/100 Confidence)',
-    body: 'Domain g00gle-careers-verify.xyz was registered 2 days ago using zero-substitution typosquatting and lacks EV TLS. Quarantine recommended.',
-    tones: ['Fast Brief', 'Forensics', 'Action'],
+      'Multi-turn conversations with Google sign-in and Supabase history—context stays synced across reloads.',
+    windowTitle: 'Chat + Memory',
+    promptPreview: 'Summarize our last diligence run...',
+    subject: 'Context Synced · 12-Turn Memory',
+    body: 'Signed in via Google OAuth. Your threads persist in Supabase with row-level security and carry the latest 12 messages into every reply.',
+    tones: ['Fast Chat', 'Saved Threads', 'Context'],
     preset: DEMO_PRESETS[0],
   },
   {
     num: '2',
-    title: 'Grounded in files & live tools',
+    title: 'Four-agent diligence pipeline',
     description:
-      'Drop any PDF, log, or CSV. Agents retrieve exact citations and run real-time checks.',
-    windowTitle: 'RAG + Tools',
-    promptPreview: 'Why is checkout-api throwing 502?',
-    subject: 'Root Cause: DB Pool Exhaustion (v2.14)',
-    body: 'DB_POOL_SIZE jumped 10 → 50 across 8 pods (400 > max 100). Roll back deployment pods gracefully instead of restarting primary RDS.',
-    tones: ['Root Cause', 'Citations', 'Rollback'],
+      'Planner, Researcher, Analyst, and Evaluator run in sequence with live SSE progress updates.',
+    windowTitle: '4-Agent Pipeline',
+    promptPreview: 'Run due diligence on this seed deck...',
+    subject: 'Live SSE · 4 Stages Completed',
+    body: 'Planner → Researcher → Analyst → Evaluator streamed real-time stage updates and compiled a structured startup investment memo.',
+    tones: ['Planner', 'Researcher', 'Evaluator'],
     preset: DEMO_PRESETS[1],
   },
   {
     num: '3',
-    title: 'Self-corrects before you read',
+    title: 'Grounded in files & RAG',
     description:
-      'A Critic agent scores every draft and fixes missing details automatically in the background.',
-    windowTitle: 'Critic Gate',
-    promptPreview: 'Match my resume to this JD...',
-    subject: 'Critic Refined: 69 → 91/100 Verified',
-    body: 'Strong core in Python, FastAPI & Gemini API. Added Redis caching & Docker sprint plan to close the remaining 22% gap before applying.',
-    tones: ['Roadmap', 'Skill Gaps', 'Outreach'],
+      'Upload PDFs, CSVs, logs, or images. Agents retrieve cited excerpts and optional web search results.',
+    windowTitle: 'RAG + Citations',
+    promptPreview: 'Check burn rate in financials.csv...',
+    subject: '2 Cited Excerpts · Grounded',
+    body: 'Extracted chunks from your uploaded file alongside SBA guide playbooks and web search with inline source citations.',
+    tones: ['Citations', 'Uploads', 'Web Search'],
     preset: DEMO_PRESETS[2],
   },
   {
     num: '4',
-    title: 'Safe actions, your approval',
+    title: 'Critic review & PDF/MD export',
     description:
-      'Nothing sends, deletes, or executes without your one-click sign-off.',
-    windowTitle: 'Action Guard',
-    promptPreview: 'Draft & queue security alert...',
-    subject: 'Ready to Execute · Waiting for Approval',
-    body: 'Prepared quarantine rule and #campus-security advisory. Review, edit inline, or approve with one click when ready.',
-    tones: ['Approve', 'Edit', 'Reject'],
+      'Evaluator scores Draft v1, refines Draft v2, records your sign-off, and exports PDF or Markdown.',
+    windowTitle: 'Review & Export',
+    promptPreview: 'Approve follow-up & export memo...',
+    subject: 'Draft v2 Verified · Ready to Export',
+    body: 'Critic refined the memo from v1 to v2. Approve or reject the follow-up decision with one click, then download as PDF or Markdown.',
+    tones: ['Approve', 'PDF Export', 'Markdown'],
     preset: DEMO_PRESETS[0],
   },
 ];
@@ -226,6 +226,39 @@ export default function App() {
       listener.subscription.unsubscribe();
     };
   }, []);
+
+  useEffect(() => {
+    const client = supabase;
+    if (!client || !apiToken) return;
+    let cancelled = false;
+    const loadChats = async () => {
+      const { data: threadRows, error: threadError } = await client
+        .from('chat_threads').select('id,title,updated_at').order('updated_at', { ascending: false });
+      if (threadError || !threadRows?.length || cancelled) return;
+      const ids = threadRows.map((row) => row.id as string);
+      const { data: messageRows, error: messageError } = await client
+        .from('chat_messages').select('id,thread_id,role,content,created_at')
+        .in('thread_id', ids).order('created_at', { ascending: true });
+      if (messageError || cancelled) return;
+      const restored: ChatThread[] = threadRows.map((row) => ({
+        id: row.id as string,
+        title: row.title as string,
+        updatedAt: new Date(row.updated_at as string).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        messages: (messageRows ?? []).filter((message) => message.thread_id === row.id).map((message) => ({
+          id: message.id as string,
+          role: message.role as 'user' | 'assistant',
+          text: message.content as string,
+          createdAt: new Date(message.created_at as string).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        })),
+      }));
+      setThreads((current) => {
+        const unsaved = current.filter((thread) => !restored.some((saved) => saved.id === thread.id));
+        return [...unsaved, ...restored];
+      });
+    };
+    void loadChats();
+    return () => { cancelled = true; };
+  }, [apiToken]);
 
   useEffect(() => {
     if (API_URL || !isEmptyChat || isPreviewPaused || heroInput.trim()) return;
@@ -429,6 +462,26 @@ export default function App() {
         const formData = new FormData();
         formData.append('prompt', text);
         if (isChat) {
+          formData.append('history', JSON.stringify((activeThread?.messages ?? [])
+            .filter((message) => !message.isStreaming && !message.error && !message.result)
+            .slice(-12)
+            .map((message) => ({ role: message.role, content: message.text }))));
+          const { data: auth } = await supabase?.auth.getUser() ?? { data: { user: null } };
+          const signedInUser = auth.user;
+          if (supabase && signedInUser) {
+            const { error: threadError } = await supabase.from('chat_threads').upsert({
+              id: targetThreadId,
+              user_id: signedInUser.id,
+              title: activeThread?.title ?? text.slice(0, 38),
+              updated_at: new Date().toISOString(),
+            });
+            if (threadError) throw new Error('Could not save this chat.');
+            const { error: messageError } = await supabase.from('chat_messages').insert({
+              id: userMsg.id, thread_id: targetThreadId, user_id: signedInUser.id,
+              role: 'user', content: text,
+            });
+            if (messageError) throw new Error('Could not save this message.');
+          }
           const response = await api('/api/chat', requestToken(), {
             method: 'POST', body: formData, signal,
           });
@@ -436,6 +489,20 @@ export default function App() {
           updateAssistantMessage(targetThreadId, assistantMsgId, (m) => ({
             ...m, text: reply, isStreaming: false,
           }));
+          if (supabase && signedInUser) {
+            const { error: saveError } = await supabase.from('chat_messages').insert({
+              id: assistantMsgId, thread_id: targetThreadId, user_id: signedInUser.id,
+              role: 'assistant', content: reply,
+            });
+            if (saveError) {
+              updateAssistantMessage(targetThreadId, assistantMsgId, (m) => ({
+                ...m, error: 'Reply shown, but it could not be saved.',
+              }));
+            } else {
+              await supabase.from('chat_threads').update({ updated_at: new Date().toISOString() })
+                .eq('id', targetThreadId);
+            }
+          }
           return;
         }
 
@@ -627,25 +694,66 @@ export default function App() {
     setAttachedFile(e.target.files?.[0] ?? null);
   };
 
-  const handlePaste = (e: ClipboardEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const items = e.clipboardData?.items;
-    if (!items) return;
-    for (const item of Array.from(items)) {
-      if (item.type.startsWith('image/')) {
-        const file = item.getAsFile();
-        if (file) {
-          e.preventDefault();
-          const ext = file.type.split('/')[1] || 'png';
-          const namedFile =
-            file.name && file.name !== 'image.png'
-              ? file
-              : new File([file], `pasted-image-${Date.now()}.${ext}`, { type: file.type });
-          setAttachedFile(namedFile);
-          return;
+  const extractImageFromClipboard = (clipboardData: DataTransfer | null): File | null => {
+    if (!clipboardData) return null;
+
+    if (clipboardData.files && clipboardData.files.length > 0) {
+      for (const file of Array.from(clipboardData.files)) {
+        if (
+          file.type.startsWith('image/') ||
+          /\.(png|jpe?g|webp|gif|bmp|svg|heic)$/i.test(file.name)
+        ) {
+          const ext = (file.type.split('/')[1] || file.name.split('.').pop() || 'png').replace(/[^a-z0-9]/gi, '');
+          return file.name && file.name !== 'image.png'
+            ? file
+            : new File([file], `pasted-image-${Date.now()}.${ext}`, { type: file.type || 'image/png' });
         }
       }
     }
+
+    if (clipboardData.items) {
+      for (const item of Array.from(clipboardData.items)) {
+        if (item.kind === 'file' || item.type.startsWith('image/')) {
+          const file = item.getAsFile();
+          if (file && (file.type.startsWith('image/') || item.type.startsWith('image/'))) {
+            const mime = file.type || item.type || 'image/png';
+            const ext = mime.split('/')[1] || 'png';
+            return file.name && file.name !== 'image.png'
+              ? file
+              : new File([file], `pasted-image-${Date.now()}.${ext}`, { type: mime });
+          }
+        }
+      }
+    }
+
+    return null;
   };
+
+  const handlePaste = (e: ClipboardEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const imageFile = extractImageFromClipboard(e.clipboardData);
+    if (imageFile) {
+      e.preventDefault();
+      e.stopPropagation();
+      setAttachedFile(imageFile);
+    }
+  };
+
+  useEffect(() => {
+    const onWindowPaste = (e: globalThis.ClipboardEvent) => {
+      const imageFile = extractImageFromClipboard(e.clipboardData);
+      if (imageFile) {
+        e.preventDefault();
+        setAttachedFile(imageFile);
+        if (activeThreadId) {
+          chatInputRef.current?.focus();
+        } else {
+          heroInputRef.current?.focus();
+        }
+      }
+    };
+    window.addEventListener('paste', onWindowPaste);
+    return () => window.removeEventListener('paste', onWindowPaste);
+  }, [activeThreadId]);
 
   const handleNewChat = () => {
     runTokenRef.current++;

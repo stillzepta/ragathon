@@ -278,13 +278,28 @@ Attachment = Annotated[UploadFile | None, File()]
 
 
 @app.post("/api/chat")
-async def chat(request: Request, prompt: Prompt) -> dict[str, str]:
+async def chat(request: Request, prompt: Prompt, history: Annotated[str, Form()] = "[]") -> dict[str, str]:
     origin = request.headers.get("origin")
     if origin and origin not in ALLOWED_ORIGINS:
         raise HTTPException(403, "This dashboard origin is not allowed.")
     prompt = prompt.strip()
     if not prompt:
         raise HTTPException(422, "Enter a message.")
+    try:
+        previous = json.loads(history)
+    except (TypeError, ValueError) as exc:
+        raise HTTPException(422, "Invalid chat history.") from exc
+    if not isinstance(previous, list) or len(previous) > 40:
+        raise HTTPException(422, "Invalid chat history.")
+    turns = []
+    for item in previous[-12:]:
+        if not isinstance(item, dict) or item.get("role") not in {"user", "assistant"}:
+            raise HTTPException(422, "Invalid chat history.")
+        content = item.get("content")
+        if not isinstance(content, str) or len(content) > 4000:
+            raise HTTPException(422, "Invalid chat history.")
+        turns.append(f"{item['role'].title()}: {content}")
+    conversation = "\n".join([*turns, f"User: {prompt}"])
     model = provider()
     if not model.live:
         raise HTTPException(503, "Chat model access is not configured.")
@@ -294,8 +309,8 @@ async def chat(request: Request, prompt: Prompt) -> dict[str, str]:
     job = asyncio.create_task(run_in_threadpool(
         model.generate,
         "You are AgentVerse, a helpful conversational assistant. Reply directly to the "
-        "user's message. Be concise and never claim you ran tools or reviewed evidence.",
-        prompt,
+        "user's latest message using the conversation context. Be concise and never claim you ran tools or reviewed evidence.",
+        conversation,
         accept=lambda answer: bool(answer.strip()),
     ))
     state.jobs.add(job)
