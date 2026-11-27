@@ -2,8 +2,9 @@ import { ArrowUp, Paperclip, X } from 'lucide-react';
 import { ChangeEvent, useEffect, useRef, useState } from 'react';
 import { ChatMessage } from './components/ChatMessage';
 import { ChatSidebar } from './components/ChatSidebar';
-import { AuroraBackground } from './components/dimaac/aurora-background';
 import { TopBar } from './components/TopBar';
+import { SemanticBloom } from './shaders/semantic-bloom/SemanticBloom';
+import './shaders/threeui.css';
 import { DEMO_PRESETS } from './data/presets';
 import {
   AgentNode,
@@ -430,16 +431,19 @@ export default function App() {
   const isEmptyChat = !activeThread || activeThread.messages.length === 0;
 
   return (
-    <AuroraBackground
-      palette="dimaac"
-      theme="light"
-      position="bottom"
-      intensity={0.48}
-      blur={105}
-      speed={1.1}
-      className="h-screen w-screen bg-[#FAFBFD]"
-    >
-      <div className="relative h-full w-full flex overflow-hidden">
+    <div className="relative h-screen w-screen overflow-hidden bg-[#030303]">
+      {/* ThreeUI SemanticBloom Background */}
+      <div className="fixed inset-0 z-0">
+        <SemanticBloom
+          mode="dark"
+          text="Codex"
+          size={1.0}
+          opacity={1.0}
+          className="w-full h-full"
+        />
+      </div>
+
+      <div className="relative z-10 h-full w-full flex overflow-hidden pointer-events-none">
         <ChatSidebar
         open={sidebarOpen}
         threads={threads}
@@ -477,11 +481,11 @@ export default function App() {
         </div>
 
         {/* Sticky Bottom Dia-Glass Chat Input */}
-        <div className="px-4 sm:px-6 pb-5 pt-2">
+        <div className="px-4 sm:px-6 pb-5 pt-2 pointer-events-auto">
           <div className="max-w-3xl mx-auto dia-glass rounded-full px-3 py-2">
             {attachedFile && (
               <div className="mb-2 px-1">
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs bg-emerald-50 text-emerald-900 border border-emerald-200">
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs bg-white/10 text-neutral-100 border border-white/15">
                   <Paperclip className="w-3 h-3" />
                   <span className="truncate max-w-[200px]">{attachedFile.name}</span>
                   <button
@@ -507,7 +511,7 @@ export default function App() {
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
                 title="Attach PDF, Log, or CSV"
-                className="p-2.5 rounded-full hover:bg-black/[0.05] text-[#5A5A55] transition cursor-pointer shrink-0"
+                className="p-2.5 rounded-full hover:bg-white/10 text-neutral-300 transition cursor-pointer shrink-0"
               >
                 <Paperclip className="w-4 h-4" />
               </button>
@@ -523,7 +527,7 @@ export default function App() {
                 }}
                 rows={1}
                 placeholder="Message AgentVerse..."
-                className="flex-1 resize-none bg-transparent py-2 text-sm text-[#141413] placeholder:text-[#9A9A94] focus:outline-none max-h-36"
+                className="flex-1 resize-none bg-transparent py-2 text-sm text-white placeholder:text-neutral-400 focus:outline-none max-h-36"
               />
 
               <button
@@ -531,7 +535,7 @@ export default function App() {
                 disabled={!input.trim() || isRunning}
                 onClick={() => void sendMessage()}
                 aria-label="Send message"
-                className="p-2.5 rounded-full bg-[#141413] text-white hover:bg-[#2A2A28] disabled:opacity-35 disabled:cursor-not-allowed transition cursor-pointer shrink-0"
+                className="p-2.5 rounded-full bg-white text-[#030303] hover:bg-neutral-200 disabled:opacity-30 disabled:cursor-not-allowed transition cursor-pointer shrink-0"
               >
                 <ArrowUp className="w-4 h-4" />
               </button>
@@ -540,6 +544,6 @@ export default function App() {
         </div>
       </div>
       </div>
-    </AuroraBackground>
+    </div>
   );
 }

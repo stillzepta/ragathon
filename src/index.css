@@ -3,8 +3,8 @@
 @layer base {
   body {
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-    background-color: #FCFCFD;
-    color: #141413;
+    background-color: #030303;
+    color: #f3f4f6;
   }
 }
 
@@ -16,25 +16,25 @@
   font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
 }
 
-/* Bright Clear Liquid-Glass Surface */
+/* Black Clear Liquid-Glass Surface */
 .dia-glass {
-  background: rgba(255, 255, 255, 0.84);
+  background: rgba(14, 14, 16, 0.62);
   backdrop-filter: blur(26px) saturate(165%);
   -webkit-backdrop-filter: blur(26px) saturate(165%);
-  border: 1px solid rgba(255, 255, 255, 0.96);
+  border: 1px solid rgba(255, 255, 255, 0.12);
   box-shadow:
-    0 12px 36px rgba(15, 23, 42, 0.04),
-    inset 0 1px 0 rgba(255, 255, 255, 1);
+    0 16px 42px rgba(0, 0, 0, 0.55),
+    inset 0 1px 0 rgba(255, 255, 255, 0.14);
 }
 
 .dia-glass-subtle {
-  background: rgba(255, 255, 255, 0.72);
+  background: rgba(18, 18, 20, 0.5);
   backdrop-filter: blur(18px) saturate(150%);
   -webkit-backdrop-filter: blur(18px) saturate(150%);
-  border: 1px solid rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   box-shadow:
-    0 6px 20px rgba(15, 23, 42, 0.025),
-    inset 0 1px 0 rgba(255, 255, 255, 0.95);
+    0 8px 24px rgba(0, 0, 0, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
 }
 
 @keyframes float-gentle {
