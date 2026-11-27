@@ -2,45 +2,58 @@ interface ThinkingOrbProps {
   statusText?: string;
 }
 
-export function ThinkingOrb({ statusText = 'AgentVerse is thinking...' }: ThinkingOrbProps) {
+export function ThinkingOrb({ statusText = 'Thinking...' }: ThinkingOrbProps) {
   return (
-    <div className="relative overflow-hidden rounded-[28px] py-8 px-6 flex flex-col items-center justify-center dia-glass">
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-0 opacity-75 blur-2xl"
-        style={{
-          background:
-            'radial-gradient(circle at 30% 35%, rgba(167, 243, 208, 0.48), transparent 58%), radial-gradient(circle at 72% 40%, rgba(186, 230, 253, 0.52), transparent 58%), radial-gradient(circle at 50% 85%, rgba(224, 231, 255, 0.45), transparent 60%)',
-        }}
-      />
+    <div className="dia-glass rounded-[28px] px-6 py-6 flex flex-col items-center justify-center overflow-hidden">
+      {/* Minimalist Flowing Sine Waves */}
+      <div className="relative w-full max-w-sm h-14 overflow-hidden [mask-image:linear-gradient(to_right,transparent,black_18%,black_82%,transparent)]">
+        {/* Wave 1 — Soft Indigo */}
+        <svg
+          viewBox="0 0 800 60"
+          preserveAspectRatio="none"
+          className="absolute inset-0 w-[200%] h-full animate-wave-slow opacity-70"
+        >
+          <path
+            d="M0 30 Q 50 10, 100 30 T 200 30 T 300 30 T 400 30 T 500 30 T 600 30 T 700 30 T 800 30"
+            fill="none"
+            stroke="#6366f1"
+            strokeWidth="2"
+            strokeLinecap="round"
+          />
+        </svg>
 
-      <div className="relative w-24 h-24 sm:w-28 sm:h-28 rounded-full overflow-hidden animate-orb border border-white/90 bg-gradient-to-br from-indigo-100/90 via-sky-100/85 to-emerald-100/90">
-        <div
-          className="absolute -inset-2 rounded-full blur-md animate-orb-core"
-          style={{
-            background:
-              'radial-gradient(circle at 36% 48%, rgba(255, 255, 255, 0.98) 0%, rgba(165, 180, 252, 0.72) 38%, rgba(167, 243, 208, 0.35) 70%, transparent 100%)',
-          }}
-        />
+        {/* Wave 2 — Sky Blue */}
+        <svg
+          viewBox="0 0 800 60"
+          preserveAspectRatio="none"
+          className="absolute inset-0 w-[200%] h-full animate-wave-mid opacity-65"
+        >
+          <path
+            d="M0 30 Q 50 48, 100 30 T 200 30 T 300 30 T 400 30 T 500 30 T 600 30 T 700 30 T 800 30"
+            fill="none"
+            stroke="#38bdf8"
+            strokeWidth="2"
+            strokeLinecap="round"
+          />
+        </svg>
 
-        <div
-          className="absolute -right-4 -top-3 w-24 h-24 sm:w-28 sm:h-28 rounded-full blur-md animate-orb-eclipse"
-          style={{
-            background:
-              'radial-gradient(circle at 65% 40%, rgba(30, 41, 59, 0.24) 0%, rgba(79, 70, 229, 0.2) 48%, transparent 78%)',
-          }}
-        />
-
-        <div
-          className="absolute inset-0 rounded-full pointer-events-none"
-          style={{
-            boxShadow:
-              'inset 1.5px 1.5px 5px rgba(255, 255, 255, 0.95), inset -3px -3px 10px rgba(15, 23, 42, 0.1)',
-          }}
-        />
+        {/* Wave 3 — Mint Emerald */}
+        <svg
+          viewBox="0 0 800 60"
+          preserveAspectRatio="none"
+          className="absolute inset-0 w-[200%] h-full animate-wave-fast opacity-55"
+        >
+          <path
+            d="M0 30 Q 40 16, 80 30 T 160 30 T 240 30 T 320 30 T 400 30 T 480 30 T 560 30 T 640 30 T 720 30 T 800 30"
+            fill="none"
+            stroke="#34d399"
+            strokeWidth="1.6"
+            strokeLinecap="round"
+          />
+        </svg>
       </div>
 
-      <p className="relative mt-4 text-xs sm:text-[13px] font-medium tracking-tight text-[#4A4A46] text-center max-w-md">
+      <p className="mt-2 text-xs font-medium text-[#5A5A55] tracking-tight text-center">
         {statusText}
       </p>
     </div>
