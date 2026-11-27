@@ -1,6 +1,6 @@
 """Shared typed contracts. All lanes coordinate through these models."""
 
-from typing import Literal
+from typing import List, Literal, Optional
 
 from pydantic import BaseModel, Field
 
@@ -10,18 +10,18 @@ class RetrievedChunk(BaseModel):
     document_id: str
     text: str
     source_url: str
-    locator: str | None = None
+    locator: Optional[str] = None
     score: float = Field(ge=0, le=1)
 
 
 class ClaimSupport(BaseModel):
     claim: str
-    supported_by: list[str] = Field(default_factory=list)
+    supported_by: List[str] = Field(default_factory=list)
     support_type: Literal["direct", "inference", "unsupported"]
 
 
 class RetrievalContext(BaseModel):
     query: str
-    retrieved_chunks: list[RetrievedChunk] = Field(default_factory=list)
-    claims: list[ClaimSupport] = Field(default_factory=list)
+    retrieved_chunks: List[RetrievedChunk] = Field(default_factory=list)
+    claims: List[ClaimSupport] = Field(default_factory=list)
 
