@@ -1,6 +1,8 @@
 """Stateful due-diligence workflow with a LangGraph-compatible shape."""
 
 import uuid
+import os
+import sqlite3
 from typing import Any, Optional
 
 from app.agents.analyst import analyst_node
@@ -18,9 +20,15 @@ def _revise_node(state: AgentState) -> AgentState:
 
 
 def build_langgraph(retriever: HybridRetriever) -> Any:
-    """Compile the cyclic workflow when LangGraph is installed."""
+    """Compile the cyclic workflow with a SQLite checkpoint saver."""
     try:
         from langgraph.graph import END, StateGraph
+        from langgraph.checkpoint.sqlite import SqliteSaver
+
+        connection = sqlite3.connect(
+            os.getenv("CHECKPOINT_DB_PATH", "agentverse.sqlite3"),
+            check_same_thread=False,
+        )
 
         graph = StateGraph(AgentState)
         graph.add_node("planner", plan_node)
@@ -38,8 +46,8 @@ def build_langgraph(retriever: HybridRetriever) -> Any:
             {"revision": "revision", "done": END},
         )
         graph.add_edge("revision", "analyst")
-        return graph.compile()
-    except ImportError:
+        return graph.compile(checkpointer=SqliteSaver(connection))
+    except (ImportError, ModuleNotFoundError):
         return None
 
 
@@ -50,7 +58,7 @@ def run_due_diligence(goal: str, criteria: Optional[list[str]] = None, source_te
         retriever.add_text(source_text)
     workflow = build_langgraph(retriever)
     if workflow:
-        state = workflow.invoke(state)
+        state = workflow.invoke(state, config={"configurable": {"thread_id": state["run_id"]}})
     else:
         state = plan_node(state)
         state = research_node(state, retriever)

@@ -39,6 +39,10 @@ VITE_API_URL=http://localhost:8000 npm run dev
 
 See [ARCHITECTURE.md](ARCHITECTURE.md) for the system design and RAG pipeline.
 
+## Implementation status
+
+See [IMPLEMENTATION_STATUS.md](IMPLEMENTATION_STATUS.md) for completed steps and remaining work.
+
 ## Existing frontend
 
 The current demo frontend lives in `src/` and is built with Vite. The backend and RAG lanes are scaffolded under `app/`; see [TEAM_ACCESS.md](TEAM_ACCESS.md) before changing shared contracts.
