@@ -10,7 +10,7 @@ import time
 import uuid
 from collections import deque
 from contextlib import asynccontextmanager
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from typing import Annotated
 
 from fastapi import Depends, FastAPI, File, Form, Header, HTTPException, Request, UploadFile
@@ -129,7 +129,7 @@ def mission_result(state: dict, prompt: str, filename: str | None) -> dict:
         "domain": "bizintel",
         "prompt": prompt,
         "attachedFileName": filename,
-        "createdAt": datetime.now(UTC).isoformat(),
+        "createdAt": datetime.now(timezone.utc).isoformat(),
         "mode": state["generation_mode"],
         "criticInitialScore": drafts[0]["score"],
         "criticFinalScore": drafts[-1]["score"],
