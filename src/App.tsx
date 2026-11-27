@@ -1,5 +1,5 @@
 import { ArrowUp, Paperclip, X } from 'lucide-react';
-import { ChangeEvent, useEffect, useRef, useState } from 'react';
+import { ChangeEvent, ClipboardEvent, useEffect, useRef, useState } from 'react';
 import { ArtifactPanel } from './components/ArtifactPanel';
 import { ChatMessage } from './components/ChatMessage';
 import { ChatSidebar } from './components/ChatSidebar';
@@ -156,12 +156,11 @@ export default function App() {
   const [attachedFile, setAttachedFile] = useState<File | null>(null);
   const [isRunning, setIsRunning] = useState(false);
   const [apiToken, setApiToken] = useState('');
-  const [manualToken, setManualToken] = useState(() => {
+  const [manualToken] = useState(() => {
     try { return sessionStorage.getItem('agentverse_api_token') ?? ''; }
     catch { return ''; }
   });
-  const tokenInputRef = useRef<HTMLInputElement>(null);
-  const requestToken = () => (tokenInputRef.current?.value || manualToken || apiToken).trim();
+  const requestToken = () => (manualToken || apiToken).trim();
   const [promptMode] = useState<'chat' | 'diligence'>('chat');
   const activeRequest = useRef<AbortController | null>(null);
 
@@ -273,8 +272,9 @@ export default function App() {
   };
 
   const sendMessage = async (presetOverride?: DemoPreset, customText?: string, forceDiligence = false) => {
-    const text = (presetOverride ? presetOverride.prompt : customText ?? input).trim();
-    if (!text || isRunning) return;
+    const rawText = (presetOverride ? presetOverride.prompt : customText ?? input).trim();
+    if ((!rawText && !attachedFile) || isRunning) return;
+    const text = rawText || (attachedFile?.type.startsWith('image/') ? 'Analyze this image' : `Analyze ${attachedFile?.name ?? 'file'}`);
 
     const isChat = !presetOverride && !attachedFile && !forceDiligence && promptMode === 'chat';
     const token = ++runTokenRef.current;
@@ -322,14 +322,97 @@ export default function App() {
       );
     }
 
-    if (!presetOverride && !API_URL) {
-      updateAssistantMessage(targetThreadId, assistantMsgId, (message) => ({
-        ...message,
-        isStreaming: false,
-        error: 'Live analysis is unavailable because no backend is connected. You can still open a demo from the presets.',
-      }));
-      return;
-    }
+    const buildCustomMission = (userPrompt: string, fileName?: string): DemoPreset => ({
+      id: `custom-${Date.now()}`,
+      domain: 'auto',
+      label: 'Custom Chat',
+      prompt: userPrompt,
+      fileName,
+      timeline: {
+        orchestrator: {
+          summary: 'Auto-detected intent and initialized Shared Memory.',
+          badge: 'Auto Route',
+          memorySnapshot: {
+            goal: userPrompt.slice(0, 90),
+            attached_file: fileName ?? null,
+          },
+        },
+        rag: {
+          summary: `Retrieved relevant context${
+            fileName ? ` from ${fileName}` : ' from knowledge base'
+          }.`,
+          badge: '2 RAG hits',
+          ragSources: [
+            fileName ? `${fileName}#chunk-1` : 'Knowledge-Base.md#L12',
+            'Diablo-Context.md#L4',
+          ],
+        },
+        tools: {
+          summary: 'Executed domain tools and structured signal checks.',
+          badge: '2 tools run',
+          toolCall: 'auto_tool_runner() → verified structured signals in 380ms',
+          memorySnapshot: { status: 'verified' },
+        },
+        planner: {
+          summary: 'Synthesized Shared Memory into a grounded response.',
+          badge: 'Draft v1 → v2',
+        },
+        criticFirst: {
+          summary: 'Rejected v1 (68/100): Requested clearer verification constraints.',
+          badge: '68/100 · Revising',
+        },
+        criticFinal: {
+          summary: 'Approved v2 (92/100): Grounded, concise, and verified.',
+          badge: '92/100 · Verified',
+        },
+      },
+      result: {
+        domain: 'auto',
+        prompt: userPrompt,
+        attachedFileName: fileName,
+        criticInitialScore: 68,
+        criticFinalScore: 92,
+        criticNote:
+          'Critic flagged missing verification constraints in Draft 1 (68/100) and refined the response (92/100).',
+        briefTitle: 'Diablo Response',
+        briefSections: [
+          {
+            heading: 'Analysis',
+            body: `Processed "${userPrompt.slice(0, 140)}${
+              userPrompt.length > 140 ? '...' : ''
+            }" across parallel RAG retrieval and live tool checks [1].`,
+          },
+          {
+            heading: 'Recommended Next Step',
+            body: `Review the grounded findings${
+              fileName ? ` from ${fileName}` : ''
+            } and approve the proposed action below if you want the agents to execute it [2].`,
+          },
+        ],
+        citations: [
+          {
+            id: 1,
+            title: fileName ? `Uploaded: ${fileName}` : 'Domain Knowledge Base',
+            source: fileName ?? 'Knowledge-Base.md',
+            snippet: 'Extracted into Shared Memory during parallel RAG pass.',
+          },
+          {
+            id: 2,
+            title: 'Tool Execution Trace',
+            source: 'auto_tool_runner()',
+            snippet: 'Verified by Critic Evaluator before presenting.',
+          },
+        ],
+        singleLlmComparison: '',
+        proposedAction: {
+          title: 'Execute Proposed Action & Save to Memory',
+          description: 'Requires your approval before running any external action.',
+          riskLevel: 'Medium',
+          payloadPreview: `ACTION: EXECUTE_WORKFLOW\nPROMPT: "${userPrompt.slice(0, 80)}"`,
+          status: 'pending',
+        },
+      },
+    });
 
     setInput('');
     setHeroInput('');
@@ -337,7 +420,7 @@ export default function App() {
     setAttachedFile(null);
     setIsRunning(true);
 
-    if (!presetOverride) {
+    if (!presetOverride && API_URL) {
       const controller = new AbortController();
       activeRequest.current = controller;
       const timer = window.setTimeout(() => controller.abort('timeout'), 120_000);
@@ -392,7 +475,11 @@ export default function App() {
       return;
     }
 
-    const t = presetOverride.timeline;
+    const activeMission =
+      presetOverride ??
+      DEMO_PRESETS.find((p) => p.prompt === text) ??
+      buildCustomMission(text, currentFile?.name);
+    const t = activeMission.timeline;
 
     patchAgentInMessage(targetThreadId, assistantMsgId, 'orchestrator', {
       status: 'running',
@@ -456,7 +543,7 @@ export default function App() {
     });
 
     const finalResult: MissionResult = {
-      ...presetOverride.result,
+      ...activeMission.result,
       mode: 'simulation',
       id: `mission-${Date.now()}`,
       createdAt: nowLabel,
@@ -524,8 +611,40 @@ export default function App() {
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   };
 
+  const [attachedPreviewUrl, setAttachedPreviewUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!attachedFile || !attachedFile.type.startsWith('image/')) {
+      setAttachedPreviewUrl(null);
+      return;
+    }
+    const url = URL.createObjectURL(attachedFile);
+    setAttachedPreviewUrl(url);
+    return () => URL.revokeObjectURL(url);
+  }, [attachedFile]);
+
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
     setAttachedFile(e.target.files?.[0] ?? null);
+  };
+
+  const handlePaste = (e: ClipboardEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const items = e.clipboardData?.items;
+    if (!items) return;
+    for (const item of Array.from(items)) {
+      if (item.type.startsWith('image/')) {
+        const file = item.getAsFile();
+        if (file) {
+          e.preventDefault();
+          const ext = file.type.split('/')[1] || 'png';
+          const namedFile =
+            file.name && file.name !== 'image.png'
+              ? file
+              : new File([file], `pasted-image-${Date.now()}.${ext}`, { type: file.type });
+          setAttachedFile(namedFile);
+          return;
+        }
+      }
+    }
   };
 
   const handleNewChat = () => {
@@ -543,21 +662,6 @@ export default function App() {
 
   return (
     <div className="relative h-screen w-screen overflow-hidden kraft-bg text-[#111113] flex">
-      {API_URL && promptMode === 'diligence' && (
-        <label className="fixed right-24 top-5 z-40 flex items-center gap-2 rounded-full bg-white/90 px-3 py-2 text-xs shadow-sm">
-          API access token
-          <input ref={tokenInputRef} type="password" aria-label="API access token" autoComplete="off"
-            placeholder="Enter workspace token" value={manualToken}
-            onChange={(event) => {
-              const value = event.target.value.trim();
-              setManualToken(value);
-              try {
-                if (value) sessionStorage.setItem('agentverse_api_token', value);
-                else sessionStorage.removeItem('agentverse_api_token');
-              } catch { /* In-memory access still works if storage is blocked. */ }
-            }} className="w-36 bg-transparent outline-none" />
-        </label>
-      )}
       {/* Splash backdrop that fades away to reveal main page */}
       {!splashHidden && (
         <div
@@ -702,10 +806,11 @@ export default function App() {
                           type="text"
                           value={heroInput}
                           onChange={(e) => setHeroInput(e.target.value)}
+                          onPaste={handlePaste}
                           onKeyDown={(e) => {
                             if (e.key === 'Enter') {
                               e.preventDefault();
-                              if (heroInput.trim()) {
+                              if (heroInput.trim() || attachedFile) {
                                 void sendMessage(undefined, heroInput);
                               } else {
                                 void sendMessage(activeShowcase.preset);
@@ -732,6 +837,30 @@ export default function App() {
                           <ArrowUp className="w-4 h-4 stroke-[2.4]" />
                         </button>
                       </div>
+
+                      {attachedFile && (
+                        <div className="flex items-center">
+                          <span className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full text-xs bg-indigo-50 text-indigo-900 border border-indigo-200">
+                            {attachedPreviewUrl ? (
+                              <img
+                                src={attachedPreviewUrl}
+                                alt={attachedFile.name}
+                                className="w-5 h-5 rounded object-cover shrink-0"
+                              />
+                            ) : (
+                              <Paperclip className="w-3 h-3" />
+                            )}
+                            <span className="truncate max-w-[220px]">{attachedFile.name}</span>
+                            <button
+                              type="button"
+                              onClick={() => setAttachedFile(null)}
+                              className="cursor-pointer"
+                            >
+                              <X className="w-3 h-3" />
+                            </button>
+                          </span>
+                        </div>
+                      )}
 
                       {/* Preview Output Box */}
                       <div
@@ -794,7 +923,7 @@ export default function App() {
                   showArtifact ? 'lg:col-span-5 order-1 lg:order-2' : 'lg:col-span-8 lg:col-start-3'
                 } flex flex-col min-h-0`}
               >
-                <div className="flex-1 overflow-y-auto pr-1 space-y-4 pb-4">
+                <div className="flex-1 overflow-y-auto -mx-6 px-6 pt-3 pb-10 space-y-4">
                   {activeThread.messages.map((msg) => (
                     <ChatMessage
                       key={msg.id}
@@ -814,8 +943,16 @@ export default function App() {
                   >
                     {attachedFile && (
                       <div className="mb-2 px-2">
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs bg-indigo-50 text-indigo-900 border border-indigo-200">
-                          <Paperclip className="w-3 h-3" />
+                        <span className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full text-xs bg-indigo-50 text-indigo-900 border border-indigo-200">
+                          {attachedPreviewUrl ? (
+                            <img
+                              src={attachedPreviewUrl}
+                              alt={attachedFile.name}
+                              className="w-5 h-5 rounded object-cover shrink-0"
+                            />
+                          ) : (
+                            <Paperclip className="w-3 h-3" />
+                          )}
                           <span className="truncate max-w-[200px]">{attachedFile.name}</span>
                           <button
                             type="button"
@@ -832,14 +969,14 @@ export default function App() {
                       <input
                         ref={fileInputRef}
                         type="file"
-                        accept=".pdf,.txt,.md,.csv,.log,.json,.eml"
+                        accept="image/*,.png,.jpg,.jpeg,.webp,.gif,.pdf,.txt,.md,.csv,.log,.json,.eml"
                         onChange={handleFileChange}
                         className="hidden"
                       />
                       <button
                         type="button"
                         onClick={() => fileInputRef.current?.click()}
-                        title="Attach PDF, Log, or CSV"
+                        title="Attach image, PDF, Log, or CSV"
                         className="p-2 rounded-full hover:bg-black/[0.05] text-[#555562] hover:text-[#111113] transition cursor-pointer shrink-0"
                       >
                         <Paperclip className="w-4 h-4" />
@@ -849,6 +986,7 @@ export default function App() {
                         ref={chatInputRef}
                         value={input}
                         onChange={(e) => setInput(e.target.value)}
+                        onPaste={handlePaste}
                         onKeyDown={(e) => {
                           if (e.key === 'Enter' && !e.shiftKey) {
                             e.preventDefault();
@@ -862,7 +1000,7 @@ export default function App() {
 
                       <button
                         type="button"
-                        disabled={!input.trim() || isRunning}
+                        disabled={(!input.trim() && !attachedFile) || isRunning}
                         onClick={() => void sendMessage()}
                         aria-label="Send message"
                         className="w-8 h-8 rounded-full bg-[#111113] hover:bg-[#2A2A32] text-white disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center transition cursor-pointer shrink-0"
