@@ -47,20 +47,20 @@
 @keyframes orb-breathe {
   0%, 100% {
     transform: scale(1);
-    box-shadow: 0 0 38px rgba(249, 115, 22, 0.42), 0 0 80px rgba(185, 28, 28, 0.25);
+    box-shadow: 0 12px 32px rgba(16, 185, 129, 0.16), 0 4px 18px rgba(56, 189, 248, 0.14);
   }
   50% {
     transform: scale(1.045);
-    box-shadow: 0 0 52px rgba(251, 146, 60, 0.62), 0 0 100px rgba(185, 28, 28, 0.38);
+    box-shadow: 0 16px 42px rgba(16, 185, 129, 0.24), 0 6px 26px rgba(56, 189, 248, 0.22);
   }
 }
 
 @keyframes orb-eclipse {
   0%, 100% {
-    transform: translate(12%, -6%) scale(1);
+    transform: translate(14%, -8%) scale(1);
   }
   50% {
-    transform: translate(-10%, 8%) scale(1.08);
+    transform: translate(-12%, 10%) scale(1.08);
   }
 }
 
@@ -69,7 +69,7 @@
     transform: translate(-8%, 6%) scale(1);
   }
   50% {
-    transform: translate(8%, -6%) scale(1.1);
+    transform: translate(10%, -8%) scale(1.1);
   }
 }
 
@@ -78,7 +78,7 @@
 }
 
 .animate-orb-eclipse {
-  animation: orb-eclipse 4.6s ease-in-out infinite;
+  animation: orb-eclipse 4.8s ease-in-out infinite;
 }
 
 .animate-orb-core {
