@@ -228,6 +228,39 @@ export default function App() {
   }, []);
 
   useEffect(() => {
+    const client = supabase;
+    if (!client || !apiToken) return;
+    let cancelled = false;
+    const loadChats = async () => {
+      const { data: threadRows, error: threadError } = await client
+        .from('chat_threads').select('id,title,updated_at').order('updated_at', { ascending: false });
+      if (threadError || !threadRows?.length || cancelled) return;
+      const ids = threadRows.map((row) => row.id as string);
+      const { data: messageRows, error: messageError } = await client
+        .from('chat_messages').select('id,thread_id,role,content,created_at')
+        .in('thread_id', ids).order('created_at', { ascending: true });
+      if (messageError || cancelled) return;
+      const restored: ChatThread[] = threadRows.map((row) => ({
+        id: row.id as string,
+        title: row.title as string,
+        updatedAt: new Date(row.updated_at as string).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        messages: (messageRows ?? []).filter((message) => message.thread_id === row.id).map((message) => ({
+          id: message.id as string,
+          role: message.role as 'user' | 'assistant',
+          text: message.content as string,
+          createdAt: new Date(message.created_at as string).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        })),
+      }));
+      setThreads((current) => {
+        const unsaved = current.filter((thread) => !restored.some((saved) => saved.id === thread.id));
+        return [...unsaved, ...restored];
+      });
+    };
+    void loadChats();
+    return () => { cancelled = true; };
+  }, [apiToken]);
+
+  useEffect(() => {
     if (API_URL || !isEmptyChat || isPreviewPaused || heroInput.trim()) return;
     const timer = setInterval(() => {
       setActiveShowcaseIdx((prev) => (prev + 1) % SHOWCASE_ITEMS.length);
@@ -429,6 +462,26 @@ export default function App() {
         const formData = new FormData();
         formData.append('prompt', text);
         if (isChat) {
+          formData.append('history', JSON.stringify((activeThread?.messages ?? [])
+            .filter((message) => !message.isStreaming && !message.error && !message.result)
+            .slice(-12)
+            .map((message) => ({ role: message.role, content: message.text }))));
+          const { data: auth } = await supabase?.auth.getUser() ?? { data: { user: null } };
+          const signedInUser = auth.user;
+          if (supabase && signedInUser) {
+            const { error: threadError } = await supabase.from('chat_threads').upsert({
+              id: targetThreadId,
+              user_id: signedInUser.id,
+              title: activeThread?.title ?? text.slice(0, 38),
+              updated_at: new Date().toISOString(),
+            });
+            if (threadError) throw new Error('Could not save this chat.');
+            const { error: messageError } = await supabase.from('chat_messages').insert({
+              id: userMsg.id, thread_id: targetThreadId, user_id: signedInUser.id,
+              role: 'user', content: text,
+            });
+            if (messageError) throw new Error('Could not save this message.');
+          }
           const response = await api('/api/chat', requestToken(), {
             method: 'POST', body: formData, signal,
           });
@@ -436,6 +489,20 @@ export default function App() {
           updateAssistantMessage(targetThreadId, assistantMsgId, (m) => ({
             ...m, text: reply, isStreaming: false,
           }));
+          if (supabase && signedInUser) {
+            const { error: saveError } = await supabase.from('chat_messages').insert({
+              id: assistantMsgId, thread_id: targetThreadId, user_id: signedInUser.id,
+              role: 'assistant', content: reply,
+            });
+            if (saveError) {
+              updateAssistantMessage(targetThreadId, assistantMsgId, (m) => ({
+                ...m, error: 'Reply shown, but it could not be saved.',
+              }));
+            } else {
+              await supabase.from('chat_threads').update({ updated_at: new Date().toISOString() })
+                .eq('id', targetThreadId);
+            }
+          }
           return;
         }
 

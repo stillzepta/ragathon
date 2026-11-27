@@ -61,6 +61,13 @@ CI runs the same checks on pull requests and pushes to `main`. See [implementati
 
 ## Vercel + Google OAuth
 
+Apply both SQL files in `supabase/migrations` to your Supabase project before enabling saved chats.
+The `chat_threads` and `chat_messages` tables use row-level security so signed-in users
+can access only their own history. Chat mode sends the latest 12 messages to FastAPI
+as conversation context. The backend still uses document RAG separately for diligence runs.
+Guests without Supabase sign-in can chat during the open page session, but their chats
+are not saved across reloads.
+
 Set these Vercel Environment Variables for Preview and Production:
 
 ```env
