@@ -160,6 +160,8 @@ export default function App() {
   const activeRequest = useRef<AbortController | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const heroInputRef = useRef<HTMLInputElement>(null);
+  const chatInputRef = useRef<HTMLTextAreaElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const runTokenRef = useRef(0);
 
@@ -663,7 +665,8 @@ export default function App() {
                     <div className="p-6 sm:p-7 space-y-5">
                       {/* Interactive Prompt Input Bar inside Card */}
                       <div
-                        className={`flex items-center gap-2.5 rounded-full bg-white pl-4 pr-2 py-2.5 border transition-all duration-300 ease-out cursor-text focus-within:scale-[1.03] focus-within:-translate-y-0.5 focus-within:border-indigo-500 focus-within:ring-4 focus-within:ring-indigo-500/15 focus-within:shadow-[0_18px_40px_rgba(38,43,102,0.18),0_4px_12px_rgba(79,86,184,0.15)] ${
+                        onClick={() => heroInputRef.current?.focus()}
+                        className={`flex items-center gap-2.5 rounded-full bg-white pl-4 pr-2 border transition-all duration-300 ease-out cursor-text focus-within:scale-[1.03] focus-within:-translate-y-0.5 focus-within:border-indigo-500 focus-within:ring-4 focus-within:ring-indigo-500/15 focus-within:shadow-[0_18px_40px_rgba(38,43,102,0.18),0_4px_12px_rgba(79,86,184,0.15)] ${
                           heroInput.trim()
                             ? 'scale-[1.03] -translate-y-0.5 border-indigo-500 ring-4 ring-indigo-500/15 shadow-[0_18px_40px_rgba(38,43,102,0.18),0_4px_12px_rgba(79,86,184,0.15)]'
                             : 'border-indigo-200/90 shadow-[0_6px_18px_rgba(79,86,184,0.09)] hover:border-indigo-300'
@@ -671,9 +674,10 @@ export default function App() {
                       >
                         <span
                           aria-hidden="true"
-                          className="w-0.5 h-4 rounded-full bg-indigo-500 animate-pulse shrink-0"
+                          className="w-0.5 h-4 rounded-full bg-indigo-500 animate-pulse shrink-0 pointer-events-none"
                         />
                         <input
+                          ref={heroInputRef}
                           type="text"
                           value={heroInput}
                           onChange={(e) => setHeroInput(e.target.value)}
@@ -689,11 +693,12 @@ export default function App() {
                           }}
                           aria-label="Message"
                           placeholder={`Ask anything — ${activeShowcase.promptPreview}`}
-                          className="flex-1 min-w-0 bg-transparent text-sm text-[#111113] placeholder:text-[#6E6E77] focus:outline-none"
+                          className="flex-1 min-w-0 py-2.5 bg-transparent text-sm text-[#111113] placeholder:text-[#6E6E77] focus:outline-none"
                         />
                         <button
                           type="button"
-                          onClick={() => {
+                          onClick={(e) => {
+                            e.stopPropagation();
                             if (heroInput.trim()) {
                               void sendMessage(undefined, heroInput);
                             } else {
@@ -782,7 +787,10 @@ export default function App() {
 
                 {/* Chat Input Bar */}
                 <div className="pt-2 pb-3">
-                  <div className="rounded-full bg-white/90 backdrop-blur-xl border border-white px-3 py-2 shadow-[0_14px_36px_rgba(38,43,102,0.14)] transition-all duration-300 ease-out focus-within:bg-white focus-within:scale-[1.02] focus-within:-translate-y-0.5 focus-within:shadow-[0_20px_48px_rgba(38,43,102,0.22)]">
+                  <div
+                    onClick={() => chatInputRef.current?.focus()}
+                    className="rounded-full bg-white/90 backdrop-blur-xl border border-white px-3 py-2 shadow-[0_14px_36px_rgba(38,43,102,0.14)] transition-all duration-300 ease-out cursor-text focus-within:bg-white focus-within:scale-[1.02] focus-within:-translate-y-0.5 focus-within:shadow-[0_20px_48px_rgba(38,43,102,0.22)]"
+                  >
                     {attachedFile && (
                       <div className="mb-2 px-2">
                         <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs bg-indigo-50 text-indigo-900 border border-indigo-200">
@@ -817,6 +825,7 @@ export default function App() {
                       </button>
 
                       <textarea
+                        ref={chatInputRef}
                         value={input}
                         onChange={(e) => setInput(e.target.value)}
                         onKeyDown={(e) => {
