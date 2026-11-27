@@ -2,7 +2,6 @@ import { ArrowUp, Paperclip, X } from 'lucide-react';
 import { ChangeEvent, useEffect, useRef, useState } from 'react';
 import { ChatMessage } from './components/ChatMessage';
 import { ChatSidebar } from './components/ChatSidebar';
-import { DotFieldBg } from './components/DotFieldBg';
 import { TopBar } from './components/TopBar';
 import { DEMO_PRESETS } from './data/presets';
 import {
@@ -441,10 +440,7 @@ export default function App() {
         onCloseMobile={() => setSidebarOpen(false)}
       />
 
-        <div className="relative flex-1 flex flex-col min-w-0 pointer-events-none">
-          {/* Smooth interactive dot-wave background */}
-          <DotFieldBg />
-
+        <div className="relative flex-1 flex flex-col min-w-0">
           <TopBar
           sidebarOpen={sidebarOpen}
           onToggleSidebar={() => setSidebarOpen((v) => !v)}
