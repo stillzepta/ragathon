@@ -160,7 +160,8 @@ export default function App() {
     try { return sessionStorage.getItem('agentverse_api_token') ?? ''; }
     catch { return ''; }
   });
-  const requestToken = manualToken || apiToken;
+  const tokenInputRef = useRef<HTMLInputElement>(null);
+  const requestToken = () => (tokenInputRef.current?.value || manualToken || apiToken).trim();
   const [promptMode] = useState<'chat' | 'diligence'>('chat');
   const activeRequest = useRef<AbortController | null>(null);
 
@@ -345,7 +346,7 @@ export default function App() {
         const formData = new FormData();
         formData.append('prompt', text);
         if (isChat) {
-          const response = await api('/api/chat', requestToken, {
+          const response = await api('/api/chat', requestToken(), {
             method: 'POST', body: formData, signal,
           });
           const { reply } = await response.json() as { reply: string };
@@ -361,7 +362,7 @@ export default function App() {
         formData.append('domain', 'bizintel');
         if (currentFile) formData.append('file', currentFile);
 
-        const response = await api('/api/run', requestToken, {
+        const response = await api('/api/run', requestToken(), {
           method: 'POST', body: formData, signal,
         });
         const missionResult = await response.json() as MissionResult & { error?: string };
@@ -491,7 +492,7 @@ export default function App() {
         executionNote: `Simulation decision: ${status}.`,
       };
       if (msg.result.mode !== 'simulation') {
-        const response = await api('/api/approve', requestToken, {
+        const response = await api('/api/approve', requestToken(), {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ mission_id: msg.result.id, payload, status }),
@@ -512,7 +513,7 @@ export default function App() {
   };
 
   const downloadReport = async (runId: string, format: 'md' | 'pdf') => {
-    const response = await api(`/api/runs/${runId}/report/${format}`, requestToken, {
+    const response = await api(`/api/runs/${runId}/report/${format}`, requestToken(), {
       signal: AbortSignal.timeout(15_000),
     });
     const url = URL.createObjectURL(await response.blob());
@@ -545,7 +546,7 @@ export default function App() {
       {API_URL && (
         <label className="fixed right-24 top-5 z-40 flex items-center gap-2 rounded-full bg-white/90 px-3 py-2 text-xs shadow-sm">
           API access token
-          <input type="password" aria-label="API access token" autoComplete="off"
+          <input ref={tokenInputRef} type="password" aria-label="API access token" autoComplete="off"
             placeholder="Enter workspace token" value={manualToken}
             onChange={(event) => {
               const value = event.target.value.trim();
