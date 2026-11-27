@@ -79,7 +79,7 @@ export function ArtifactPanel({
             <div className="flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-indigo-500 shadow-[0_0_8px_rgba(99,102,241,0.55)]" />
               <span className="text-[11px] font-medium uppercase tracking-[0.12em] text-[#4A4A58]">
-                {simulation ? 'Verified by 5 Agents' : result.mode === 'fallback'
+                {simulation ? 'Studio simulation' : result.mode === 'fallback'
                   ? 'Local fallback · model unavailable' : result.mode === 'local'
                     ? 'Local due-diligence run' : `${result.mode === 'groq' ? 'Groq' : 'Gemini'}-assisted run`}
               </span>

@@ -1,54 +1,92 @@
-"""Model provider compatibility layer with Gemini → Groq fallback."""
+"""Model adapter with Gemini-first, Groq-fallback, and mock support."""
 
+import json
 import os
+from collections.abc import Callable
+from urllib import request
+
+try:
+    from dotenv import load_dotenv
+except ImportError:  # Keep tests and minimal installs usable; production installs the declared dependency.
+    load_dotenv = None
+
+if load_dotenv:
+    load_dotenv()
 
 
 class ModelProvider:
     def __init__(self) -> None:
-        self.provider = os.getenv("MODEL_PROVIDER", "mock")
-        self.gemini_key = os.getenv("GEMINI_API_KEY", "")
-        self.groq_key = os.getenv("GROQ_API_KEY", "")
+        self.provider_name = os.getenv("MODEL_PROVIDER", "mock").lower()
+        self.gemini_model = os.getenv("MODEL_NAME", "gemini-2.5-flash")
+        self.groq_model = os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile")
+        self.gemini_api_key = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
+        self.used_provider = None
+        self.groq_api_key = os.getenv("GROQ_API_KEY")
+
+    @property
+    def requested(self) -> bool:
+        return self.provider_name in {"gemini", "groq"}
+
+    @property
+    def live(self) -> bool:
+        return self.requested and bool(self.gemini_api_key or self.groq_api_key)
+
+    def generate(
+        self, system: str, prompt: str, *,
+        preferred_provider: str | None = None,
+        accept: Callable[[str], bool] = bool,
+    ) -> str:
+        self.used_provider = None
+        if not self.live:
+            return ""
+
+        providers = [preferred_provider or self.provider_name]
+        if self.gemini_api_key and "gemini" not in providers:
+            providers.append("gemini")
+        if self.groq_api_key and "groq" not in providers:
+            providers.append("groq")
+
+        for provider_name in providers:
+            try:
+                response = self._generate_gemini(system, prompt) if provider_name == "gemini" else self._generate_groq(system, prompt)
+                if response and accept(response):
+                    self.used_provider = provider_name
+                    return response
+            except Exception:  # noqa: BLE001, S112 - Provider SDK failures should trigger failover.
+                continue
+        return ""
 
     def _generate_gemini(self, system: str, prompt: str) -> str:
-        if not self.gemini_key:
+        if not self.gemini_api_key:
             return ""
-        try:
-            from google import genai
+        from google import genai
 
-            client = genai.Client(api_key=self.gemini_key)
+        with genai.Client(api_key=self.gemini_api_key, http_options={"timeout": 12000}) as client:
             response = client.models.generate_content(
-                model=os.getenv("MODEL_NAME", "gemini-2.5-flash"),
-                contents=f"SYSTEM:\n{system}\n\nUSER:\n{prompt}",
+                model=self.gemini_model, contents=prompt,
+                config={"system_instruction": system, "max_output_tokens": 600},
             )
-            return response.text or ""
-        except Exception:
-            return ""
+        return response.text or ""
 
     def _generate_groq(self, system: str, prompt: str) -> str:
-        if not self.groq_key:
+        if not self.groq_api_key:
             return ""
-        try:
-            import httpx
+        payload = json.dumps({
+            "model": self.groq_model,
+            "messages": [{"role": "system", "content": system}, {"role": "user", "content": prompt}],
+            "temperature": 0.2,
+        }).encode()
+        req = request.Request(
+            "https://api.groq.com/openai/v1/chat/completions",
+            data=payload,
+            headers={"Authorization": f"Bearer {self.groq_api_key}", "Content-Type": "application/json"},
+            method="POST",
+        )
+        with request.urlopen(req, timeout=12) as response:
+            data = json.loads(response.read().decode())
+        return data.get("choices", [{}])[0].get("message", {}).get("content", "")
 
-            response = httpx.post(
-                "https://api.groq.com/openai/v1/chat/completions",
-                headers={"Authorization": f"Bearer {self.groq_key}"},
-                json={
-                    "model": os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile"),
-                    "messages": [{"role": "system", "content": system}, {"role": "user", "content": prompt}],
-                },
-                timeout=30,
-            )
-            response.raise_for_status()
-            return response.json()["choices"][0]["message"]["content"]
-        except Exception:
-            return ""
 
-    def generate(self, system: str, prompt: str) -> str:
-        if self.provider == "gemini":
-            answer = self._generate_gemini(system, prompt)
-            return answer or self._generate_groq(system, prompt)
-        if self.provider == "groq":
-            return self._generate_groq(system, prompt)
-        return ""
+def provider() -> ModelProvider:
+    return ModelProvider()
 

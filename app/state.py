@@ -12,6 +12,7 @@ class AgentState(TypedDict, total=False):
     draft_deliverable: str
     critique_feedback: str
     quality_score: int
+    second_review_verdict: str
     revision_count: int
     agent_logs: list[dict[str, Any]]
     final_output: str

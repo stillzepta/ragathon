@@ -8,7 +8,7 @@ from contextlib import closing
 from typing import Any
 
 from app.agents.analyst import analyst_node
-from app.agents.evaluator import evaluate_node
+from app.agents.evaluator import SECOND_REVIEW_THRESHOLD, evaluate_node
 from app.agents.planner import plan_node
 from app.agents.researcher import research_node
 from app.rag.retriever import HybridRetriever
@@ -23,7 +23,11 @@ def _revise_node(state: AgentState) -> AgentState:
 
 def _route(state: AgentState) -> str:
     can_improve = bool(state["citations"]) or state["revision_count"] == 0
-    should_revise = state["quality_score"] < 88 and state["revision_count"] < 2
+    needs_revision = (
+        state["quality_score"] < SECOND_REVIEW_THRESHOLD
+        or state.get("second_review_verdict") == "revise"
+    )
+    should_revise = needs_revision and state["revision_count"] < 2
     return "revision" if can_improve and should_revise else "done"
 
 
