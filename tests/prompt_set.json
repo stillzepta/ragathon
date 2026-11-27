@@ -1,0 +1,22 @@
+[
+  {
+    "name": "ai-accounting",
+    "prompt": "Should we invest in an AI accounting startup?",
+    "evidence": "The startup targets mid-market finance teams. Competitors include legacy accounting suites and newer automation vendors. Key diligence questions are retention, gross margin, acquisition cost, burn, runway, and compliance."
+  },
+  {
+    "name": "climate-software",
+    "prompt": "Evaluate a climate software company that helps factories reduce energy use.",
+    "evidence": "The product uses factory telemetry to identify energy savings. Alternatives include consultants and industrial monitoring platforms. Validate savings attribution, deployment time, contracts, gross margin, and customer payback."
+  },
+  {
+    "name": "healthcare-workflow",
+    "prompt": "Assess whether to invest in an AI workflow tool for outpatient clinics.",
+    "evidence": "The tool automates administrative workflows for outpatient clinics. Competitors include practice-management suites and specialized service vendors. Diligence should cover clinical safety boundaries, privacy, implementation effort, retention, pricing, and expansion."
+  },
+  {
+    "name": "developer-security",
+    "prompt": "Review a developer security platform for a possible seed investment.",
+    "evidence": "The platform scans source code and cloud configuration for security issues. Competitors include established application-security tools and open-source scanners. Validate false-positive rates, developer adoption, distribution, retention, gross margin, and platform dependency."
+  }
+]
