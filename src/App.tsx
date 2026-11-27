@@ -572,8 +572,21 @@ export default function App() {
     setAttachedFile(null);
   };
 
+  if (loginOpen) {
+    return (
+      <LoginModal
+        open={true}
+        onClose={() => setLoginOpen(false)}
+        onLogin={(loggedInUser) => {
+          setUser(loggedInUser);
+          localStorage.setItem('agentverse_user', JSON.stringify(loggedInUser));
+        }}
+      />
+    );
+  }
+
   return (
-    <div className="relative h-screen w-screen overflow-hidden kraft-bg text-[#111113] flex">
+    <div className="relative h-screen w-screen overflow-hidden kraft-bg text-[#111113] flex animate-fade-slide">
       <div className="relative flex-1 flex flex-col min-w-0">
         <div className="flex items-center justify-between gap-3 px-5 pt-3 text-xs text-indigo-950">
           <span>{API_URL ? 'Connected due diligence' : 'Studio simulation'}</span>
@@ -876,15 +889,7 @@ export default function App() {
         onLogout={() => {
           setUser(null);
           localStorage.removeItem('agentverse_user');
-        }}
-      />
-
-      <LoginModal
-        open={loginOpen}
-        onClose={() => setLoginOpen(false)}
-        onLogin={(loggedInUser) => {
-          setUser(loggedInUser);
-          localStorage.setItem('agentverse_user', JSON.stringify(loggedInUser));
+          setLoginOpen(true);
         }}
       />
     </div>

@@ -38,25 +38,19 @@ export function LoginModal({ open, onClose, onLogin }: LoginModalProps) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-backdrop-fade">
-      {/* Backdrop click to close */}
-      <div
-        onClick={onClose}
-        className="absolute inset-0 bg-[#1a1d3a]/25 backdrop-blur-lg"
-      />
-
+    <div className="min-h-screen w-screen kraft-bg flex items-center justify-center p-4 animate-backdrop-fade relative overflow-hidden">
       {/* Soft ambient indigo halo behind card */}
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute w-[460px] h-[460px] rounded-full opacity-55 blur-3xl animate-pulse"
+        className="pointer-events-none absolute w-[520px] h-[520px] rounded-full opacity-50 blur-3xl animate-pulse"
         style={{
           background:
-            'radial-gradient(circle, rgba(99, 102, 241, 0.38) 0%, rgba(129, 140, 248, 0.2) 55%, transparent 75%)',
+            'radial-gradient(circle, rgba(99, 102, 241, 0.35) 0%, rgba(129, 140, 248, 0.2) 55%, transparent 75%)',
         }}
       />
 
-      {/* Frosted Glass Login Card -> Solid Crisp White Card */}
-      <div className="relative w-full max-w-md bg-white rounded-[34px] border border-black/[0.07] shadow-[0_32px_80px_rgba(20,24,60,0.24)] overflow-hidden animate-modal-pop">
+      {/* Solid Crisp White Login Card */}
+      <div className="relative w-full max-w-md bg-white rounded-[34px] border border-black/[0.07] shadow-[0_32px_80px_rgba(20,24,60,0.2)] overflow-hidden animate-modal-pop">
         <div className="h-[1.5px] w-full indigo-top-glow" />
 
         <div className="p-7 sm:p-8 space-y-6">
