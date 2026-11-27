@@ -31,8 +31,7 @@ interface ShowcaseItem {
   windowTitle: string;
   promptPreview: string;
   subject: string;
-  body: string;
-  tones: string[];
+  suggestions: { label: string; prompt: string }[];
   preset: DemoPreset;
 }
 
@@ -44,9 +43,17 @@ const SHOWCASE_ITEMS: ShowcaseItem[] = [
       'Multi-turn conversations with Google sign-in and Supabase history—context stays synced across reloads.',
     windowTitle: 'Chat + Memory',
     promptPreview: 'Summarize our last diligence run...',
-    subject: 'Context Synced · 12-Turn Memory',
-    body: 'Signed in via Google OAuth. Your threads persist in Supabase with row-level security and carry the latest 12 messages into every reply.',
-    tones: ['Fast Chat', 'Saved Threads', 'Context'],
+    subject: 'Try asking Diablo',
+    suggestions: [
+      {
+        label: 'Summarize key risks from my previous due-diligence runs',
+        prompt: 'Summarize key risks from my previous due-diligence runs',
+      },
+      {
+        label: 'Compare burn rate and runway across two startup pitches',
+        prompt: 'Compare burn rate and runway across two startup pitches',
+      },
+    ],
     preset: DEMO_PRESETS[0],
   },
   {
@@ -56,9 +63,17 @@ const SHOWCASE_ITEMS: ShowcaseItem[] = [
       'Planner, Researcher, Analyst, and Evaluator run in sequence with live SSE progress updates.',
     windowTitle: '4-Agent Pipeline',
     promptPreview: 'Run due diligence on this seed deck...',
-    subject: 'Live SSE · 4 Stages Completed',
-    body: 'Planner → Researcher → Analyst → Evaluator streamed real-time stage updates and compiled a structured startup investment memo.',
-    tones: ['Planner', 'Researcher', 'Evaluator'],
+    subject: 'Run a 4-agent workflow',
+    suggestions: [
+      {
+        label: 'Run due diligence on a B2B AI SaaS seed startup',
+        prompt: 'Run a 4-agent due diligence analysis on a B2B AI SaaS seed startup with $40k MRR',
+      },
+      {
+        label: 'Evaluate unit economics, moat, and GTM risks for a fintech app',
+        prompt: 'Evaluate unit economics, competitive moat, and GTM risks for a consumer fintech app',
+      },
+    ],
     preset: DEMO_PRESETS[1],
   },
   {
@@ -68,9 +83,17 @@ const SHOWCASE_ITEMS: ShowcaseItem[] = [
       'Upload PDFs, CSVs, logs, or images. Agents retrieve cited excerpts and optional web search results.',
     windowTitle: 'RAG + Citations',
     promptPreview: 'Check burn rate in financials.csv...',
-    subject: '2 Cited Excerpts · Grounded',
-    body: 'Extracted chunks from your uploaded file alongside SBA guide playbooks and web search with inline source citations.',
-    tones: ['Citations', 'Uploads', 'Web Search'],
+    subject: 'Search files & live knowledge',
+    suggestions: [
+      {
+        label: 'Check SBA market benchmarks and compliance risks for a new SaaS',
+        prompt: 'Check SBA market benchmarks and compliance risks for a new B2B SaaS company',
+      },
+      {
+        label: 'Audit a pitch deck or financial CSV for hidden red flags',
+        prompt: 'What financial red flags should I audit first in a seed-stage startup pitch deck?',
+      },
+    ],
     preset: DEMO_PRESETS[2],
   },
   {
@@ -80,9 +103,17 @@ const SHOWCASE_ITEMS: ShowcaseItem[] = [
       'Evaluator scores Draft v1, refines Draft v2, records your sign-off, and exports PDF or Markdown.',
     windowTitle: 'Review & Export',
     promptPreview: 'Approve follow-up & export memo...',
-    subject: 'Draft v2 Verified · Ready to Export',
-    body: 'Critic refined the memo from v1 to v2. Approve or reject the follow-up decision with one click, then download as PDF or Markdown.',
-    tones: ['Approve', 'PDF Export', 'Markdown'],
+    subject: 'Self-correcting memos & sign-off',
+    suggestions: [
+      {
+        label: 'Draft an investor-ready diligence memo with Critic verification',
+        prompt: 'Draft an investor-ready startup due-diligence memo with key risks and follow-up actions',
+      },
+      {
+        label: 'List critical follow-up questions before a Series A term sheet',
+        prompt: 'List the top follow-up diligence questions to verify before signing a Series A term sheet',
+      },
+    ],
     preset: DEMO_PRESETS[0],
   },
 ];
@@ -967,17 +998,27 @@ export default function App() {
                         </div>
                       )}
 
-                      {/* Preview Output Box */}
+                      {/* Interactive Search & Feature Suggestions Box */}
                       <div
                         key={activeShowcase.num}
-                        className="rounded-2xl bg-[#F7F8FC] border border-indigo-100/80 p-5 min-h-[190px] space-y-2.5 animate-fade-slide"
+                        className="rounded-2xl bg-[#F7F8FC] border border-indigo-100/80 p-4 min-h-[190px] space-y-2.5 animate-fade-slide"
                       >
-                        <p className="text-sm font-medium text-[#111113]">
+                        <p className="text-xs font-semibold uppercase tracking-wider text-indigo-600/90 px-1">
                           {activeShowcase.subject}
                         </p>
-                        <p className="text-[13px] text-[#4A4A58] leading-relaxed">
-                          {activeShowcase.body}
-                        </p>
+                        <div className="space-y-2">
+                          {activeShowcase.suggestions.map((item) => (
+                            <button
+                              key={item.label}
+                              type="button"
+                              onClick={() => void sendMessage(undefined, item.prompt)}
+                              className="w-full text-left flex items-center justify-between gap-3 px-3.5 py-2.5 rounded-xl bg-white hover:bg-indigo-50/70 border border-indigo-100/80 hover:border-indigo-300 text-[13px] text-[#1E1E26] transition cursor-pointer group"
+                            >
+                              <span className="leading-snug">{item.label}</span>
+                              <ArrowUp className="w-3.5 h-3.5 shrink-0 rotate-45 text-indigo-500 opacity-60 group-hover:opacity-100 transition" />
+                            </button>
+                          ))}
+                        </div>
                       </div>
                     </div>
                   </div>
