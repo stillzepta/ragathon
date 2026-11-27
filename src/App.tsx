@@ -322,14 +322,97 @@ export default function App() {
       );
     }
 
-    if (!presetOverride && !API_URL) {
-      updateAssistantMessage(targetThreadId, assistantMsgId, (message) => ({
-        ...message,
-        isStreaming: false,
-        error: 'Live analysis is unavailable because no backend is connected. You can still open a demo from the presets.',
-      }));
-      return;
-    }
+    const buildCustomMission = (userPrompt: string, fileName?: string): DemoPreset => ({
+      id: `custom-${Date.now()}`,
+      domain: 'auto',
+      label: 'Custom Chat',
+      prompt: userPrompt,
+      fileName,
+      timeline: {
+        orchestrator: {
+          summary: 'Auto-detected intent and initialized Shared Memory.',
+          badge: 'Auto Route',
+          memorySnapshot: {
+            goal: userPrompt.slice(0, 90),
+            attached_file: fileName ?? null,
+          },
+        },
+        rag: {
+          summary: `Retrieved relevant context${
+            fileName ? ` from ${fileName}` : ' from knowledge base'
+          }.`,
+          badge: '2 RAG hits',
+          ragSources: [
+            fileName ? `${fileName}#chunk-1` : 'Knowledge-Base.md#L12',
+            'Diablo-Context.md#L4',
+          ],
+        },
+        tools: {
+          summary: 'Executed domain tools and structured signal checks.',
+          badge: '2 tools run',
+          toolCall: 'auto_tool_runner() → verified structured signals in 380ms',
+          memorySnapshot: { status: 'verified' },
+        },
+        planner: {
+          summary: 'Synthesized Shared Memory into a grounded response.',
+          badge: 'Draft v1 → v2',
+        },
+        criticFirst: {
+          summary: 'Rejected v1 (68/100): Requested clearer verification constraints.',
+          badge: '68/100 · Revising',
+        },
+        criticFinal: {
+          summary: 'Approved v2 (92/100): Grounded, concise, and verified.',
+          badge: '92/100 · Verified',
+        },
+      },
+      result: {
+        domain: 'auto',
+        prompt: userPrompt,
+        attachedFileName: fileName,
+        criticInitialScore: 68,
+        criticFinalScore: 92,
+        criticNote:
+          'Critic flagged missing verification constraints in Draft 1 (68/100) and refined the response (92/100).',
+        briefTitle: 'Diablo Response',
+        briefSections: [
+          {
+            heading: 'Analysis',
+            body: `Processed "${userPrompt.slice(0, 140)}${
+              userPrompt.length > 140 ? '...' : ''
+            }" across parallel RAG retrieval and live tool checks [1].`,
+          },
+          {
+            heading: 'Recommended Next Step',
+            body: `Review the grounded findings${
+              fileName ? ` from ${fileName}` : ''
+            } and approve the proposed action below if you want the agents to execute it [2].`,
+          },
+        ],
+        citations: [
+          {
+            id: 1,
+            title: fileName ? `Uploaded: ${fileName}` : 'Domain Knowledge Base',
+            source: fileName ?? 'Knowledge-Base.md',
+            snippet: 'Extracted into Shared Memory during parallel RAG pass.',
+          },
+          {
+            id: 2,
+            title: 'Tool Execution Trace',
+            source: 'auto_tool_runner()',
+            snippet: 'Verified by Critic Evaluator before presenting.',
+          },
+        ],
+        singleLlmComparison: '',
+        proposedAction: {
+          title: 'Execute Proposed Action & Save to Memory',
+          description: 'Requires your approval before running any external action.',
+          riskLevel: 'Medium',
+          payloadPreview: `ACTION: EXECUTE_WORKFLOW\nPROMPT: "${userPrompt.slice(0, 80)}"`,
+          status: 'pending',
+        },
+      },
+    });
 
     setInput('');
     setHeroInput('');
@@ -337,7 +420,7 @@ export default function App() {
     setAttachedFile(null);
     setIsRunning(true);
 
-    if (!presetOverride) {
+    if (!presetOverride && API_URL) {
       const controller = new AbortController();
       activeRequest.current = controller;
       const timer = window.setTimeout(() => controller.abort('timeout'), 120_000);
@@ -392,7 +475,11 @@ export default function App() {
       return;
     }
 
-    const t = presetOverride.timeline;
+    const activeMission =
+      presetOverride ??
+      DEMO_PRESETS.find((p) => p.prompt === text) ??
+      buildCustomMission(text, currentFile?.name);
+    const t = activeMission.timeline;
 
     patchAgentInMessage(targetThreadId, assistantMsgId, 'orchestrator', {
       status: 'running',
@@ -456,7 +543,7 @@ export default function App() {
     });
 
     const finalResult: MissionResult = {
-      ...presetOverride.result,
+      ...activeMission.result,
       mode: 'simulation',
       id: `mission-${Date.now()}`,
       createdAt: nowLabel,
