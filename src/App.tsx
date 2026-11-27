@@ -2,9 +2,8 @@ import { ArrowUp, Paperclip, X } from 'lucide-react';
 import { ChangeEvent, useEffect, useRef, useState } from 'react';
 import { ChatMessage } from './components/ChatMessage';
 import { ChatSidebar } from './components/ChatSidebar';
+import { DotFieldBg } from './components/DotFieldBg';
 import { TopBar } from './components/TopBar';
-import { SemanticBloom } from './shaders/semantic-bloom/SemanticBloom';
-import './shaders/threeui.css';
 import { DEMO_PRESETS } from './data/presets';
 import {
   AgentNode,
@@ -442,19 +441,11 @@ export default function App() {
         onCloseMobile={() => setSidebarOpen(false)}
       />
 
-      <div className="relative flex-1 flex flex-col min-w-0 pointer-events-none">
-        {/* SemanticBloom centered inside the chat area */}
-        <div className="absolute inset-0 z-0 pointer-events-auto">
-          <SemanticBloom
-            mode="dark"
-            text=""
-            size={1.0}
-            opacity={1.0}
-            className="w-full h-full"
-          />
-        </div>
+        <div className="relative flex-1 flex flex-col min-w-0 pointer-events-none">
+          {/* Smooth interactive dot-wave background */}
+          <DotFieldBg />
 
-        <TopBar
+          <TopBar
           sidebarOpen={sidebarOpen}
           onToggleSidebar={() => setSidebarOpen((v) => !v)}
           onNewChat={handleNewChat}
