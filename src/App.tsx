@@ -157,7 +157,7 @@ export default function App() {
   const [attachedFile, setAttachedFile] = useState<File | null>(null);
   const [isRunning, setIsRunning] = useState(false);
   const [apiToken, setApiToken] = useState('');
-  const [promptMode, setPromptMode] = useState<'chat' | 'diligence'>('chat');
+  const [promptMode] = useState<'chat' | 'diligence'>('chat');
   const activeRequest = useRef<AbortController | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -578,13 +578,7 @@ export default function App() {
       </button>
       <div className="relative flex-1 flex flex-col min-w-0">
         {API_URL && (
-          <div className="flex items-center justify-between gap-3 px-5 pt-3 text-xs text-indigo-950">
-            <select aria-label="Prompt mode" value={promptMode}
-              onChange={(event) => setPromptMode(event.target.value === 'diligence' ? 'diligence' : 'chat')}
-              className="rounded-full border border-black/10 bg-white/85 px-3 py-2">
-              <option value="chat">Chat</option>
-              <option value="diligence">Due diligence</option>
-            </select>
+          <div className="flex items-center justify-end gap-3 px-5 pt-3 text-xs text-indigo-950">
             <input type="password" aria-label="API access token" placeholder="API token (if required)"
               autoComplete="off" value={apiToken} onChange={(event) => setApiToken(event.target.value)}
               className="w-36 rounded-full border border-black/10 bg-white/85 px-3 py-2" />
