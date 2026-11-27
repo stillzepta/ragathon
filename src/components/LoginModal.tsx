@@ -55,8 +55,8 @@ export function LoginModal({ open, onClose, onLogin }: LoginModalProps) {
         }}
       />
 
-      {/* Frosted Glass Login Card */}
-      <div className="relative w-full max-w-md dia-glass-blend rounded-[34px] overflow-hidden animate-modal-pop">
+      {/* Frosted Glass Login Card -> Solid Crisp White Card */}
+      <div className="relative w-full max-w-md bg-white rounded-[34px] border border-black/[0.07] shadow-[0_32px_80px_rgba(20,24,60,0.24)] overflow-hidden animate-modal-pop">
         <div className="h-[1.5px] w-full indigo-top-glow" />
 
         <div className="p-7 sm:p-8 space-y-6">
