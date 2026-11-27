@@ -101,3 +101,33 @@
 .animate-fade-slide {
   animation: fade-slide 0.35s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
+
+@keyframes modal-pop {
+  0% {
+    opacity: 0;
+    transform: translateY(22px) scale(0.93);
+    filter: blur(10px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0);
+  }
+}
+
+@keyframes backdrop-fade {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+.animate-modal-pop {
+  animation: modal-pop 0.55s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.animate-backdrop-fade {
+  animation: backdrop-fade 0.4s ease-out both;
+}

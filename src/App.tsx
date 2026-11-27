@@ -122,13 +122,19 @@ const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 export default function App() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [loginOpen, setLoginOpen] = useState(false);
   const [user, setUser] = useState<AuthUser | null>(() => {
     try {
       const saved = localStorage.getItem('agentverse_user');
       return saved ? (JSON.parse(saved) as AuthUser) : null;
     } catch {
       return null;
+    }
+  });
+  const [loginOpen, setLoginOpen] = useState<boolean>(() => {
+    try {
+      return !localStorage.getItem('agentverse_user');
+    } catch {
+      return true;
     }
   });
   const [threads, setThreads] = useState<ChatThread[]>([]);

@@ -38,15 +38,25 @@ export function LoginModal({ open, onClose, onLogin }: LoginModalProps) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 kraft-bg/95 backdrop-blur-xl animate-fade-slide">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-backdrop-fade">
       {/* Backdrop click to close */}
       <div
         onClick={onClose}
-        className="absolute inset-0 bg-[#111428]/20 backdrop-blur-md"
+        className="absolute inset-0 bg-[#1a1d3a]/25 backdrop-blur-lg"
+      />
+
+      {/* Soft ambient indigo halo behind card */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute w-[460px] h-[460px] rounded-full opacity-55 blur-3xl animate-pulse"
+        style={{
+          background:
+            'radial-gradient(circle, rgba(99, 102, 241, 0.38) 0%, rgba(129, 140, 248, 0.2) 55%, transparent 75%)',
+        }}
       />
 
       {/* Frosted Glass Login Card */}
-      <div className="relative w-full max-w-md dia-glass-blend rounded-[34px] overflow-hidden">
+      <div className="relative w-full max-w-md dia-glass-blend rounded-[34px] overflow-hidden animate-modal-pop">
         <div className="h-[1.5px] w-full indigo-top-glow" />
 
         <div className="p-7 sm:p-8 space-y-6">
