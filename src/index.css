@@ -3,7 +3,7 @@
 @layer base {
   body {
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-    background-color: #F8F9FB;
+    background-color: #F6F8FB;
     color: #141413;
   }
 }
@@ -16,40 +16,25 @@
   font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
 }
 
-/* Clear Liquid-Glass Surface (Light OpenRouter / Dia) */
+/* Clear Liquid-Glass Surface */
 .dia-glass {
-  background: rgba(255, 255, 255, 0.68);
-  backdrop-filter: blur(24px) saturate(165%);
-  -webkit-backdrop-filter: blur(24px) saturate(165%);
-  border: 1px solid rgba(255, 255, 255, 0.88);
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(26px) saturate(170%);
+  -webkit-backdrop-filter: blur(26px) saturate(170%);
+  border: 1px solid rgba(255, 255, 255, 0.9);
   box-shadow:
-    0 12px 36px rgba(15, 23, 42, 0.055),
+    0 14px 40px rgba(15, 23, 42, 0.06),
     inset 0 1px 0 rgba(255, 255, 255, 0.95);
 }
 
 .dia-glass-subtle {
-  background: rgba(255, 255, 255, 0.52);
+  background: rgba(255, 255, 255, 0.56);
   backdrop-filter: blur(18px) saturate(150%);
   -webkit-backdrop-filter: blur(18px) saturate(150%);
-  border: 1px solid rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.82);
   box-shadow:
     0 6px 20px rgba(15, 23, 42, 0.035),
     inset 0 1px 0 rgba(255, 255, 255, 0.9);
-}
-
-/* OpenRouter-style animated routing pulse */
-@keyframes route-flow {
-  0% {
-    stroke-dashoffset: 240;
-  }
-  100% {
-    stroke-dashoffset: 0;
-  }
-}
-
-.animate-route-flow {
-  stroke-dasharray: 48 192;
-  animation: route-flow 3.2s linear infinite;
 }
 
 @keyframes float-gentle {
@@ -65,43 +50,48 @@
   animation: float-gentle 6s ease-in-out infinite;
 }
 
-@keyframes orb-breathe {
+/* Liquid Plasma Orb Animations */
+@keyframes plasma-morph {
   0%, 100% {
-    transform: scale(1);
-    box-shadow: 0 12px 32px rgba(99, 102, 241, 0.16), 0 4px 18px rgba(56, 189, 248, 0.14);
+    border-radius: 58% 42% 62% 38% / 44% 56% 44% 56%;
+    transform: rotate(0deg) scale(1);
   }
-  50% {
-    transform: scale(1.045);
-    box-shadow: 0 16px 42px rgba(99, 102, 241, 0.24), 0 6px 26px rgba(56, 189, 248, 0.22);
+  33% {
+    border-radius: 42% 58% 48% 52% / 58% 40% 60% 42%;
+    transform: rotate(120deg) scale(1.06);
   }
-}
-
-@keyframes orb-eclipse {
-  0%, 100% {
-    transform: translate(14%, -8%) scale(1);
-  }
-  50% {
-    transform: translate(-12%, 10%) scale(1.08);
+  66% {
+    border-radius: 52% 48% 38% 62% / 46% 62% 38% 54%;
+    transform: rotate(240deg) scale(0.97);
   }
 }
 
-@keyframes orb-core-shift {
-  0%, 100% {
-    transform: translate(-8%, 6%) scale(1);
+@keyframes spin-slow {
+  from {
+    transform: rotate(0deg);
   }
-  50% {
-    transform: translate(10%, -8%) scale(1.1);
+  to {
+    transform: rotate(360deg);
   }
 }
 
-.animate-orb {
-  animation: orb-breathe 3.4s ease-in-out infinite;
+@keyframes spin-reverse {
+  from {
+    transform: rotate(360deg);
+  }
+  to {
+    transform: rotate(0deg);
+  }
 }
 
-.animate-orb-eclipse {
-  animation: orb-eclipse 4.8s ease-in-out infinite;
+.animate-plasma {
+  animation: plasma-morph 5.5s ease-in-out infinite;
 }
 
-.animate-orb-core {
-  animation: orb-core-shift 3.8s ease-in-out infinite;
+.animate-spin-slow {
+  animation: spin-slow 9s linear infinite;
+}
+
+.animate-spin-reverse {
+  animation: spin-reverse 6.5s linear infinite;
 }
