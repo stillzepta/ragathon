@@ -9,7 +9,12 @@ description = "Parallel-friendly multi-agent RAG workflow engine"
 requires-python = ">=3.11"
 dependencies = [
   "fastapi>=0.115",
+  "google-genai>=1.0",
+  "langgraph>=0.2",
   "pydantic>=2.9",
+  "python-multipart>=0.0.9",
+  "ddgs>=9.0",
+  "tavily-python>=0.5",
   "uvicorn[standard]>=0.30",
 ]
 

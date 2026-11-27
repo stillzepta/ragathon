@@ -26,6 +26,15 @@ cp .env.example .env
 pytest
 ```
 
+Run the API and point the existing Vite dashboard at it:
+
+```bash
+uvicorn app.api.main:app --reload --port 8000
+VITE_API_URL=http://localhost:8000 npm run dev
+```
+
+`MODEL_PROVIDER=mock` runs offline with the local RAG corpus. Set `GEMINI_API_KEY` and `MODEL_PROVIDER=gemini` to enable Gemini generation. Set `TAVILY_API_KEY` to enable live web research; without credentials the search tool safely falls back to the seeded corpus. The workflow preserves structured state, citations, and the critic loop.
+
 ## Architecture
 
 See [ARCHITECTURE.md](ARCHITECTURE.md) for the system design and RAG pipeline.

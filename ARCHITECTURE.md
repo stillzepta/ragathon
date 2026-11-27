@@ -2,9 +2,9 @@
 
 ## Product concept
 
-Build a **goal-to-deliverable multi-agent workspace**: a user submits a complex goal, and a controller decomposes it into executable tasks, delegates each task to a specialist, stores evidence in a shared workspace, and runs an evaluator/revision loop before returning a finished deliverable.
+Build **AgentVerse**, a goal-to-deliverable multi-agent workspace for autonomous startup and market due diligence: a user submits a company or idea, and a controller decomposes it into research, analysis, and memo-writing tasks before an evaluator checks and revises the investment recommendation.
 
-The demo should use one concrete workflow—**research brief + recommendation report** is the safest choice—while keeping agents and tools configurable so the architecture visibly generalizes.
+The demo workflow is a **startup investment memo** covering competitors, market sizing, risks, financial assumptions, evidence, and recommended next steps.
 
 ## Architecture at a glance
 
@@ -242,7 +242,7 @@ The important architectural choice is the contracts and persisted state, not the
 
 ## MVP scope for the demo
 
-1. User enters a research/report goal and three quality criteria.
+1. User enters a startup/market due-diligence goal and three quality criteria.
 2. Planner creates four tasks.
 3. Researcher gathers 3–5 sources.
 4. Analyst produces a comparison table.

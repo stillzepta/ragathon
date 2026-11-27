@@ -25,3 +25,22 @@ class RetrievalContext(BaseModel):
     retrieved_chunks: List[RetrievedChunk] = Field(default_factory=list)
     claims: List[ClaimSupport] = Field(default_factory=list)
 
+
+class DueDiligenceRequest(BaseModel):
+    prompt: str
+    domain: str = "bizintel"
+    quality_criteria: List[str] = Field(
+        default_factory=lambda: [
+            "Use verifiable evidence and cite sources",
+            "Cover competitors, market, risks, and financial assumptions",
+            "Make uncertainty and recommended next steps explicit",
+        ]
+    )
+
+
+class EvaluationResult(BaseModel):
+    score: int = Field(ge=1, le=100)
+    passed: bool
+    feedback: str
+    criteria: dict[str, int] = Field(default_factory=dict)
+
