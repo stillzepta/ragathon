@@ -534,11 +534,11 @@ export default function App() {
               <div className="w-full grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-center">
                 {/* Left Editorial Column */}
                 <div className="lg:col-span-6 space-y-9">
-                  <h1 className="text-5xl sm:text-6xl font-normal tracking-[-0.03em] leading-[1.06] text-[#111113]">
+                  <h1 className="font-display text-5xl sm:text-6xl font-bold tracking-[-0.04em] leading-[1.03] text-[#111113]">
                     One workspace
                     <br />
                     for the work that{' '}
-                    <span className="font-serif-accent italic font-normal text-[1.08em]">
+                    <span className="font-serif-accent italic font-semibold text-[1.03em]">
                       slows
                     </span>{' '}
                     you down
