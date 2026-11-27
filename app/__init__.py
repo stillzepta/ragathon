@@ -1,0 +1,2 @@
+"""RAGathon application package."""
+

@@ -1,0 +1,16 @@
+# Replace placeholders with the team's GitHub usernames before enabling branch protection.
+
+* @person-5
+/app/orchestrator/ @person-1
+/app/storage/ @person-1
+/app/rag/ @person-2
+/app/agents/ @person-3
+/app/providers/ @person-3
+/app/api/ @person-4
+/app/ui/ @person-4
+/app/evaluation/ @person-5
+/tests/ @person-5
+/ARCHITECTURE.md @person-1 @person-2 @person-5
+/app/models.py @person-1 @person-2 @person-3 @person-4 @person-5
+/pyproject.toml @person-5
+
