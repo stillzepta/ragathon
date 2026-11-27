@@ -17,7 +17,6 @@ import {
   ProposedAction,
 } from './types';
 
-const DILIGENCE_EXAMPLE = 'Assess the market for a fictional accounting startup';
 const CONNECTED_AGENTS: AgentNode[] = [
   { id: 'orchestrator', name: 'Planner', role: 'Planning', status: 'idle', summary: 'Queued' },
   { id: 'rag', name: 'Researcher', role: 'Evidence retrieval', status: 'idle', summary: 'Queued' },
@@ -592,18 +591,16 @@ export default function App() {
                 {/* Left Editorial Column */}
                 <div className="lg:col-span-6 space-y-9">
                   <h1 className="font-display text-5xl sm:text-6xl font-bold tracking-[-0.04em] leading-[1.03] text-[#111113]">
-                    {API_URL ? <>Startup<br />due diligence</> : <>
-                      One workspace<br />for the work that{' '}
-                      <span className="font-serif-accent italic font-semibold text-[1.03em]">slows</span>{' '}
-                      you down
-                    </>}
+                    One workspace
+                    <br />
+                    for the work that{' '}
+                    <span className="font-serif-accent italic font-semibold text-[1.03em]">
+                      slows
+                    </span>{' '}
+                    you down
                   </h1>
 
-                  {API_URL ? (
-                    <p className="max-w-md text-sm leading-relaxed text-[#24263b]">
-                      Ask about a startup, review the sources and draft changes, and save your follow-up decision.
-                    </p>
-                  ) : <div className="space-y-5">
+                  <div className="space-y-5">
                     {SHOWCASE_ITEMS.map((item, idx) => {
                       const isActive = idx === activeShowcaseIdx;
                       return (
@@ -644,7 +641,7 @@ export default function App() {
                         </button>
                       );
                     })}
-                  </div>}
+                  </div>
                 </div>
 
                 {/* Right Interactive Window Preview */}
@@ -665,7 +662,7 @@ export default function App() {
                         <span className="w-3 h-3 rounded-full bg-black/15" />
                       </div>
                       <span className="text-xs sm:text-[13px] text-[#6E6E77]">
-                        {API_URL ? 'New due-diligence run' : activeShowcase.windowTitle}
+                        {activeShowcase.windowTitle}
                       </span>
                     </div>
 
@@ -692,15 +689,13 @@ export default function App() {
                               e.preventDefault();
                               if (heroInput.trim()) {
                                 void sendMessage(undefined, heroInput);
-                              } else if (API_URL) {
-                                void sendMessage(undefined, DILIGENCE_EXAMPLE, true);
                               } else {
                                 void sendMessage(activeShowcase.preset);
                               }
                             }
                           }}
                           aria-label="Message"
-                          placeholder={API_URL ? (promptMode === 'chat' ? 'Ask AgentVerse anything…' : DILIGENCE_EXAMPLE) : activeShowcase.promptPreview}
+                          placeholder={`Ask anything — ${activeShowcase.promptPreview}`}
                           className="flex-1 min-w-0 bg-transparent text-sm text-[#111113] placeholder:text-[#6E6E77] focus:outline-none"
                         />
                         <button
@@ -708,8 +703,6 @@ export default function App() {
                           onClick={() => {
                             if (heroInput.trim()) {
                               void sendMessage(undefined, heroInput);
-                            } else if (API_URL) {
-                              void sendMessage(undefined, DILIGENCE_EXAMPLE, true);
                             } else {
                               void sendMessage(activeShowcase.preset);
                             }
@@ -721,7 +714,6 @@ export default function App() {
                         </button>
                       </div>
 
-                      {!API_URL && <>
                       {/* Preview Output Box */}
                       <div
                         key={activeShowcase.num}
@@ -752,7 +744,6 @@ export default function App() {
                           </button>
                         ))}
                       </div>
-                      </>}
                     </div>
                   </div>
 
