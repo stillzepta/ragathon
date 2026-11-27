@@ -261,8 +261,11 @@ Prompt = Annotated[str, Form(min_length=1, max_length=4000)]
 Attachment = Annotated[UploadFile | None, File()]
 
 
-@app.post("/api/chat", dependencies=[Auth])
+@app.post("/api/chat")
 async def chat(request: Request, prompt: Prompt) -> dict[str, str]:
+    origin = request.headers.get("origin")
+    if origin and origin not in ALLOWED_ORIGINS:
+        raise HTTPException(403, "This dashboard origin is not allowed.")
     prompt = prompt.strip()
     if not prompt:
         raise HTTPException(422, "Enter a message.")

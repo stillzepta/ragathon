@@ -130,7 +130,7 @@ def test_chat_uses_one_model_with_fallback_and_no_workflow(client, monkeypatch):
     monkeypatch.setattr(ModelProvider, "_generate_groq", groq)
     monkeypatch.setattr("app.api.main.run_due_diligence", unexpected_workflow)
 
-    assert client.post("/api/chat", data={"prompt": " hello "}).json() == {
+    assert client.post("/api/chat", data={"prompt": " hello "}, headers={"Authorization": ""}).json() == {
         "reply": "Hello! How can I help?"
     }
     assert client.post("/api/chat", data={"prompt": "What is RAG?"}).json() == {
@@ -139,10 +139,13 @@ def test_chat_uses_one_model_with_fallback_and_no_workflow(client, monkeypatch):
     assert calls == [("gemini", "hello"), ("groq", "hello"), ("gemini", "What is RAG?")]
 
 
-def test_chat_validates_access_and_reports_model_unavailability(client):
+def test_public_chat_validates_origin_and_reports_model_unavailability(client):
     assert client.post(
         "/api/chat", data={"prompt": "hello"}, headers={"Authorization": ""}
-    ).status_code == 401
+    ).status_code == 503
+    assert client.post(
+        "/api/chat", data={"prompt": "hello"}, headers={"Origin": "https://untrusted.example"}
+    ).status_code == 403
     for prompt in (" ", "a" * 4001):
         assert client.post("/api/chat", data={"prompt": prompt}).status_code == 422
     assert client.post("/api/chat", data={"prompt": "hello"}).status_code == 503

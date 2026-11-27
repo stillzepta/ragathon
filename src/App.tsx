@@ -543,7 +543,7 @@ export default function App() {
 
   return (
     <div className="relative h-screen w-screen overflow-hidden kraft-bg text-[#111113] flex">
-      {API_URL && (
+      {API_URL && promptMode === 'diligence' && (
         <label className="fixed right-24 top-5 z-40 flex items-center gap-2 rounded-full bg-white/90 px-3 py-2 text-xs shadow-sm">
           API access token
           <input ref={tokenInputRef} type="password" aria-label="API access token" autoComplete="off"
