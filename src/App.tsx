@@ -1,5 +1,5 @@
 import { ArrowUp, Paperclip, X } from 'lucide-react';
-import { ChangeEvent, useEffect, useRef, useState } from 'react';
+import { ChangeEvent, ClipboardEvent, useEffect, useRef, useState } from 'react';
 import { ArtifactPanel } from './components/ArtifactPanel';
 import { ChatMessage } from './components/ChatMessage';
 import { ChatSidebar } from './components/ChatSidebar';
@@ -272,8 +272,9 @@ export default function App() {
   };
 
   const sendMessage = async (presetOverride?: DemoPreset, customText?: string, forceDiligence = false) => {
-    const text = (presetOverride ? presetOverride.prompt : customText ?? input).trim();
-    if (!text || isRunning) return;
+    const rawText = (presetOverride ? presetOverride.prompt : customText ?? input).trim();
+    if ((!rawText && !attachedFile) || isRunning) return;
+    const text = rawText || (attachedFile?.type.startsWith('image/') ? 'Analyze this image' : `Analyze ${attachedFile?.name ?? 'file'}`);
 
     const isChat = !presetOverride && !attachedFile && !forceDiligence && promptMode === 'chat';
     const token = ++runTokenRef.current;
@@ -610,8 +611,40 @@ export default function App() {
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   };
 
+  const [attachedPreviewUrl, setAttachedPreviewUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!attachedFile || !attachedFile.type.startsWith('image/')) {
+      setAttachedPreviewUrl(null);
+      return;
+    }
+    const url = URL.createObjectURL(attachedFile);
+    setAttachedPreviewUrl(url);
+    return () => URL.revokeObjectURL(url);
+  }, [attachedFile]);
+
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
     setAttachedFile(e.target.files?.[0] ?? null);
+  };
+
+  const handlePaste = (e: ClipboardEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const items = e.clipboardData?.items;
+    if (!items) return;
+    for (const item of Array.from(items)) {
+      if (item.type.startsWith('image/')) {
+        const file = item.getAsFile();
+        if (file) {
+          e.preventDefault();
+          const ext = file.type.split('/')[1] || 'png';
+          const namedFile =
+            file.name && file.name !== 'image.png'
+              ? file
+              : new File([file], `pasted-image-${Date.now()}.${ext}`, { type: file.type });
+          setAttachedFile(namedFile);
+          return;
+        }
+      }
+    }
   };
 
   const handleNewChat = () => {
@@ -773,10 +806,11 @@ export default function App() {
                           type="text"
                           value={heroInput}
                           onChange={(e) => setHeroInput(e.target.value)}
+                          onPaste={handlePaste}
                           onKeyDown={(e) => {
                             if (e.key === 'Enter') {
                               e.preventDefault();
-                              if (heroInput.trim()) {
+                              if (heroInput.trim() || attachedFile) {
                                 void sendMessage(undefined, heroInput);
                               } else {
                                 void sendMessage(activeShowcase.preset);
@@ -803,6 +837,30 @@ export default function App() {
                           <ArrowUp className="w-4 h-4 stroke-[2.4]" />
                         </button>
                       </div>
+
+                      {attachedFile && (
+                        <div className="flex items-center">
+                          <span className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full text-xs bg-indigo-50 text-indigo-900 border border-indigo-200">
+                            {attachedPreviewUrl ? (
+                              <img
+                                src={attachedPreviewUrl}
+                                alt={attachedFile.name}
+                                className="w-5 h-5 rounded object-cover shrink-0"
+                              />
+                            ) : (
+                              <Paperclip className="w-3 h-3" />
+                            )}
+                            <span className="truncate max-w-[220px]">{attachedFile.name}</span>
+                            <button
+                              type="button"
+                              onClick={() => setAttachedFile(null)}
+                              className="cursor-pointer"
+                            >
+                              <X className="w-3 h-3" />
+                            </button>
+                          </span>
+                        </div>
+                      )}
 
                       {/* Preview Output Box */}
                       <div
@@ -885,8 +943,16 @@ export default function App() {
                   >
                     {attachedFile && (
                       <div className="mb-2 px-2">
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs bg-indigo-50 text-indigo-900 border border-indigo-200">
-                          <Paperclip className="w-3 h-3" />
+                        <span className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full text-xs bg-indigo-50 text-indigo-900 border border-indigo-200">
+                          {attachedPreviewUrl ? (
+                            <img
+                              src={attachedPreviewUrl}
+                              alt={attachedFile.name}
+                              className="w-5 h-5 rounded object-cover shrink-0"
+                            />
+                          ) : (
+                            <Paperclip className="w-3 h-3" />
+                          )}
                           <span className="truncate max-w-[200px]">{attachedFile.name}</span>
                           <button
                             type="button"
@@ -903,14 +969,14 @@ export default function App() {
                       <input
                         ref={fileInputRef}
                         type="file"
-                        accept=".pdf,.txt,.md,.csv,.log,.json,.eml"
+                        accept="image/*,.png,.jpg,.jpeg,.webp,.gif,.pdf,.txt,.md,.csv,.log,.json,.eml"
                         onChange={handleFileChange}
                         className="hidden"
                       />
                       <button
                         type="button"
                         onClick={() => fileInputRef.current?.click()}
-                        title="Attach PDF, Log, or CSV"
+                        title="Attach image, PDF, Log, or CSV"
                         className="p-2 rounded-full hover:bg-black/[0.05] text-[#555562] hover:text-[#111113] transition cursor-pointer shrink-0"
                       >
                         <Paperclip className="w-4 h-4" />
@@ -920,6 +986,7 @@ export default function App() {
                         ref={chatInputRef}
                         value={input}
                         onChange={(e) => setInput(e.target.value)}
+                        onPaste={handlePaste}
                         onKeyDown={(e) => {
                           if (e.key === 'Enter' && !e.shiftKey) {
                             e.preventDefault();
@@ -933,7 +1000,7 @@ export default function App() {
 
                       <button
                         type="button"
-                        disabled={!input.trim() || isRunning}
+                        disabled={(!input.trim() && !attachedFile) || isRunning}
                         onClick={() => void sendMessage()}
                         aria-label="Send message"
                         className="w-8 h-8 rounded-full bg-[#111113] hover:bg-[#2A2A32] text-white disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center transition cursor-pointer shrink-0"
