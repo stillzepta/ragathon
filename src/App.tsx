@@ -552,10 +552,10 @@ export default function App() {
         onClick={handleNewChat}
         title="Diablo Home"
         style={{ transformOrigin: 'center center' }}
-        className={`fixed z-50 -translate-x-1/2 -translate-y-1/2 transition-all duration-[850ms] ease-[cubic-bezier(0.34,1.45,0.64,1)] cursor-pointer rounded-full ${
+        className={`fixed z-50 -translate-x-1/2 -translate-y-1/2 transition-all duration-[850ms] ease-[cubic-bezier(0.34,1.45,0.64,1)] cursor-pointer ${
           introDocked
-            ? 'top-7 left-16 sm:left-20 scale-[0.3] px-7 py-2.5 bg-white/85 backdrop-blur-2xl border border-white shadow-[0_16px_40px_rgba(79,86,184,0.22),inset_0_2px_6px_rgba(255,255,255,1)]'
-            : 'top-[38%] left-1/2 scale-100 px-8 py-3 bg-white/0 border border-transparent'
+            ? 'top-7 left-14 sm:left-16 scale-[0.3]'
+            : 'top-[38%] left-1/2 scale-100'
         }`}
       >
         <SplitText
