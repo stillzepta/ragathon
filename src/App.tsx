@@ -694,25 +694,66 @@ export default function App() {
     setAttachedFile(e.target.files?.[0] ?? null);
   };
 
-  const handlePaste = (e: ClipboardEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const items = e.clipboardData?.items;
-    if (!items) return;
-    for (const item of Array.from(items)) {
-      if (item.type.startsWith('image/')) {
-        const file = item.getAsFile();
-        if (file) {
-          e.preventDefault();
-          const ext = file.type.split('/')[1] || 'png';
-          const namedFile =
-            file.name && file.name !== 'image.png'
-              ? file
-              : new File([file], `pasted-image-${Date.now()}.${ext}`, { type: file.type });
-          setAttachedFile(namedFile);
-          return;
+  const extractImageFromClipboard = (clipboardData: DataTransfer | null): File | null => {
+    if (!clipboardData) return null;
+
+    if (clipboardData.files && clipboardData.files.length > 0) {
+      for (const file of Array.from(clipboardData.files)) {
+        if (
+          file.type.startsWith('image/') ||
+          /\.(png|jpe?g|webp|gif|bmp|svg|heic)$/i.test(file.name)
+        ) {
+          const ext = (file.type.split('/')[1] || file.name.split('.').pop() || 'png').replace(/[^a-z0-9]/gi, '');
+          return file.name && file.name !== 'image.png'
+            ? file
+            : new File([file], `pasted-image-${Date.now()}.${ext}`, { type: file.type || 'image/png' });
         }
       }
     }
+
+    if (clipboardData.items) {
+      for (const item of Array.from(clipboardData.items)) {
+        if (item.kind === 'file' || item.type.startsWith('image/')) {
+          const file = item.getAsFile();
+          if (file && (file.type.startsWith('image/') || item.type.startsWith('image/'))) {
+            const mime = file.type || item.type || 'image/png';
+            const ext = mime.split('/')[1] || 'png';
+            return file.name && file.name !== 'image.png'
+              ? file
+              : new File([file], `pasted-image-${Date.now()}.${ext}`, { type: mime });
+          }
+        }
+      }
+    }
+
+    return null;
   };
+
+  const handlePaste = (e: ClipboardEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const imageFile = extractImageFromClipboard(e.clipboardData);
+    if (imageFile) {
+      e.preventDefault();
+      e.stopPropagation();
+      setAttachedFile(imageFile);
+    }
+  };
+
+  useEffect(() => {
+    const onWindowPaste = (e: globalThis.ClipboardEvent) => {
+      const imageFile = extractImageFromClipboard(e.clipboardData);
+      if (imageFile) {
+        e.preventDefault();
+        setAttachedFile(imageFile);
+        if (activeThreadId) {
+          chatInputRef.current?.focus();
+        } else {
+          heroInputRef.current?.focus();
+        }
+      }
+    };
+    window.addEventListener('paste', onWindowPaste);
+    return () => window.removeEventListener('paste', onWindowPaste);
+  }, [activeThreadId]);
 
   const handleNewChat = () => {
     runTokenRef.current++;
