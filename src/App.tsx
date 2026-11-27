@@ -33,7 +33,7 @@ const SHOWCASE_ITEMS: ShowcaseItem[] = [
     description:
       'Ask anything once. Five specialized agents split the work in parallel for fast, verified answers.',
     windowTitle: 'Orchestrator',
-    promptPreview: 'Audit this internship offer link before I reply',
+    promptPreview: 'Audit this internship link...',
     subject: 'Parallel Answer · 1.2s (96/100 Confidence)',
     body: 'Domain g00gle-careers-verify.xyz was registered 2 days ago using zero-substitution typosquatting and lacks EV TLS. Quarantine recommended.',
     tones: ['Fast Brief', 'Forensics', 'Action'],
@@ -45,7 +45,7 @@ const SHOWCASE_ITEMS: ShowcaseItem[] = [
     description:
       'Drop any PDF, log, or CSV. Agents retrieve exact citations and run real-time checks.',
     windowTitle: 'RAG + Tools',
-    promptPreview: 'Find why checkout-api is throwing 502 after v2.14',
+    promptPreview: 'Why is checkout-api throwing 502?',
     subject: 'Root Cause: DB Pool Exhaustion (v2.14)',
     body: 'DB_POOL_SIZE jumped 10 → 50 across 8 pods (400 > max 100). Roll back deployment pods gracefully instead of restarting primary RDS.',
     tones: ['Root Cause', 'Citations', 'Rollback'],
@@ -57,7 +57,7 @@ const SHOWCASE_ITEMS: ShowcaseItem[] = [
     description:
       'A Critic agent scores every draft and fixes missing details automatically in the background.',
     windowTitle: 'Critic Gate',
-    promptPreview: 'Compare my resume against the Backend AI Intern JD',
+    promptPreview: 'Match my resume to this JD...',
     subject: 'Critic Refined: 69 → 91/100 Verified',
     body: 'Strong core in Python, FastAPI & Gemini API. Added Redis caching & Docker sprint plan to close the remaining 22% gap before applying.',
     tones: ['Roadmap', 'Skill Gaps', 'Outreach'],
@@ -69,7 +69,7 @@ const SHOWCASE_ITEMS: ShowcaseItem[] = [
     description:
       'Nothing sends, deletes, or executes without your one-click sign-off.',
     windowTitle: 'Action Guard',
-    promptPreview: 'Draft and queue the security alert for review',
+    promptPreview: 'Draft & queue security alert...',
     subject: 'Ready to Execute · Waiting for Approval',
     body: 'Prepared quarantine rule and #campus-security advisory. Review, edit inline, or approve with one click when ready.',
     tones: ['Approve', 'Edit', 'Reject'],
@@ -630,8 +630,8 @@ export default function App() {
                               }
                             }
                           }}
-                          placeholder={`Ask anything — e.g. "${activeShowcase.promptPreview}"`}
-                          className="flex-1 bg-transparent text-sm text-[#111113] placeholder:text-[#7A7A8C] focus:outline-none"
+                          placeholder={`Ask anything — ${activeShowcase.promptPreview}`}
+                          className="flex-1 min-w-0 bg-transparent text-sm text-[#111113] placeholder:text-[#7A7A8C] focus:outline-none"
                         />
                         <button
                           type="button"
