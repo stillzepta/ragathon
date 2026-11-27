@@ -56,7 +56,7 @@ export function ChatSidebar({
             onClick={onCloseDrawer}
             className="fixed inset-0 z-30 bg-black/10 backdrop-blur-[1px] md:hidden"
           />
-          <div className="fixed md:static inset-y-0 right-[62px] z-40 w-64 bg-white/80 backdrop-blur-2xl border-l border-black/[0.06] flex flex-col animate-fade-slide">
+          <div className="fixed md:static inset-y-3 right-[72px] md:my-3 md:mr-2 z-40 w-64 rounded-[28px] bg-white/72 backdrop-blur-2xl border border-white/85 shadow-[0_24px_60px_rgba(30,34,90,0.16)] flex flex-col overflow-hidden animate-fade-slide">
             <div className="p-3.5 flex items-center justify-between border-b border-black/[0.05]">
               <span className="text-xs font-semibold text-[#111113]">
                 {activeDrawerTab === 'history' ? 'Recent Chats' : 'Quick Launch'}
@@ -141,16 +141,16 @@ export function ChatSidebar({
         </>
       )}
 
-      {/* Gemini-Style Slim Right Icon Rail */}
-      <aside className="relative z-40 w-[62px] shrink-0 bg-white/75 backdrop-blur-2xl border-l border-black/[0.06] flex flex-col items-center justify-between py-4">
+      {/* Floating Clear-Glass Icon Rail on Right */}
+      <aside className="relative z-40 my-3 mr-3 w-[56px] shrink-0 rounded-full bg-white/38 backdrop-blur-2xl border border-white/60 shadow-[0_16px_40px_rgba(30,34,90,0.12)] flex flex-col items-center justify-between py-3.5">
         {/* Top Icons */}
-        <div className="flex flex-col items-center gap-3">
+        <div className="flex flex-col items-center gap-2.5">
           {/* Glowing Brand Sparkle Ring */}
           <button
             type="button"
             onClick={onNewChat}
             title="AgentVerse Home"
-            className="w-10 h-10 rounded-full bg-white border border-indigo-200/80 shadow-[0_4px_16px_rgba(79,86,184,0.18)] flex items-center justify-center hover:scale-105 transition cursor-pointer"
+            className="w-9 h-9 rounded-full bg-white/85 border border-white shadow-[0_4px_14px_rgba(79,86,184,0.16)] flex items-center justify-center hover:scale-105 transition cursor-pointer"
           >
             <Sparkles className="w-4 h-4 text-indigo-600" />
           </button>
@@ -160,7 +160,7 @@ export function ChatSidebar({
             type="button"
             onClick={onNewChat}
             title="New chat"
-            className="w-10 h-10 rounded-full bg-[#F2F3FA] hover:bg-indigo-100/80 text-[#111113] flex items-center justify-center transition cursor-pointer"
+            className="w-9 h-9 rounded-full bg-white/60 hover:bg-white text-[#111113] flex items-center justify-center transition cursor-pointer"
           >
             <SquarePen className="w-4 h-4" />
           </button>
@@ -170,7 +170,7 @@ export function ChatSidebar({
             type="button"
             onClick={() => openTab('history')}
             title="Search chats"
-            className="w-9 h-9 rounded-full hover:bg-black/[0.05] text-[#4A4A58] hover:text-[#111113] flex items-center justify-center transition cursor-pointer"
+            className="w-9 h-9 rounded-full hover:bg-white/60 text-[#22243a] hover:text-[#111113] flex items-center justify-center transition cursor-pointer"
           >
             <Search className="w-4 h-4" />
           </button>
@@ -180,7 +180,7 @@ export function ChatSidebar({
             type="button"
             onClick={() => openTab('presets')}
             title="Quick Scenarios"
-            className="w-9 h-9 rounded-full hover:bg-black/[0.05] text-[#4A4A58] hover:text-[#111113] flex items-center justify-center transition cursor-pointer"
+            className="w-9 h-9 rounded-full hover:bg-white/60 text-[#22243a] hover:text-[#111113] flex items-center justify-center transition cursor-pointer"
           >
             <LayoutGrid className="w-4 h-4" />
           </button>
@@ -190,7 +190,7 @@ export function ChatSidebar({
             type="button"
             onClick={() => onSelectPreset(DEMO_PRESETS[0])}
             title="Security Audit"
-            className="w-9 h-9 rounded-full hover:bg-black/[0.05] text-[#4A4A58] hover:text-[#111113] flex items-center justify-center transition cursor-pointer"
+            className="w-9 h-9 rounded-full hover:bg-white/60 text-[#22243a] hover:text-[#111113] flex items-center justify-center transition cursor-pointer"
           >
             <Shield className="w-4 h-4" />
           </button>
@@ -203,7 +203,7 @@ export function ChatSidebar({
             className={`w-9 h-9 rounded-full flex items-center justify-center transition cursor-pointer ${
               open && activeDrawerTab === 'history'
                 ? 'bg-[#111113] text-white'
-                : 'hover:bg-black/[0.05] text-[#4A4A58] hover:text-[#111113]'
+                : 'hover:bg-white/60 text-[#22243a] hover:text-[#111113]'
             }`}
           >
             <Clock className="w-4 h-4" />
@@ -214,30 +214,21 @@ export function ChatSidebar({
             type="button"
             onClick={() => onSelectPreset(DEMO_PRESETS[2])}
             title="Career & Campus"
-            className="w-9 h-9 rounded-full hover:bg-black/[0.05] text-[#4A4A58] hover:text-[#111113] flex items-center justify-center transition cursor-pointer"
+            className="w-9 h-9 rounded-full hover:bg-white/60 text-[#22243a] hover:text-[#111113] flex items-center justify-center transition cursor-pointer"
           >
             <GraduationCap className="w-4 h-4" />
           </button>
         </div>
 
-        {/* Bottom Settings & Avatar */}
-        <div className="flex flex-col items-center gap-3">
+        {/* Bottom Settings */}
+        <div className="flex flex-col items-center">
           <button
             type="button"
             onClick={() => openTab('presets')}
             title="Workspace Settings"
-            className="w-9 h-9 rounded-full hover:bg-black/[0.05] text-[#4A4A58] hover:text-[#111113] flex items-center justify-center transition cursor-pointer"
+            className="w-9 h-9 rounded-full hover:bg-white/70 text-[#111113]/80 hover:text-[#111113] flex items-center justify-center transition cursor-pointer"
           >
             <Settings className="w-4 h-4" />
-          </button>
-
-          <button
-            type="button"
-            onClick={onNewChat}
-            title="Profile"
-            className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 text-white text-xs font-semibold flex items-center justify-center shadow-sm cursor-pointer"
-          >
-            D
           </button>
         </div>
       </aside>
