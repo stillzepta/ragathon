@@ -604,14 +604,18 @@ export default function App() {
 
                     {/* Window Body */}
                     <div className="p-6 sm:p-7 space-y-5">
-                      {/* Prompt Input Bar inside Card */}
+                      {/* Interactive Prompt Input Bar inside Card */}
                       <div
-                        className={`flex items-center gap-2 rounded-full pl-5 pr-2 py-2 transition-all duration-300 ease-out focus-within:bg-white focus-within:scale-[1.03] focus-within:-translate-y-0.5 focus-within:border-indigo-200/90 focus-within:shadow-[0_18px_40px_rgba(38,43,102,0.18),0_4px_12px_rgba(79,86,184,0.12)] ${
+                        className={`flex items-center gap-2.5 rounded-full bg-white pl-4 pr-2 py-2.5 border transition-all duration-300 ease-out cursor-text focus-within:scale-[1.03] focus-within:-translate-y-0.5 focus-within:border-indigo-500 focus-within:ring-4 focus-within:ring-indigo-500/15 focus-within:shadow-[0_18px_40px_rgba(38,43,102,0.18),0_4px_12px_rgba(79,86,184,0.15)] ${
                           heroInput.trim()
-                            ? 'bg-white scale-[1.03] -translate-y-0.5 border border-indigo-200/90 shadow-[0_18px_40px_rgba(38,43,102,0.18),0_4px_12px_rgba(79,86,184,0.12)]'
-                            : 'bg-[#F5F6FA] border border-black/[0.07]'
+                            ? 'scale-[1.03] -translate-y-0.5 border-indigo-500 ring-4 ring-indigo-500/15 shadow-[0_18px_40px_rgba(38,43,102,0.18),0_4px_12px_rgba(79,86,184,0.15)]'
+                            : 'border-indigo-200/90 shadow-[0_6px_18px_rgba(79,86,184,0.09)] hover:border-indigo-300'
                         }`}
                       >
+                        <span
+                          aria-hidden="true"
+                          className="w-0.5 h-4 rounded-full bg-indigo-500 animate-pulse shrink-0"
+                        />
                         <input
                           type="text"
                           value={heroInput}
@@ -626,8 +630,8 @@ export default function App() {
                               }
                             }
                           }}
-                          placeholder={activeShowcase.promptPreview}
-                          className="flex-1 bg-transparent text-sm text-[#111113] placeholder:text-[#6E6E77] focus:outline-none"
+                          placeholder={`Ask anything — e.g. "${activeShowcase.promptPreview}"`}
+                          className="flex-1 bg-transparent text-sm text-[#111113] placeholder:text-[#7A7A8C] focus:outline-none"
                         />
                         <button
                           type="button"
@@ -639,7 +643,7 @@ export default function App() {
                             }
                           }}
                           aria-label="Run prompt"
-                          className="w-8 h-8 rounded-full bg-[#111113] hover:bg-[#2A2A32] text-white flex items-center justify-center transition cursor-pointer shrink-0"
+                          className="w-8 h-8 rounded-full bg-[#111113] hover:bg-indigo-600 text-white flex items-center justify-center transition cursor-pointer shrink-0 shadow-sm"
                         >
                           <ArrowUp className="w-4 h-4 stroke-[2.4]" />
                         </button>
