@@ -436,7 +436,7 @@ export default function App() {
       <div className="fixed inset-0 z-0">
         <SemanticBloom
           mode="dark"
-          text="Codex"
+          text=""
           size={1.0}
           opacity={1.0}
           className="w-full h-full"

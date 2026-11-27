@@ -73,8 +73,10 @@ html, body { background: ${surface}; }
   window.__SEMANTIC_BLOOM_FRAME_PENDING = false;
 
   function setText(value) {
-    var next = typeof value === 'string' && value.trim() ? value.slice(0, 72) : 'Codex';
+    var trimmed = typeof value === 'string' ? value.trim() : '';
+    var next = trimmed ? trimmed.slice(0, 72) : '';
     editor.textContent = next;
+    editor.style.opacity = next ? '1' : '0';
     editor.dataset.processed = 'false';
     editor.setAttribute('contenteditable', 'false');
     scanText();
@@ -130,7 +132,7 @@ export function SemanticBloom({
     iframeRef.current?.contentWindow?.postMessage({
       type: "semantic-bloom-controls",
       controls: {
-        text: text.trim() || SEMANTIC_BLOOM_DEFAULTS.text,
+        text: text.trim(),
         size: clamp(size, 0.55, 1.6),
         paused,
       },
