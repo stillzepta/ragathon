@@ -14,6 +14,69 @@ import {
 
 const API_URL = import.meta.env.VITE_API_URL as string | undefined;
 
+interface ShowcaseItem {
+  num: string;
+  title: string;
+  description: string;
+  windowTitle: string;
+  promptPreview: string;
+  subject: string;
+  body: string;
+  tones: string[];
+  preset: DemoPreset;
+}
+
+const SHOWCASE_ITEMS: ShowcaseItem[] = [
+  {
+    num: '1',
+    title: 'Verify links & emails',
+    description:
+      'Give it one suspicious message. Agents inspect DNS, SSL and scam patterns before you click.',
+    windowTitle: 'Security',
+    promptPreview: 'Audit this internship offer link before I reply',
+    subject: 'Verdict: 96/100 Phishing Risk',
+    body: 'Domain g00gle-careers-verify.xyz was registered 2 days ago using zero-substitution typosquatting and lacks EV TLS. Quarantine recommended.',
+    tones: ['Brief', 'Forensics', 'Action'],
+    preset: DEMO_PRESETS[0],
+  },
+  {
+    num: '2',
+    title: 'Triage incident logs',
+    description:
+      'Isolate root causes from stack traces, config diffs and past postmortems in seconds.',
+    windowTitle: 'Ops',
+    promptPreview: 'Find why checkout-api is throwing 502 after v2.14',
+    subject: 'Root Cause: DB Pool Exhaustion (v2.14)',
+    body: 'DB_POOL_SIZE jumped 10 → 50 across 8 pods (400 > max 100). Roll back deployment pods gracefully instead of restarting primary RDS.',
+    tones: ['Root Cause', 'Rollback', 'Status'],
+    preset: DEMO_PRESETS[1],
+  },
+  {
+    num: '3',
+    title: 'Match resume to JD',
+    description:
+      'Compare your projects against any job description, spot skill gaps and draft outreach.',
+    windowTitle: 'Career',
+    promptPreview: 'Compare my resume against the Backend AI Intern JD',
+    subject: '78% JD Match — 14-Day Prep Roadmap',
+    body: 'Strong core in Python, FastAPI & Gemini API. Add Redis caching and multi-stage Dockerfiles to close the remaining 22% gap before applying.',
+    tones: ['Warm', 'Direct', 'Formal'],
+    preset: DEMO_PRESETS[2],
+  },
+  {
+    num: '4',
+    title: 'Hand over routine work',
+    description:
+      'Five specialized agents plan, verify and wait for your approval before any real-world action.',
+    windowTitle: 'Draft',
+    promptPreview: 'Write a launch email for the spring release',
+    subject: 'Subject: The spring release is here',
+    body: 'Hi Jordan, spring is here and so is the update you asked for. Shared drafts, faster search and a calmer workspace are waiting the next time you open the app.',
+    tones: ['Warm', 'Direct', 'Formal'],
+    preset: DEMO_PRESETS[0],
+  },
+];
+
 const INITIAL_AGENTS: AgentNode[] = [
   {
     id: 'orchestrator',
@@ -57,9 +120,13 @@ const INITIAL_AGENTS: AgentNode[] = [
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 export default function App() {
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [threads, setThreads] = useState<ChatThread[]>([]);
   const [activeThreadId, setActiveThreadId] = useState<string | null>(null);
+
+  const [activeShowcaseIdx, setActiveShowcaseIdx] = useState(0);
+  const [activeToneIdx, setActiveToneIdx] = useState(0);
+  const [heroInput, setHeroInput] = useState('');
 
   const [input, setInput] = useState('');
   const [attachedFile, setAttachedFile] = useState<File | null>(null);
@@ -70,6 +137,7 @@ export default function App() {
   const runTokenRef = useRef(0);
 
   const activeThread = threads.find((t) => t.id === activeThreadId) ?? null;
+  const activeShowcase = SHOWCASE_ITEMS[activeShowcaseIdx] ?? SHOWCASE_ITEMS[0];
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -122,7 +190,9 @@ export default function App() {
         },
       },
       rag: {
-        summary: `Retrieved relevant context${fileName ? ` from ${fileName}` : ' from knowledge base'}.`,
+        summary: `Retrieved relevant context${
+          fileName ? ` from ${fileName}` : ' from knowledge base'
+        }.`,
         badge: '2 RAG hits',
         ragSources: [
           fileName ? `${fileName}#chunk-1` : 'Knowledge-Base.md#L12',
@@ -196,8 +266,8 @@ export default function App() {
     },
   });
 
-  const sendMessage = async (presetOverride?: DemoPreset) => {
-    const text = (presetOverride ? presetOverride.prompt : input).trim();
+  const sendMessage = async (presetOverride?: DemoPreset, customText?: string) => {
+    const text = (presetOverride ? presetOverride.prompt : customText ?? input).trim();
     if (!text || isRunning) return;
 
     const token = ++runTokenRef.current;
@@ -246,11 +316,11 @@ export default function App() {
     }
 
     setInput('');
+    setHeroInput('');
     const currentFile = attachedFile;
     setAttachedFile(null);
     setIsRunning(true);
 
-    // Optional live FastAPI backend call
     if (API_URL && !presetOverride) {
       try {
         const formData = new FormData();
@@ -423,15 +493,15 @@ export default function App() {
     setIsRunning(false);
     setActiveThreadId(null);
     setInput('');
+    setHeroInput('');
     setAttachedFile(null);
   };
 
   const isEmptyChat = !activeThread || activeThread.messages.length === 0;
 
   return (
-    <div className="relative h-screen w-screen overflow-hidden bg-[#030303]">
-      <div className="relative z-10 h-full w-full flex overflow-hidden">
-        <ChatSidebar
+    <div className="relative h-screen w-screen overflow-hidden bg-[#070909] text-white flex">
+      <ChatSidebar
         open={sidebarOpen}
         threads={threads}
         activeThreadId={activeThreadId}
@@ -440,20 +510,168 @@ export default function App() {
         onCloseMobile={() => setSidebarOpen(false)}
       />
 
-        <div className="relative flex-1 flex flex-col min-w-0">
-          <TopBar
+      <div className="relative flex-1 flex flex-col min-w-0">
+        <TopBar
           sidebarOpen={sidebarOpen}
           onToggleSidebar={() => setSidebarOpen((v) => !v)}
           onNewChat={handleNewChat}
           isLiveBackend={Boolean(API_URL)}
         />
 
-        {/* Chat Scroll Area */}
-        <div className={`relative z-10 flex-1 overflow-y-auto px-4 sm:px-6 ${isEmptyChat ? 'pointer-events-none' : 'pointer-events-auto'}`}>
+        {/* Main Viewport */}
+        <div className="flex-1 overflow-y-auto px-5 sm:px-8">
           {isEmptyChat ? (
-            <div className="h-full" />
+            <div className="max-w-5xl mx-auto min-h-full flex items-center py-10">
+              <div className="w-full grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 items-center">
+                {/* Left Editorial Column */}
+                <div className="lg:col-span-6 space-y-8">
+                  <h1 className="text-4xl sm:text-5xl font-normal tracking-[-0.03em] leading-[1.08] text-white">
+                    One workspace
+                    <br />
+                    for the work that
+                    <br />
+                    slows you down
+                  </h1>
+
+                  <div className="space-y-4">
+                    {SHOWCASE_ITEMS.map((item, idx) => {
+                      const isActive = idx === activeShowcaseIdx;
+                      return (
+                        <button
+                          key={item.num}
+                          type="button"
+                          onClick={() => {
+                            setActiveShowcaseIdx(idx);
+                            setActiveToneIdx(0);
+                          }}
+                          className="w-full text-left flex items-start gap-4 group cursor-pointer"
+                        >
+                          <span
+                            className={`text-xs font-mono-code pt-1 transition-colors ${
+                              isActive
+                                ? 'text-emerald-400'
+                                : 'text-neutral-600 group-hover:text-neutral-400'
+                            }`}
+                          >
+                            {item.num}
+                          </span>
+                          <div>
+                            <p
+                              className={`text-sm sm:text-[15px] font-medium transition-colors ${
+                                isActive
+                                  ? 'text-white'
+                                  : 'text-neutral-500 group-hover:text-neutral-300'
+                              }`}
+                            >
+                              {item.title}
+                            </p>
+                            {isActive && (
+                              <p className="mt-1.5 text-xs sm:text-[13px] text-neutral-400 leading-relaxed max-w-sm">
+                                {item.description}
+                              </p>
+                            )}
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Right Interactive Window Preview */}
+                <div className="lg:col-span-6 relative">
+                  <div className="relative rounded-2xl bg-[#0d1010] border border-white/[0.09] shadow-[0_24px_60px_rgba(0,0,0,0.8)] overflow-hidden">
+                    {/* Subtle emerald top-edge highlight */}
+                    <div className="h-[1px] w-full emerald-top-glow" />
+
+                    {/* Window Header */}
+                    <div className="px-4 py-3 border-b border-white/[0.06] flex items-center gap-3">
+                      <div className="flex items-center gap-1.5">
+                        <span className="w-2.5 h-2.5 rounded-full bg-white/15" />
+                        <span className="w-2.5 h-2.5 rounded-full bg-white/15" />
+                        <span className="w-2.5 h-2.5 rounded-full bg-white/15" />
+                      </div>
+                      <span className="text-xs text-neutral-400">
+                        {activeShowcase.windowTitle}
+                      </span>
+                    </div>
+
+                    {/* Window Body */}
+                    <div className="p-4 sm:p-5 space-y-4">
+                      {/* Prompt Input Bar inside Card */}
+                      <div className="flex items-center gap-2 rounded-full bg-[#141818] border border-white/[0.08] pl-4 pr-1.5 py-1.5">
+                        <input
+                          type="text"
+                          value={heroInput}
+                          onChange={(e) => setHeroInput(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault();
+                              if (heroInput.trim()) {
+                                void sendMessage(undefined, heroInput);
+                              } else {
+                                void sendMessage(activeShowcase.preset);
+                              }
+                            }
+                          }}
+                          placeholder={activeShowcase.promptPreview}
+                          className="flex-1 bg-transparent text-xs sm:text-[13px] text-white placeholder:text-neutral-400 focus:outline-none"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (heroInput.trim()) {
+                              void sendMessage(undefined, heroInput);
+                            } else {
+                              void sendMessage(activeShowcase.preset);
+                            }
+                          }}
+                          aria-label="Run prompt"
+                          className="w-7 h-7 rounded-full bg-emerald-400 hover:bg-emerald-300 text-[#070909] flex items-center justify-center transition cursor-pointer shrink-0"
+                        >
+                          <ArrowUp className="w-3.5 h-3.5 stroke-[2.4]" />
+                        </button>
+                      </div>
+
+                      {/* Preview Output Box */}
+                      <div className="rounded-xl bg-[#0a0c0c] border border-white/[0.06] p-4 min-h-[150px] space-y-2">
+                        <p className="text-xs font-medium text-white">
+                          {activeShowcase.subject}
+                        </p>
+                        <p className="text-xs text-neutral-400 leading-relaxed">
+                          {activeShowcase.body}
+                        </p>
+                      </div>
+
+                      {/* Bottom Tone / Suggestion Chips */}
+                      <div className="flex items-center gap-2 pt-1">
+                        {activeShowcase.tones.map((tone, tIdx) => (
+                          <button
+                            key={tone}
+                            type="button"
+                            onClick={() => setActiveToneIdx(tIdx)}
+                            className={`px-3 py-1 rounded-full text-[11px] font-medium transition cursor-pointer ${
+                              tIdx === activeToneIdx
+                                ? 'bg-white text-[#070909]'
+                                : 'bg-[#141818] text-neutral-400 hover:text-white border border-white/[0.06]'
+                            }`}
+                          >
+                            {tone}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Subtle stacked card peeking beneath */}
+                  <div
+                    aria-hidden="true"
+                    className="mx-6 -mt-2 h-8 rounded-b-2xl bg-[#0b0e0e] border border-t-0 border-white/[0.05] opacity-65"
+                  />
+                </div>
+              </div>
+            </div>
           ) : (
-            <div className="max-w-3xl mx-auto py-6 space-y-6 pointer-events-auto">
+            <div className="max-w-3xl mx-auto py-6 space-y-6">
               {activeThread.messages.map((msg) => (
                 <ChatMessage
                   key={msg.id}
@@ -467,69 +685,70 @@ export default function App() {
           )}
         </div>
 
-        {/* Sticky Bottom Dia-Glass Chat Input */}
-        <div className="relative z-10 px-4 sm:px-6 pb-5 pt-2 pointer-events-auto">
-          <div className="max-w-3xl mx-auto dia-glass rounded-full px-3 py-2">
-            {attachedFile && (
-              <div className="mb-2 px-1">
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs bg-white/10 text-neutral-100 border border-white/15">
-                  <Paperclip className="w-3 h-3" />
-                  <span className="truncate max-w-[200px]">{attachedFile.name}</span>
-                  <button
-                    type="button"
-                    onClick={() => setAttachedFile(null)}
-                    className="cursor-pointer"
-                  >
-                    <X className="w-3 h-3" />
-                  </button>
-                </span>
+        {/* Bottom Chat Input Bar (shown in active chat) */}
+        {!isEmptyChat && (
+          <div className="px-4 sm:px-6 pb-5 pt-2">
+            <div className="max-w-3xl mx-auto rounded-full bg-[#111414] border border-white/10 px-3 py-2 shadow-[0_12px_36px_rgba(0,0,0,0.6)]">
+              {attachedFile && (
+                <div className="mb-2 px-2">
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs bg-white/10 text-neutral-100 border border-white/15">
+                    <Paperclip className="w-3 h-3" />
+                    <span className="truncate max-w-[200px]">{attachedFile.name}</span>
+                    <button
+                      type="button"
+                      onClick={() => setAttachedFile(null)}
+                      className="cursor-pointer"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </span>
+                </div>
+              )}
+
+              <div className="flex items-center gap-2">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".pdf,.txt,.csv,.log,.json,.eml"
+                  onChange={handleFileChange}
+                  className="hidden"
+                />
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  title="Attach PDF, Log, or CSV"
+                  className="p-2 rounded-full hover:bg-white/10 text-neutral-400 hover:text-white transition cursor-pointer shrink-0"
+                >
+                  <Paperclip className="w-4 h-4" />
+                </button>
+
+                <textarea
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault();
+                      void sendMessage();
+                    }
+                  }}
+                  rows={1}
+                  placeholder="Ask AgentVerse anything..."
+                  className="flex-1 resize-none bg-transparent py-1.5 text-sm text-white placeholder:text-neutral-500 focus:outline-none max-h-36"
+                />
+
+                <button
+                  type="button"
+                  disabled={!input.trim() || isRunning}
+                  onClick={() => void sendMessage()}
+                  aria-label="Send message"
+                  className="w-8 h-8 rounded-full bg-emerald-400 hover:bg-emerald-300 text-[#070909] disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center transition cursor-pointer shrink-0"
+                >
+                  <ArrowUp className="w-4 h-4 stroke-[2.3]" />
+                </button>
               </div>
-            )}
-
-            <div className="flex items-end gap-2">
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept=".pdf,.txt,.csv,.log,.json,.eml"
-                onChange={handleFileChange}
-                className="hidden"
-              />
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                title="Attach PDF, Log, or CSV"
-                className="p-2.5 rounded-full hover:bg-white/10 text-neutral-300 transition cursor-pointer shrink-0"
-              >
-                <Paperclip className="w-4 h-4" />
-              </button>
-
-              <textarea
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault();
-                    void sendMessage();
-                  }
-                }}
-                rows={1}
-                placeholder="Message AgentVerse..."
-                className="flex-1 resize-none bg-transparent py-2 text-sm text-white placeholder:text-neutral-400 focus:outline-none max-h-36"
-              />
-
-              <button
-                type="button"
-                disabled={!input.trim() || isRunning}
-                onClick={() => void sendMessage()}
-                aria-label="Send message"
-                className="p-2.5 rounded-full bg-white text-[#030303] hover:bg-neutral-200 disabled:opacity-30 disabled:cursor-not-allowed transition cursor-pointer shrink-0"
-              >
-                <ArrowUp className="w-4 h-4" />
-              </button>
             </div>
           </div>
-        </div>
-      </div>
+        )}
       </div>
     </div>
   );

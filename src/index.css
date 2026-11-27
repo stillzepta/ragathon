@@ -3,7 +3,7 @@
 @layer base {
   body {
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-    background-color: #030303;
+    background-color: #070909;
     color: #f3f4f6;
   }
 }
@@ -16,38 +16,31 @@
   font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
 }
 
-/* Black Clear Liquid-Glass Surface */
+/* GenAI Obsidian Glass Surface */
 .dia-glass {
-  background: rgba(14, 14, 16, 0.62);
-  backdrop-filter: blur(26px) saturate(165%);
-  -webkit-backdrop-filter: blur(26px) saturate(165%);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(13, 16, 16, 0.86);
+  backdrop-filter: blur(24px) saturate(150%);
+  -webkit-backdrop-filter: blur(24px) saturate(150%);
+  border: 1px solid rgba(255, 255, 255, 0.09);
   box-shadow:
-    0 16px 42px rgba(0, 0, 0, 0.55),
-    inset 0 1px 0 rgba(255, 255, 255, 0.14);
+    0 20px 50px rgba(0, 0, 0, 0.65),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 
 .dia-glass-subtle {
-  background: rgba(18, 18, 20, 0.5);
-  backdrop-filter: blur(18px) saturate(150%);
-  -webkit-backdrop-filter: blur(18px) saturate(150%);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow:
-    0 8px 24px rgba(0, 0, 0, 0.35),
-    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  background: rgba(17, 20, 20, 0.75);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.09);
 }
 
-@keyframes float-gentle {
-  0%, 100% {
-    transform: translate3d(0, 0, 0);
-  }
-  50% {
-    transform: translate3d(0, -6px, 0);
-  }
-}
-
-.animate-float-gentle {
-  animation: float-gentle 6s ease-in-out infinite;
+.emerald-top-glow {
+  background-image: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(52, 211, 153, 0.45) 50%,
+    transparent 100%
+  );
 }
 
 @keyframes wave-slide {
