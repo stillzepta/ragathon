@@ -1,0 +1,86 @@
+@import "tailwindcss";
+
+@layer base {
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    background-color: #F8F8F7;
+    color: #141413;
+  }
+}
+
+.font-serif-accent {
+  font-family: 'Instrument Serif', Georgia, serif;
+}
+
+.font-mono-code {
+  font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
+}
+
+.dia-glass {
+  background: rgba(255, 255, 255, 0.78);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(20, 20, 19, 0.07);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.035);
+}
+
+.dia-glass-subtle {
+  background: rgba(255, 255, 255, 0.56);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(20, 20, 19, 0.06);
+}
+
+@keyframes aurora-float {
+  0%, 100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(14px, -10px, 0) scale(1.04);
+  }
+}
+
+.animate-aurora {
+  animation: aurora-float 10s ease-in-out infinite;
+}
+
+@keyframes orb-breathe {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 0 38px rgba(249, 115, 22, 0.42), 0 0 80px rgba(185, 28, 28, 0.25);
+  }
+  50% {
+    transform: scale(1.045);
+    box-shadow: 0 0 52px rgba(251, 146, 60, 0.62), 0 0 100px rgba(185, 28, 28, 0.38);
+  }
+}
+
+@keyframes orb-eclipse {
+  0%, 100% {
+    transform: translate(12%, -6%) scale(1);
+  }
+  50% {
+    transform: translate(-10%, 8%) scale(1.08);
+  }
+}
+
+@keyframes orb-core-shift {
+  0%, 100% {
+    transform: translate(-8%, 6%) scale(1);
+  }
+  50% {
+    transform: translate(8%, -6%) scale(1.1);
+  }
+}
+
+.animate-orb {
+  animation: orb-breathe 3.4s ease-in-out infinite;
+}
+
+.animate-orb-eclipse {
+  animation: orb-eclipse 4.6s ease-in-out infinite;
+}
+
+.animate-orb-core {
+  animation: orb-core-shift 3.8s ease-in-out infinite;
+}
