@@ -233,7 +233,7 @@ export function ChatMessage({
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2 text-xs font-medium text-amber-950">
                     <ShieldCheck className="w-4 h-4 text-amber-600" />
-                    <span>Approval Required (Rule #6): {action.title}</span>
+                    <span>Approval Required: {action.title}</span>
                   </div>
                   <span className="px-2.5 py-0.5 rounded-full text-[10px] font-medium bg-amber-100/80 border border-amber-200/80 text-amber-900">
                     {action.riskLevel} Risk

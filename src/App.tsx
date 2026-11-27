@@ -68,7 +68,7 @@ const SHOWCASE_ITEMS: ShowcaseItem[] = [
     title: 'Safe actions, your approval',
     description:
       'Nothing sends, deletes, or executes without your one-click sign-off.',
-    windowTitle: 'Rule #6 Gate',
+    windowTitle: 'Action Guard',
     promptPreview: 'Draft and queue the security alert for review',
     subject: 'Ready to Execute · Waiting for Approval',
     body: 'Prepared quarantine rule and #campus-security advisory. Review, edit inline, or approve with one click when ready.',
