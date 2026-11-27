@@ -30,3 +30,6 @@ pytest
 
 See [ARCHITECTURE.md](ARCHITECTURE.md) for the system design and RAG pipeline.
 
+## Existing frontend
+
+The current demo frontend lives in `src/` and is built with Vite. The backend and RAG lanes are scaffolded under `app/`; see [TEAM_ACCESS.md](TEAM_ACCESS.md) before changing shared contracts.
