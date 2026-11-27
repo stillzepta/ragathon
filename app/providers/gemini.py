@@ -22,14 +22,16 @@ class ModelProvider:
         self.gemini_api_key = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
         self.used_provider = None
         self.groq_api_key = os.getenv("GROQ_API_KEY")
+        self.openrouter_api_key = os.getenv("OPENROUTER_API_KEY")
+        self.openrouter_model = os.getenv("OPENROUTER_MODEL", "openrouter/free")
 
     @property
     def requested(self) -> bool:
-        return self.provider_name in {"gemini", "groq"}
+        return self.provider_name in {"gemini", "groq", "openrouter"}
 
     @property
     def live(self) -> bool:
-        return self.requested and bool(self.gemini_api_key or self.groq_api_key)
+        return self.requested and bool(self.gemini_api_key or self.groq_api_key or self.openrouter_api_key)
 
     def generate(
         self, system: str, prompt: str, *,
@@ -48,7 +50,9 @@ class ModelProvider:
 
         for provider_name in providers:
             try:
-                response = self._generate_gemini(system, prompt) if provider_name == "gemini" else self._generate_groq(system, prompt)
+                generators = {"gemini": self._generate_gemini, "groq": self._generate_groq,
+                              "openrouter": self._generate_openrouter}
+                response = generators[provider_name](system, prompt)
                 if response and accept(response):
                     self.used_provider = provider_name
                     return response
@@ -68,21 +72,34 @@ class ModelProvider:
             )
         return response.text or ""
 
+    def _generate_openrouter(self, system: str, prompt: str) -> str:
+        return self._chat_completion(
+            "https://openrouter.ai/api/v1/chat/completions",
+            self.openrouter_api_key, self.openrouter_model, system, prompt,
+        )
+
     def _generate_groq(self, system: str, prompt: str) -> str:
-        if not self.groq_api_key:
+        return self._chat_completion(
+            "https://api.groq.com/openai/v1/chat/completions",
+            self.groq_api_key, self.groq_model, system, prompt,
+        )
+
+    def _chat_completion(self, url: str, key: str | None, model: str, system: str, prompt: str) -> str:
+        if not key:
             return ""
         payload = json.dumps({
-            "model": self.groq_model,
+            "model": model,
+            "max_tokens": 600,
             "messages": [{"role": "system", "content": system}, {"role": "user", "content": prompt}],
             "temperature": 0.2,
         }).encode()
         req = request.Request(
-            "https://api.groq.com/openai/v1/chat/completions",
+            url,
             data=payload,
-            headers={"Authorization": f"Bearer {self.groq_api_key}", "Content-Type": "application/json"},
+            headers={"Authorization": f"Bearer {key}", "Content-Type": "application/json"},
             method="POST",
         )
-        with request.urlopen(req, timeout=12) as response:
+        with request.urlopen(req, timeout=45) as response:
             data = json.loads(response.read().decode())
         return data.get("choices", [{}])[0].get("message", {}).get("content", "")
 
