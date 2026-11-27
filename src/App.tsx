@@ -4,6 +4,7 @@ import { ArtifactPanel } from './components/ArtifactPanel';
 import { ChatMessage } from './components/ChatMessage';
 import { ChatSidebar } from './components/ChatSidebar';
 import { AuthUser, LoginModal } from './components/LoginModal';
+import SplitText from './components/SplitText';
 import { api, API_URL, watchRun } from './api';
 import { supabase } from './lib/supabase';
 import { DEMO_PRESETS } from './data/presets';
@@ -134,6 +135,8 @@ const INITIAL_AGENTS: AgentNode[] = [
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 export default function App() {
+  const [showIntro, setShowIntro] = useState(true);
+  const [introFading, setIntroFading] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [user, setUser] = useState<AuthUser | null>(null);
   const [loginOpen, setLoginOpen] = useState(false);
@@ -537,6 +540,34 @@ export default function App() {
 
   return (
     <div className="relative h-screen w-screen overflow-hidden kraft-bg text-[#111113] flex">
+      {/* Diablo SplitText Splash Intro */}
+      {showIntro && (
+        <div
+          className={`fixed inset-0 z-50 kraft-bg flex flex-col items-center justify-center transition-all duration-700 ease-out ${
+            introFading
+              ? 'opacity-0 scale-105 blur-md pointer-events-none'
+              : 'opacity-100 scale-100 blur-0'
+          }`}
+        >
+          <SplitText
+            text="diablo"
+            tag="h1"
+            className="font-display text-6xl sm:text-8xl font-bold tracking-[-0.04em] text-[#111113]"
+            effect="rise"
+            splitType="chars"
+            delay={65}
+            duration={1.05}
+            staggerFrom="start"
+            trigger="load"
+            accentColor="#4f56b8"
+            textAlign="center"
+            onLetterAnimationComplete={() => {
+              setTimeout(() => setIntroFading(true), 420);
+              setTimeout(() => setShowIntro(false), 1120);
+            }}
+          />
+        </div>
+      )}
       <div className="relative flex-1 flex flex-col min-w-0">
         {API_URL && (
           <div className="flex items-center justify-between gap-3 px-5 pt-3 text-xs text-indigo-950">
@@ -809,7 +840,7 @@ export default function App() {
                           }
                         }}
                         rows={1}
-                        placeholder="Ask AgentVerse anything..."
+                        placeholder="Ask Diablo anything..."
                         className="flex-1 resize-none bg-transparent py-1.5 text-sm text-[#111113] placeholder:text-[#7A7A85] focus:outline-none max-h-32"
                       />
 
