@@ -29,50 +29,50 @@ interface ShowcaseItem {
 const SHOWCASE_ITEMS: ShowcaseItem[] = [
   {
     num: '1',
-    title: 'Verify links & emails',
+    title: 'One prompt, five specialists',
     description:
-      'Give it one suspicious message. Agents inspect DNS, SSL and scam patterns before you click.',
-    windowTitle: 'Security',
+      'Ask anything once. Five specialized agents split the work in parallel for fast, verified answers.',
+    windowTitle: 'Orchestrator',
     promptPreview: 'Audit this internship offer link before I reply',
-    subject: 'Verdict: 96/100 Phishing Risk',
+    subject: 'Parallel Answer · 1.2s (96/100 Confidence)',
     body: 'Domain g00gle-careers-verify.xyz was registered 2 days ago using zero-substitution typosquatting and lacks EV TLS. Quarantine recommended.',
-    tones: ['Brief', 'Forensics', 'Action'],
+    tones: ['Fast Brief', 'Forensics', 'Action'],
     preset: DEMO_PRESETS[0],
   },
   {
     num: '2',
-    title: 'Triage incident logs',
+    title: 'Grounded in files & live tools',
     description:
-      'Isolate root causes from stack traces, config diffs and past postmortems in seconds.',
-    windowTitle: 'Ops',
+      'Drop any PDF, log, or CSV. Agents retrieve exact citations and run real-time checks.',
+    windowTitle: 'RAG + Tools',
     promptPreview: 'Find why checkout-api is throwing 502 after v2.14',
     subject: 'Root Cause: DB Pool Exhaustion (v2.14)',
     body: 'DB_POOL_SIZE jumped 10 → 50 across 8 pods (400 > max 100). Roll back deployment pods gracefully instead of restarting primary RDS.',
-    tones: ['Root Cause', 'Rollback', 'Status'],
+    tones: ['Root Cause', 'Citations', 'Rollback'],
     preset: DEMO_PRESETS[1],
   },
   {
     num: '3',
-    title: 'Match resume to JD',
+    title: 'Self-corrects before you read',
     description:
-      'Compare your projects against any job description, spot skill gaps and draft outreach.',
-    windowTitle: 'Career',
+      'A Critic agent scores every draft and fixes missing details automatically in the background.',
+    windowTitle: 'Critic Gate',
     promptPreview: 'Compare my resume against the Backend AI Intern JD',
-    subject: '78% JD Match — 14-Day Prep Roadmap',
-    body: 'Strong core in Python, FastAPI & Gemini API. Add Redis caching and multi-stage Dockerfiles to close the remaining 22% gap before applying.',
-    tones: ['Warm', 'Direct', 'Formal'],
+    subject: 'Critic Refined: 69 → 91/100 Verified',
+    body: 'Strong core in Python, FastAPI & Gemini API. Added Redis caching & Docker sprint plan to close the remaining 22% gap before applying.',
+    tones: ['Roadmap', 'Skill Gaps', 'Outreach'],
     preset: DEMO_PRESETS[2],
   },
   {
     num: '4',
-    title: 'Hand over routine work',
+    title: 'Safe actions, your approval',
     description:
-      'Five specialized agents plan, verify and wait for your approval before any real-world action.',
-    windowTitle: 'Draft',
-    promptPreview: 'Write a launch email for the spring release',
-    subject: 'Subject: The spring release is here',
-    body: 'Hi Jordan, spring is here and so is the update you asked for. Shared drafts, faster search and a calmer workspace are waiting the next time you open the app.',
-    tones: ['Warm', 'Direct', 'Formal'],
+      'Nothing sends, deletes, or executes without your one-click sign-off.',
+    windowTitle: 'Rule #6 Gate',
+    promptPreview: 'Draft and queue the security alert for review',
+    subject: 'Ready to Execute · Waiting for Approval',
+    body: 'Prepared quarantine rule and #campus-security advisory. Review, edit inline, or approve with one click when ready.',
+    tones: ['Approve', 'Edit', 'Reject'],
     preset: DEMO_PRESETS[0],
   },
 ];
@@ -560,8 +560,8 @@ export default function App() {
                           <span
                             className={`text-xs font-mono-code pt-1 transition-colors ${
                               isActive
-                                ? 'text-indigo-600 font-semibold'
-                                : 'text-[#9A9AA8] group-hover:text-[#4A4A55]'
+                                ? 'text-[#2e3278] font-semibold'
+                                : 'text-[#252850]/65 group-hover:text-[#111113]'
                             }`}
                           >
                             {item.num}
@@ -571,13 +571,13 @@ export default function App() {
                               className={`text-sm sm:text-[15px] font-medium transition-colors ${
                                 isActive
                                   ? 'text-[#111113]'
-                                  : 'text-[#6E6E7C] group-hover:text-[#111113]'
+                                  : 'text-[#1c1e36]/75 group-hover:text-[#111113]'
                               }`}
                             >
                               {item.title}
                             </p>
                             {isActive && (
-                              <p className="mt-1.5 text-xs sm:text-[13px] text-[#4A4A58] leading-relaxed max-w-sm">
+                              <p className="mt-1.5 text-xs sm:text-[13px] text-[#24263b] leading-relaxed max-w-sm">
                                 {item.description}
                               </p>
                             )}
