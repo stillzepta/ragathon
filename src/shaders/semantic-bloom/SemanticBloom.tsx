@@ -36,7 +36,8 @@ function buildFocusedDocument(mode: "dark" | "light") {
   --highlight-color: ${activeText};
   --sf-semantic-size: 1;
 }
-html, body { background: ${surface}; }
+html, body { background: ${surface}; cursor: auto !important; }
+* { cursor: auto !important; }
 .query-container, .status-hud { display: none !important; }
 .interface-layer {
   display: flex;
