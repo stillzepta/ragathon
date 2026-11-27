@@ -148,7 +148,6 @@ export default function App() {
   const [selectedArtifactMsgId, setSelectedArtifactMsgId] = useState<string | null>(null);
 
   const [activeShowcaseIdx, setActiveShowcaseIdx] = useState(0);
-  const [activeToneIdx, setActiveToneIdx] = useState(0);
   const [isPreviewPaused, setIsPreviewPaused] = useState(false);
   const [heroInput, setHeroInput] = useState('');
 
@@ -264,7 +263,6 @@ export default function App() {
     if (API_URL || !isEmptyChat || isPreviewPaused || heroInput.trim()) return;
     const timer = setInterval(() => {
       setActiveShowcaseIdx((prev) => (prev + 1) % SHOWCASE_ITEMS.length);
-      setActiveToneIdx(0);
     }, 2000);
     return () => clearInterval(timer);
   }, [isEmptyChat, isPreviewPaused, heroInput]);
@@ -835,10 +833,7 @@ export default function App() {
                         <button
                           key={item.num}
                           type="button"
-                          onClick={() => {
-                            setActiveShowcaseIdx(idx);
-                            setActiveToneIdx(0);
-                          }}
+                          onClick={() => setActiveShowcaseIdx(idx)}
                           className="w-full text-left flex items-start gap-4 group cursor-pointer"
                         >
                           <span
@@ -981,24 +976,6 @@ export default function App() {
                         <p className="text-[13px] text-[#4A4A58] leading-relaxed">
                           {activeShowcase.body}
                         </p>
-                      </div>
-
-                      {/* Bottom Tone / Suggestion Chips */}
-                      <div className="flex flex-wrap items-center gap-2 pt-1">
-                        {activeShowcase.tones.map((tone, tIdx) => (
-                          <button
-                            key={tone}
-                            type="button"
-                            onClick={() => setActiveToneIdx(tIdx)}
-                            className={`whitespace-nowrap px-3.5 py-1.5 rounded-full text-xs font-medium transition cursor-pointer ${
-                              tIdx === activeToneIdx
-                                ? 'bg-[#111113] text-white'
-                                : 'bg-[#F1F2F8] text-[#4A4A58] hover:text-[#111113] border border-black/[0.05]'
-                            }`}
-                          >
-                            {tone}
-                          </button>
-                        ))}
                       </div>
                     </div>
                   </div>
