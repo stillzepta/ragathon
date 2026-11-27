@@ -37,34 +37,34 @@ export function AgentPipeline({
 
     const statusIcon =
       agent.status === 'running' ? (
-        <Loader2 className="w-4 h-4 text-sky-400 animate-spin" />
+        <Loader2 className="w-4 h-4 text-indigo-600 animate-spin" />
       ) : agent.status === 'rejected' ? (
-        <RefreshCw className="w-4 h-4 text-amber-400 animate-spin" />
+        <RefreshCw className="w-4 h-4 text-amber-600 animate-spin" />
       ) : agent.status === 'done' ? (
-        <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+        <CheckCircle2 className="w-4 h-4 text-emerald-600" />
       ) : (
-        <span className="w-2 h-2 rounded-full bg-white/25" />
+        <span className="w-2 h-2 rounded-full bg-black/20" />
       );
 
     const roleIcon =
       agent.id === 'rag' ? (
-        <Database className="w-3.5 h-3.5 text-neutral-400" />
+        <Database className="w-3.5 h-3.5 text-[#6E6E77]" />
       ) : agent.id === 'tools' ? (
-        <Wrench className="w-3.5 h-3.5 text-neutral-400" />
+        <Wrench className="w-3.5 h-3.5 text-[#6E6E77]" />
       ) : agent.id === 'critic' ? (
-        <ShieldAlert className="w-3.5 h-3.5 text-neutral-400" />
+        <ShieldAlert className="w-3.5 h-3.5 text-[#6E6E77]" />
       ) : (
-        <Cpu className="w-3.5 h-3.5 text-neutral-400" />
+        <Cpu className="w-3.5 h-3.5 text-[#6E6E77]" />
       );
 
     return (
       <div
         key={agent.id}
-        className={`rounded-2xl bg-white/[0.05] border border-white/10 p-3.5 transition-all ${
+        className={`rounded-2xl bg-[#F7F8FC] border border-black/[0.06] p-3.5 transition-all ${
           agent.status === 'running'
-            ? 'ring-1 ring-sky-400/40'
+            ? 'ring-1 ring-indigo-400/50'
             : agent.status === 'rejected'
-            ? 'ring-1 ring-amber-400/50'
+            ? 'ring-1 ring-amber-400/60'
             : ''
         }`}
       >
@@ -79,13 +79,13 @@ export function AgentPipeline({
             <div className="mt-0.5 shrink-0">{statusIcon}</div>
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-2">
-                <span className="inline-flex items-center gap-1.5 text-xs font-medium text-white">
+                <span className="inline-flex items-center gap-1.5 text-xs font-medium text-[#111113]">
                   {roleIcon}
                   {agent.name}
                 </span>
-                <span className="text-[11px] text-neutral-400">{agent.role}</span>
+                <span className="text-[11px] text-[#7A7A85]">{agent.role}</span>
               </div>
-              <p className="mt-1 text-xs text-neutral-300 leading-relaxed">
+              <p className="mt-1 text-xs text-[#4A4A55] leading-relaxed">
                 {agent.summary}
               </p>
             </div>
@@ -96,10 +96,10 @@ export function AgentPipeline({
               <span
                 className={`px-2.5 py-0.5 rounded-full text-[11px] font-medium ${
                   agent.status === 'rejected'
-                    ? 'bg-amber-400/15 text-amber-200 border border-amber-400/25'
+                    ? 'bg-amber-100 text-amber-900'
                     : agent.status === 'done'
-                    ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-400/25'
-                    : 'bg-white/10 text-neutral-300'
+                    ? 'bg-indigo-50 text-indigo-800 border border-indigo-200/80'
+                    : 'bg-black/[0.05] text-[#4A4A55]'
                 }`}
               >
                 {agent.badge}
@@ -107,21 +107,21 @@ export function AgentPipeline({
             )}
             {hasDetails &&
               (isExpanded ? (
-                <ChevronDown className="w-4 h-4 text-neutral-400" />
+                <ChevronDown className="w-4 h-4 text-[#7A7A85]" />
               ) : (
-                <ChevronRight className="w-4 h-4 text-neutral-400" />
+                <ChevronRight className="w-4 h-4 text-[#7A7A85]" />
               ))}
           </div>
         </button>
 
         {isExpanded && hasDetails && (
-          <div className="mt-3 pt-3 border-t border-white/10 space-y-2">
+          <div className="mt-3 pt-3 border-t border-black/[0.06] space-y-2">
             {agent.toolCall && (
-              <div className="rounded-xl bg-black/40 px-3 py-2">
-                <span className="text-[10px] uppercase tracking-wider text-neutral-400 block mb-1">
+              <div className="rounded-xl bg-white px-3 py-2 border border-black/[0.05]">
+                <span className="text-[10px] uppercase tracking-wider text-[#6E6E77] block mb-1">
                   Tool Execution
                 </span>
-                <code className="font-mono-code text-[11px] text-neutral-200 break-all">
+                <code className="font-mono-code text-[11px] text-[#111113] break-all">
                   {agent.toolCall}
                 </code>
               </div>
@@ -129,13 +129,13 @@ export function AgentPipeline({
 
             {agent.ragSources && agent.ragSources.length > 0 && (
               <div className="flex flex-wrap items-center gap-1.5">
-                <span className="text-[10px] uppercase tracking-wider text-neutral-400 mr-1">
+                <span className="text-[10px] uppercase tracking-wider text-[#6E6E77] mr-1">
                   RAG Chunks:
                 </span>
                 {agent.ragSources.map((src) => (
                   <span
                     key={src}
-                    className="font-mono-code text-[11px] px-2 py-0.5 rounded-md bg-white/10 text-neutral-200"
+                    className="font-mono-code text-[11px] px-2 py-0.5 rounded-md bg-white text-[#3A3A45] border border-black/[0.05]"
                   >
                     {src}
                   </span>
@@ -144,8 +144,8 @@ export function AgentPipeline({
             )}
 
             {agent.memorySnapshot && (
-              <div className="rounded-xl bg-black/45 text-neutral-200 p-3 overflow-x-auto border border-white/10">
-                <span className="text-[10px] uppercase tracking-wider text-neutral-400 block mb-1">
+              <div className="rounded-xl bg-white text-[#111113] p-3 overflow-x-auto border border-black/[0.05]">
+                <span className="text-[10px] uppercase tracking-wider text-[#6E6E77] block mb-1">
                   Shared Memory Snapshot
                 </span>
                 <pre className="font-mono-code text-[11px] leading-relaxed">
@@ -162,22 +162,22 @@ export function AgentPipeline({
   return (
     <div className="space-y-2.5 pt-2">
       <div className="flex items-center justify-between px-1">
-        <p className="text-[11px] text-neutral-400">
+        <p className="text-[11px] text-[#6E6E77]">
           Click any completed agent to inspect Shared Memory & tool calls
         </p>
 
         {criticInitialScore !== undefined && criticFinalScore !== undefined && (
-          <div className="px-2.5 py-0.5 rounded-full bg-white/10 text-[11px] font-medium text-neutral-200">
-            Critic: <span className="text-amber-300">{criticInitialScore}</span> →{' '}
-            <span className="text-emerald-300">{criticFinalScore}/100</span>
+          <div className="px-2.5 py-0.5 rounded-full bg-[#F1F2F8] text-[11px] font-medium text-[#111113]">
+            Critic: <span className="text-amber-700">{criticInitialScore}</span> →{' '}
+            <span className="text-indigo-700">{criticFinalScore}/100</span>
           </div>
         )}
       </div>
 
       {orchestrator && renderCard(orchestrator)}
 
-      <div className="relative pl-3 border-l border-white/15 space-y-2">
-        <span className="inline-block text-[10px] uppercase tracking-widest text-neutral-400">
+      <div className="relative pl-3 border-l border-indigo-200 space-y-2">
+        <span className="inline-block text-[10px] uppercase tracking-widest text-[#7A7A85]">
           Parallel Fan-Out (asyncio)
         </span>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">

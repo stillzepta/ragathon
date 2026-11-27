@@ -500,7 +500,7 @@ export default function App() {
   const isEmptyChat = !activeThread || activeThread.messages.length === 0;
 
   return (
-    <div className="relative h-screen w-screen overflow-hidden bg-[#070909] text-white flex">
+    <div className="relative h-screen w-screen overflow-hidden kraft-bg text-[#111113] flex">
       <ChatSidebar
         open={sidebarOpen}
         threads={threads}
@@ -525,12 +525,14 @@ export default function App() {
               <div className="w-full grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 items-center">
                 {/* Left Editorial Column */}
                 <div className="lg:col-span-6 space-y-8">
-                  <h1 className="text-4xl sm:text-5xl font-normal tracking-[-0.03em] leading-[1.08] text-white">
+                  <h1 className="text-4xl sm:text-5xl font-normal tracking-[-0.03em] leading-[1.08] text-[#111113]">
                     One workspace
                     <br />
-                    for the work that
-                    <br />
-                    slows you down
+                    for the work that{' '}
+                    <span className="font-serif-accent italic font-normal text-[1.08em]">
+                      slows
+                    </span>{' '}
+                    you down
                   </h1>
 
                   <div className="space-y-4">
@@ -549,8 +551,8 @@ export default function App() {
                           <span
                             className={`text-xs font-mono-code pt-1 transition-colors ${
                               isActive
-                                ? 'text-emerald-400'
-                                : 'text-neutral-600 group-hover:text-neutral-400'
+                                ? 'text-indigo-600 font-semibold'
+                                : 'text-[#9A9AA8] group-hover:text-[#4A4A55]'
                             }`}
                           >
                             {item.num}
@@ -559,14 +561,14 @@ export default function App() {
                             <p
                               className={`text-sm sm:text-[15px] font-medium transition-colors ${
                                 isActive
-                                  ? 'text-white'
-                                  : 'text-neutral-500 group-hover:text-neutral-300'
+                                  ? 'text-[#111113]'
+                                  : 'text-[#6E6E7C] group-hover:text-[#111113]'
                               }`}
                             >
                               {item.title}
                             </p>
                             {isActive && (
-                              <p className="mt-1.5 text-xs sm:text-[13px] text-neutral-400 leading-relaxed max-w-sm">
+                              <p className="mt-1.5 text-xs sm:text-[13px] text-[#4A4A58] leading-relaxed max-w-sm">
                                 {item.description}
                               </p>
                             )}
@@ -579,18 +581,18 @@ export default function App() {
 
                 {/* Right Interactive Window Preview */}
                 <div className="lg:col-span-6 relative">
-                  <div className="relative rounded-2xl bg-[#0d1010] border border-white/[0.09] shadow-[0_24px_60px_rgba(0,0,0,0.8)] overflow-hidden">
-                    {/* Subtle emerald top-edge highlight */}
-                    <div className="h-[1px] w-full emerald-top-glow" />
+                  <div className="relative rounded-2xl dia-glass overflow-hidden">
+                    {/* Subtle indigo top-edge highlight */}
+                    <div className="h-[1.5px] w-full indigo-top-glow" />
 
                     {/* Window Header */}
-                    <div className="px-4 py-3 border-b border-white/[0.06] flex items-center gap-3">
+                    <div className="px-4 py-3 border-b border-black/[0.06] flex items-center gap-3">
                       <div className="flex items-center gap-1.5">
-                        <span className="w-2.5 h-2.5 rounded-full bg-white/15" />
-                        <span className="w-2.5 h-2.5 rounded-full bg-white/15" />
-                        <span className="w-2.5 h-2.5 rounded-full bg-white/15" />
+                        <span className="w-2.5 h-2.5 rounded-full bg-black/15" />
+                        <span className="w-2.5 h-2.5 rounded-full bg-black/15" />
+                        <span className="w-2.5 h-2.5 rounded-full bg-black/15" />
                       </div>
-                      <span className="text-xs text-neutral-400">
+                      <span className="text-xs text-[#6E6E77]">
                         {activeShowcase.windowTitle}
                       </span>
                     </div>
@@ -598,7 +600,7 @@ export default function App() {
                     {/* Window Body */}
                     <div className="p-4 sm:p-5 space-y-4">
                       {/* Prompt Input Bar inside Card */}
-                      <div className="flex items-center gap-2 rounded-full bg-[#141818] border border-white/[0.08] pl-4 pr-1.5 py-1.5">
+                      <div className="flex items-center gap-2 rounded-full bg-[#F5F6FA] border border-black/[0.07] pl-4 pr-1.5 py-1.5">
                         <input
                           type="text"
                           value={heroInput}
@@ -614,7 +616,7 @@ export default function App() {
                             }
                           }}
                           placeholder={activeShowcase.promptPreview}
-                          className="flex-1 bg-transparent text-xs sm:text-[13px] text-white placeholder:text-neutral-400 focus:outline-none"
+                          className="flex-1 bg-transparent text-xs sm:text-[13px] text-[#111113] placeholder:text-[#6E6E77] focus:outline-none"
                         />
                         <button
                           type="button"
@@ -626,18 +628,18 @@ export default function App() {
                             }
                           }}
                           aria-label="Run prompt"
-                          className="w-7 h-7 rounded-full bg-emerald-400 hover:bg-emerald-300 text-[#070909] flex items-center justify-center transition cursor-pointer shrink-0"
+                          className="w-7 h-7 rounded-full bg-[#111113] hover:bg-[#2A2A32] text-white flex items-center justify-center transition cursor-pointer shrink-0"
                         >
                           <ArrowUp className="w-3.5 h-3.5 stroke-[2.4]" />
                         </button>
                       </div>
 
                       {/* Preview Output Box */}
-                      <div className="rounded-xl bg-[#0a0c0c] border border-white/[0.06] p-4 min-h-[150px] space-y-2">
-                        <p className="text-xs font-medium text-white">
+                      <div className="rounded-xl bg-[#F7F8FC] border border-indigo-100/80 p-4 min-h-[150px] space-y-2">
+                        <p className="text-xs font-medium text-[#111113]">
                           {activeShowcase.subject}
                         </p>
-                        <p className="text-xs text-neutral-400 leading-relaxed">
+                        <p className="text-xs text-[#4A4A58] leading-relaxed">
                           {activeShowcase.body}
                         </p>
                       </div>
@@ -651,8 +653,8 @@ export default function App() {
                             onClick={() => setActiveToneIdx(tIdx)}
                             className={`px-3 py-1 rounded-full text-[11px] font-medium transition cursor-pointer ${
                               tIdx === activeToneIdx
-                                ? 'bg-white text-[#070909]'
-                                : 'bg-[#141818] text-neutral-400 hover:text-white border border-white/[0.06]'
+                                ? 'bg-[#111113] text-white'
+                                : 'bg-[#F1F2F8] text-[#4A4A58] hover:text-[#111113] border border-black/[0.05]'
                             }`}
                           >
                             {tone}
@@ -665,7 +667,7 @@ export default function App() {
                   {/* Subtle stacked card peeking beneath */}
                   <div
                     aria-hidden="true"
-                    className="mx-6 -mt-2 h-8 rounded-b-2xl bg-[#0b0e0e] border border-t-0 border-white/[0.05] opacity-65"
+                    className="mx-6 -mt-2 h-8 rounded-b-2xl bg-white/55 backdrop-blur-md border border-t-0 border-white/70 opacity-75"
                   />
                 </div>
               </div>
@@ -688,10 +690,10 @@ export default function App() {
         {/* Bottom Chat Input Bar (shown in active chat) */}
         {!isEmptyChat && (
           <div className="px-4 sm:px-6 pb-5 pt-2">
-            <div className="max-w-3xl mx-auto rounded-full bg-[#111414] border border-white/10 px-3 py-2 shadow-[0_12px_36px_rgba(0,0,0,0.6)]">
+            <div className="max-w-3xl mx-auto rounded-full bg-white/90 backdrop-blur-xl border border-white px-3 py-2 shadow-[0_14px_36px_rgba(38,43,102,0.16)]">
               {attachedFile && (
                 <div className="mb-2 px-2">
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs bg-white/10 text-neutral-100 border border-white/15">
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs bg-indigo-50 text-indigo-900 border border-indigo-200">
                     <Paperclip className="w-3 h-3" />
                     <span className="truncate max-w-[200px]">{attachedFile.name}</span>
                     <button
@@ -717,7 +719,7 @@ export default function App() {
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
                   title="Attach PDF, Log, or CSV"
-                  className="p-2 rounded-full hover:bg-white/10 text-neutral-400 hover:text-white transition cursor-pointer shrink-0"
+                  className="p-2 rounded-full hover:bg-black/[0.05] text-[#555562] hover:text-[#111113] transition cursor-pointer shrink-0"
                 >
                   <Paperclip className="w-4 h-4" />
                 </button>
@@ -733,7 +735,7 @@ export default function App() {
                   }}
                   rows={1}
                   placeholder="Ask AgentVerse anything..."
-                  className="flex-1 resize-none bg-transparent py-1.5 text-sm text-white placeholder:text-neutral-500 focus:outline-none max-h-36"
+                  className="flex-1 resize-none bg-transparent py-1.5 text-sm text-[#111113] placeholder:text-[#7A7A85] focus:outline-none max-h-36"
                 />
 
                 <button
@@ -741,7 +743,7 @@ export default function App() {
                   disabled={!input.trim() || isRunning}
                   onClick={() => void sendMessage()}
                   aria-label="Send message"
-                  className="w-8 h-8 rounded-full bg-emerald-400 hover:bg-emerald-300 text-[#070909] disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center transition cursor-pointer shrink-0"
+                  className="w-8 h-8 rounded-full bg-[#111113] hover:bg-[#2A2A32] text-white disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center transition cursor-pointer shrink-0"
                 >
                   <ArrowUp className="w-4 h-4 stroke-[2.3]" />
                 </button>

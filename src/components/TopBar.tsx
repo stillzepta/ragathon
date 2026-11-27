@@ -19,14 +19,14 @@ export function TopBar({
       <button
         type="button"
         onClick={onNewChat}
-        className="inline-flex items-center gap-2.5 px-4 py-2 rounded-full bg-[#111414] border border-white/10 hover:border-white/20 transition cursor-pointer"
+        className="inline-flex items-center gap-2.5 px-4 py-2 rounded-full bg-white/85 backdrop-blur-md border border-black/[0.07] hover:border-black/[0.14] shadow-2xs transition cursor-pointer"
       >
-        <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
-        <span className="text-xs sm:text-sm font-medium tracking-tight text-white">
+        <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
+        <span className="text-xs sm:text-sm font-medium tracking-tight text-[#111113]">
           AgentVerse
         </span>
         {isLiveBackend && (
-          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+          <span className="w-1.5 h-1.5 rounded-full bg-indigo-500" />
         )}
       </button>
 
@@ -35,7 +35,7 @@ export function TopBar({
         <button
           type="button"
           onClick={onNewChat}
-          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-medium bg-[#111414] border border-white/10 text-neutral-200 hover:text-white hover:border-white/20 transition cursor-pointer"
+          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-medium bg-white/85 backdrop-blur-md border border-black/[0.07] text-[#111113] hover:bg-white shadow-2xs transition cursor-pointer"
         >
           <Plus className="w-3.5 h-3.5" />
           <span>New chat</span>
@@ -45,7 +45,7 @@ export function TopBar({
           type="button"
           onClick={onToggleSidebar}
           aria-label={sidebarOpen ? 'Close sidebar' : 'Open sidebar'}
-          className="p-2.5 rounded-full bg-[#111414] border border-white/10 text-neutral-300 hover:text-white hover:border-white/20 transition cursor-pointer"
+          className="p-2.5 rounded-full bg-white/85 backdrop-blur-md border border-black/[0.07] text-[#4A4A55] hover:text-[#111113] hover:bg-white shadow-2xs transition cursor-pointer"
         >
           <PanelLeft className="w-3.5 h-3.5" />
         </button>

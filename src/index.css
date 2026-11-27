@@ -3,8 +3,8 @@
 @layer base {
   body {
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-    background-color: #070909;
-    color: #f3f4f6;
+    background-color: #ffffff;
+    color: #111113;
   }
 }
 
@@ -16,29 +16,37 @@
   font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
 }
 
-/* GenAI Obsidian Glass Surface */
+/* KRAFT White-to-Indigo Mist Background */
+.kraft-bg {
+  background:
+    radial-gradient(120% 75% at 50% 105%, #2f336e 0%, #5257a3 36%, #99a0de 64%, rgba(255, 255, 255, 0) 86%),
+    linear-gradient(180deg, #ffffff 0%, #ffffff 34%, #e9ecfa 72%, #7d84cb 100%);
+}
+
+/* Frosted White Glass Surface */
 .dia-glass {
-  background: rgba(13, 16, 16, 0.86);
-  backdrop-filter: blur(24px) saturate(150%);
-  -webkit-backdrop-filter: blur(24px) saturate(150%);
-  border: 1px solid rgba(255, 255, 255, 0.09);
+  background: rgba(255, 255, 255, 0.86);
+  backdrop-filter: blur(24px) saturate(160%);
+  -webkit-backdrop-filter: blur(24px) saturate(160%);
+  border: 1px solid rgba(255, 255, 255, 0.96);
   box-shadow:
-    0 20px 50px rgba(0, 0, 0, 0.65),
-    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    0 20px 50px rgba(38, 43, 102, 0.14),
+    inset 0 1px 0 rgba(255, 255, 255, 1);
 }
 
 .dia-glass-subtle {
-  background: rgba(17, 20, 20, 0.75);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.09);
+  background: rgba(255, 255, 255, 0.78);
+  backdrop-filter: blur(18px) saturate(150%);
+  -webkit-backdrop-filter: blur(18px) saturate(150%);
+  border: 1px solid rgba(17, 17, 19, 0.07);
+  box-shadow: 0 6px 20px rgba(38, 43, 102, 0.06);
 }
 
-.emerald-top-glow {
+.indigo-top-glow {
   background-image: linear-gradient(
     90deg,
     transparent 0%,
-    rgba(52, 211, 153, 0.45) 50%,
+    rgba(99, 102, 241, 0.45) 50%,
     transparent 100%
   );
 }

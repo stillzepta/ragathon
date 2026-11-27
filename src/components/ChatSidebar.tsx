@@ -24,38 +24,38 @@ export function ChatSidebar({
     <>
       <div
         onClick={onCloseMobile}
-        className="fixed inset-0 z-30 bg-black/60 backdrop-blur-[2px] md:hidden"
+        className="fixed inset-0 z-30 bg-black/15 backdrop-blur-[2px] md:hidden"
       />
 
-      <aside className="fixed md:static inset-y-0 left-0 z-40 w-60 shrink-0 bg-[#0b0d0d] border-r border-white/[0.07] flex flex-col transition-all duration-200">
+      <aside className="fixed md:static inset-y-0 left-0 z-40 w-60 shrink-0 bg-white/75 backdrop-blur-2xl border-r border-black/[0.06] flex flex-col transition-all duration-200">
         <div className="p-3.5 flex items-center justify-between gap-2">
           <button
             type="button"
             onClick={onNewChat}
-            className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-full bg-[#141818] hover:bg-[#1a1f1f] border border-white/10 text-xs font-medium text-white transition cursor-pointer"
+            className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-full bg-white hover:bg-indigo-50/60 border border-black/[0.07] text-xs font-medium text-[#111113] transition cursor-pointer shadow-2xs"
           >
-            <Plus className="w-3.5 h-3.5 text-emerald-400" />
+            <Plus className="w-3.5 h-3.5 text-indigo-600" />
             <span>New chat</span>
           </button>
 
           <button
             type="button"
             onClick={onCloseMobile}
-            className="md:hidden p-1.5 rounded-full hover:bg-white/10 text-neutral-400"
+            className="md:hidden p-1.5 rounded-full hover:bg-black/[0.05] text-[#6E6E77]"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
         <div className="px-4 pt-2 pb-1">
-          <span className="text-[10px] font-medium uppercase tracking-[0.14em] text-neutral-500">
+          <span className="text-[10px] font-medium uppercase tracking-[0.14em] text-[#7A7A85]">
             Workspace
           </span>
         </div>
 
         <div className="flex-1 overflow-y-auto px-2.5 pb-3 space-y-0.5">
           {threads.length === 0 ? (
-            <p className="text-xs text-neutral-600 px-2.5 py-2">
+            <p className="text-xs text-[#8E8E99] px-2.5 py-2">
               No sessions yet
             </p>
           ) : (
@@ -71,11 +71,11 @@ export function ChatSidebar({
                   }}
                   className={`w-full text-left flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs transition cursor-pointer ${
                     active
-                      ? 'bg-white/[0.08] text-white font-medium border border-white/10'
-                      : 'text-neutral-400 hover:bg-white/[0.04] hover:text-neutral-200'
+                      ? 'bg-white text-[#111113] font-medium shadow-2xs border border-black/[0.06]'
+                      : 'text-[#555562] hover:bg-white/60 hover:text-[#111113]'
                   }`}
                 >
-                  <MessageSquare className="w-3.5 h-3.5 shrink-0 text-emerald-400/75" />
+                  <MessageSquare className="w-3.5 h-3.5 shrink-0 text-indigo-500" />
                   <span className="truncate">{thread.title}</span>
                 </button>
               );
