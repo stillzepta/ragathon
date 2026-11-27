@@ -546,33 +546,33 @@ export default function App() {
         />
       )}
 
-      {/* Morphing "diablo" logo: starts upper-center, shrinks & glides to top-left corner */}
+      {/* Morphing "diablo" bubble logo: starts upper-center, bounces & shrinks into top-left corner */}
       <button
         type="button"
         onClick={handleNewChat}
         title="Diablo Home"
         style={{ transformOrigin: 'center center' }}
-        className={`fixed z-50 -translate-x-1/2 -translate-y-1/2 transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] cursor-pointer ${
+        className={`fixed z-50 -translate-x-1/2 -translate-y-1/2 transition-all duration-[850ms] ease-[cubic-bezier(0.34,1.45,0.64,1)] cursor-pointer rounded-full ${
           introDocked
-            ? 'top-7 left-16 sm:left-20 scale-[0.28]'
-            : 'top-[38%] left-1/2 scale-100'
+            ? 'top-7 left-16 sm:left-20 scale-[0.3] px-7 py-2.5 bg-white/85 backdrop-blur-2xl border border-white shadow-[0_16px_40px_rgba(79,86,184,0.22),inset_0_2px_6px_rgba(255,255,255,1)]'
+            : 'top-[38%] left-1/2 scale-100 px-8 py-3 bg-white/0 border border-transparent'
         }`}
       >
         <SplitText
           text="diablo"
           tag="h1"
           className="font-display text-6xl sm:text-8xl font-bold tracking-[-0.04em] text-[#111113]"
-          effect="rise"
+          effect="pop"
           splitType="chars"
-          delay={60}
-          duration={1.0}
+          delay={55}
+          duration={0.95}
           staggerFrom="start"
           trigger="load"
           accentColor="#4f56b8"
           textAlign="center"
           onLetterAnimationComplete={() => {
-            setTimeout(() => setIntroDocked(true), 380);
-            setTimeout(() => setSplashHidden(true), 1100);
+            setTimeout(() => setIntroDocked(true), 360);
+            setTimeout(() => setSplashHidden(true), 1200);
           }}
         />
       </button>
