@@ -21,6 +21,7 @@ from starlette.concurrency import run_in_threadpool
 import jwt
 
 from app.orchestrator.graph import run_due_diligence
+from app.rag.retriever import default_retriever
 from app.rag.uploads import MAX_UPLOAD_BYTES, extract_text
 from app.storage.runs import RunStore
 from app.tools.report import render_markdown, render_pdf
@@ -196,6 +197,17 @@ async def perform(store, run_id, prompt, data, filename):
 @app.get("/health")
 def health():
     return {"status": "ok", "service": "agentverse-api"}
+
+
+@app.post("/api/retrieve")
+def retrieve(payload: dict) -> dict:
+    """Expose retrieval as a tool for agents and external callers."""
+    query = str(payload.get("query", "")).strip()
+    if not query:
+        return {"query": "", "chunks": [], "error": "query is required"}
+    top_k = max(1, min(int(payload.get("top_k", 6)), 20))
+    chunks = default_retriever().search(query, top_k=top_k)
+    return {"query": query, "chunks": chunks}
 
 
 async def queue_run(request, prompt, domain, file):
