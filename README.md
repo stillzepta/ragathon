@@ -40,3 +40,22 @@ npm run build
 ```
 
 CI runs the same checks on pull requests and pushes to `main`. See [implementation status](IMPLEMENTATION_STATUS.md) and [the target architecture](ARCHITECTURE.md).
+
+## Vercel + Google OAuth
+
+Set these Vercel Environment Variables for Preview and Production:
+
+```env
+VITE_API_URL=https://<deployed-api-host>
+VITE_SUPABASE_URL=https://qnoaezyqryizzblqxjmz.supabase.co
+VITE_SUPABASE_PUBLISHABLE_KEY=<Supabase-publishable-key>
+VITE_AUTH_REDIRECT_URL=https://<your-vercel-domain>
+```
+
+In Supabase Dashboard → Authentication → Providers, enable Google and add the Google OAuth client ID and secret. Set this callback URL in Google Cloud:
+
+```text
+https://qnoaezyqryizzblqxjmz.supabase.co/auth/v1/callback
+```
+
+Add the Vercel domain to Supabase Authentication → URL Configuration as the site URL and an allowed redirect URL. `vercel.json` keeps OAuth returns and other client-side routes inside the Vite SPA.

@@ -95,11 +95,20 @@ export function LoginModal({ open, onClose, onLogin }: LoginModalProps) {
       return;
     }
     setError('');
+    const redirectTo =
+      (import.meta.env.VITE_AUTH_REDIRECT_URL as string | undefined)?.trim() ||
+      window.location.origin;
     const { error: authError } = await supabase.auth.signInWithOAuth({
       provider,
-      options: { redirectTo: window.location.origin },
+      options: { redirectTo },
     });
-    if (authError) setError(authError.message);
+    if (authError) {
+      setError(
+        authError.message.includes('provider')
+          ? `${provider} sign-in is not enabled in Supabase yet.`
+          : authError.message,
+      );
+    }
   };
 
   return (
