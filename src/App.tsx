@@ -151,6 +151,7 @@ export default function App() {
   const [attachedFile, setAttachedFile] = useState<File | null>(null);
   const [isRunning, setIsRunning] = useState(false);
   const [apiToken, setApiToken] = useState('');
+  const [promptMode, setPromptMode] = useState<'chat' | 'diligence'>('chat');
   const activeRequest = useRef<AbortController | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -258,10 +259,11 @@ export default function App() {
     }));
   };
 
-  const sendMessage = async (presetOverride?: DemoPreset, customText?: string) => {
+  const sendMessage = async (presetOverride?: DemoPreset, customText?: string, forceDiligence = false) => {
     const text = (presetOverride ? presetOverride.prompt : customText ?? input).trim();
     if (!text || isRunning) return;
 
+    const isChat = !presetOverride && !attachedFile && !forceDiligence && promptMode === 'chat';
     const token = ++runTokenRef.current;
     const nowLabel = new Date().toLocaleTimeString([], {
       hour: '2-digit',
@@ -281,7 +283,7 @@ export default function App() {
       id: assistantMsgId,
       role: 'assistant',
       text: '',
-      agents: INITIAL_AGENTS.map((a) => ({ ...a })),
+      agents: isChat ? undefined : INITIAL_AGENTS.map((a) => ({ ...a })),
       isStreaming: true,
       createdAt: nowLabel,
     };
@@ -327,12 +329,23 @@ export default function App() {
       activeRequest.current = controller;
       const timer = window.setTimeout(() => controller.abort('timeout'), 120_000);
       const signal = controller.signal;
-      updateAssistantMessage(targetThreadId, assistantMsgId, (m) => ({
-        ...m, agents: CONNECTED_AGENTS,
-      }));
       try {
         const formData = new FormData();
         formData.append('prompt', text);
+        if (isChat) {
+          const response = await api('/api/chat', apiToken, {
+            method: 'POST', body: formData, signal,
+          });
+          const { reply } = await response.json() as { reply: string };
+          updateAssistantMessage(targetThreadId, assistantMsgId, (m) => ({
+            ...m, text: reply, isStreaming: false,
+          }));
+          return;
+        }
+
+        updateAssistantMessage(targetThreadId, assistantMsgId, (m) => ({
+          ...m, agents: CONNECTED_AGENTS,
+        }));
         formData.append('domain', 'bizintel');
         if (currentFile) formData.append('file', currentFile);
 
@@ -539,7 +552,12 @@ export default function App() {
       <div className="relative flex-1 flex flex-col min-w-0">
         {API_URL && (
           <div className="flex items-center justify-between gap-3 px-5 pt-3 text-xs text-indigo-950">
-            <span>Connected due diligence</span>
+            <select aria-label="Prompt mode" value={promptMode}
+              onChange={(event) => setPromptMode(event.target.value === 'diligence' ? 'diligence' : 'chat')}
+              className="rounded-full border border-black/10 bg-white/85 px-3 py-2">
+              <option value="chat">Chat</option>
+              <option value="diligence">Due diligence</option>
+            </select>
             <input type="password" aria-label="API access token" placeholder="API token (if required)"
               autoComplete="off" value={apiToken} onChange={(event) => setApiToken(event.target.value)}
               className="w-36 rounded-full border border-black/10 bg-white/85 px-3 py-2" />
@@ -654,14 +672,14 @@ export default function App() {
                               if (heroInput.trim()) {
                                 void sendMessage(undefined, heroInput);
                               } else if (API_URL) {
-                                void sendMessage(undefined, DILIGENCE_EXAMPLE);
+                                void sendMessage(undefined, DILIGENCE_EXAMPLE, true);
                               } else {
                                 void sendMessage(activeShowcase.preset);
                               }
                             }
                           }}
-                          aria-label="Due-diligence question"
-                          placeholder={API_URL ? DILIGENCE_EXAMPLE : activeShowcase.promptPreview}
+                          aria-label="Message"
+                          placeholder={API_URL ? (promptMode === 'chat' ? 'Ask AgentVerse anything…' : DILIGENCE_EXAMPLE) : activeShowcase.promptPreview}
                           className="flex-1 min-w-0 bg-transparent text-sm text-[#111113] placeholder:text-[#6E6E77] focus:outline-none"
                         />
                         <button
@@ -670,7 +688,7 @@ export default function App() {
                             if (heroInput.trim()) {
                               void sendMessage(undefined, heroInput);
                             } else if (API_URL) {
-                              void sendMessage(undefined, DILIGENCE_EXAMPLE);
+                              void sendMessage(undefined, DILIGENCE_EXAMPLE, true);
                             } else {
                               void sendMessage(activeShowcase.preset);
                             }
