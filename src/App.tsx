@@ -2,6 +2,7 @@ import { ArrowUp, Paperclip, X } from 'lucide-react';
 import { ChangeEvent, useEffect, useRef, useState } from 'react';
 import { ChatMessage } from './components/ChatMessage';
 import { ChatSidebar } from './components/ChatSidebar';
+import { ModelConstellationBg } from './components/ModelConstellationBg';
 import { TopBar } from './components/TopBar';
 import { DEMO_PRESETS } from './data/presets';
 import {
@@ -429,27 +430,9 @@ export default function App() {
   const isEmptyChat = !activeThread || activeThread.messages.length === 0;
 
   return (
-    <div className="relative h-screen flex overflow-hidden bg-[#F4F6F5]">
-      {/* Ambient Aurora Backdrop so every clear-glass card refracts soft color */}
-      <div
-        aria-hidden="true"
-        className="pointer-events-none fixed inset-0 overflow-hidden"
-      >
-        <div
-          className="absolute -top-24 -left-20 w-[520px] h-[520px] rounded-full opacity-55 blur-3xl animate-aurora"
-          style={{
-            background:
-              'radial-gradient(circle, rgba(167, 243, 208, 0.55) 0%, rgba(186, 230, 253, 0.35) 55%, transparent 75%)',
-          }}
-        />
-        <div
-          className="absolute bottom-[-120px] right-[-80px] w-[540px] h-[540px] rounded-full opacity-50 blur-3xl animate-aurora"
-          style={{
-            background:
-              'radial-gradient(circle, rgba(186, 230, 253, 0.55) 0%, rgba(254, 243, 199, 0.45) 55%, transparent 75%)',
-          }}
-        />
-      </div>
+    <div className="relative h-screen flex overflow-hidden bg-[#F8F9FB]">
+      {/* Interactive Roaming AI Model Constellation Background */}
+      <ModelConstellationBg />
 
       <ChatSidebar
         open={sidebarOpen}
@@ -469,44 +452,9 @@ export default function App() {
         />
 
         {/* Chat Scroll Area */}
-        <div className="flex-1 overflow-y-auto px-4 sm:px-6">
+        <div className={`flex-1 overflow-y-auto px-4 sm:px-6 ${isEmptyChat ? 'pointer-events-none' : ''}`}>
           {isEmptyChat ? (
-            <div className="relative max-w-2xl mx-auto h-full flex flex-col items-center justify-center pb-16 text-center">
-              <div
-                aria-hidden="true"
-                className="pointer-events-none absolute -inset-x-8 top-1/4 h-64 rounded-full opacity-75 blur-3xl animate-aurora"
-                style={{
-                  background:
-                    'radial-gradient(circle at 25% 40%, rgba(167, 243, 208, 0.55), transparent 55%), radial-gradient(circle at 75% 35%, rgba(186, 230, 253, 0.6), transparent 55%), radial-gradient(circle at 50% 80%, rgba(254, 243, 199, 0.5), transparent 60%)',
-                }}
-              />
-
-              <p className="relative text-[11px] uppercase tracking-[0.18em] text-[#6E6E6A] mb-3">
-                AgentVerse Assistant
-              </p>
-              <h1 className="relative text-4xl sm:text-5xl font-light tracking-tight text-[#141413] leading-[1.1]">
-                Ask anything. Five agents
-                <br />
-                solve it{' '}
-                <span className="font-serif-accent italic font-normal text-[1.08em]">
-                  together
-                </span>
-                .
-              </h1>
-
-              <div className="relative mt-7 flex flex-wrap items-center justify-center gap-2">
-                {DEMO_PRESETS.map((preset) => (
-                  <button
-                    key={preset.id}
-                    type="button"
-                    onClick={() => void sendMessage(preset)}
-                    className="px-3.5 py-1.5 rounded-full text-xs font-medium dia-glass-subtle text-[#3A3A37] hover:bg-white transition cursor-pointer"
-                  >
-                    {preset.label}
-                  </button>
-                ))}
-              </div>
-            </div>
+            <div className="h-full" />
           ) : (
             <div className="max-w-3xl mx-auto py-6 space-y-6">
               {activeThread.messages.map((msg) => (

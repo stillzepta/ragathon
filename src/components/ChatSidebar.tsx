@@ -22,7 +22,6 @@ export function ChatSidebar({
 
   return (
     <>
-      {/* Mobile backdrop */}
       <div
         onClick={onCloseMobile}
         className="fixed inset-0 z-30 bg-black/15 backdrop-blur-[2px] md:hidden"
@@ -33,7 +32,7 @@ export function ChatSidebar({
           <button
             type="button"
             onClick={onNewChat}
-            className="flex-1 flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-full bg-white/75 hover:bg-white border border-white/90 text-xs font-medium text-[#141413] transition cursor-pointer shadow-2xs"
+            className="flex-1 flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-full bg-white/80 hover:bg-white border border-white text-xs font-medium text-[#141413] transition cursor-pointer shadow-2xs"
           >
             <Plus className="w-3.5 h-3.5" />
             <span>New chat</span>
@@ -72,8 +71,8 @@ export function ChatSidebar({
                   }}
                   className={`w-full text-left flex items-center gap-2.5 px-3.5 py-2.5 rounded-2xl text-xs transition-all cursor-pointer ${
                     active
-                      ? 'bg-white/85 text-[#141413] font-medium shadow-2xs border border-white'
-                      : 'text-[#5A5A55] hover:bg-white/50'
+                      ? 'bg-white/90 text-[#141413] font-medium shadow-2xs border border-white'
+                      : 'text-[#5A5A55] hover:bg-white/60'
                   }`}
                 >
                   <MessageSquare className="w-3.5 h-3.5 shrink-0 text-[#7A7A74]" />

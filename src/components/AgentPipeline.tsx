@@ -60,7 +60,7 @@ export function AgentPipeline({
     return (
       <div
         key={agent.id}
-        className={`dia-glass rounded-2xl p-4 transition-all ${
+        className={`dia-glass rounded-2xl p-3.5 transition-all ${
           agent.status === 'running'
             ? 'ring-1 ring-sky-400/50'
             : agent.status === 'rejected'
@@ -79,7 +79,7 @@ export function AgentPipeline({
             <div className="mt-0.5 shrink-0">{statusIcon}</div>
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-2">
-                <span className="inline-flex items-center gap-1.5 text-sm font-medium text-[#141413]">
+                <span className="inline-flex items-center gap-1.5 text-xs font-medium text-[#141413]">
                   {roleIcon}
                   {agent.name}
                 </span>
@@ -114,11 +114,10 @@ export function AgentPipeline({
           </div>
         </button>
 
-        {/* Time-Travel Shared Memory & Tool Inspector */}
         {isExpanded && hasDetails && (
           <div className="mt-3 pt-3 border-t border-black/[0.06] space-y-2">
             {agent.toolCall && (
-              <div className="rounded-xl bg-[#141413]/[0.03] px-3 py-2">
+              <div className="rounded-xl bg-white/65 px-3 py-2">
                 <span className="text-[10px] uppercase tracking-wider text-[#6E6E6A] block mb-1">
                   Tool Execution
                 </span>
@@ -136,7 +135,7 @@ export function AgentPipeline({
                 {agent.ragSources.map((src) => (
                   <span
                     key={src}
-                    className="font-mono-code text-[11px] px-2 py-0.5 rounded-md bg-black/[0.04] text-[#3A3A37]"
+                    className="font-mono-code text-[11px] px-2 py-0.5 rounded-md bg-white/75 text-[#3A3A37]"
                   >
                     {src}
                   </span>
@@ -145,8 +144,8 @@ export function AgentPipeline({
             )}
 
             {agent.memorySnapshot && (
-              <div className="rounded-xl bg-[#141413] text-neutral-100 p-3 overflow-x-auto">
-                <span className="text-[10px] uppercase tracking-wider text-neutral-400 block mb-1">
+              <div className="rounded-xl bg-white/75 text-[#141413] p-3 overflow-x-auto border border-white">
+                <span className="text-[10px] uppercase tracking-wider text-[#6E6E6A] block mb-1">
                   Shared Memory Snapshot
                 </span>
                 <pre className="font-mono-code text-[11px] leading-relaxed">
@@ -161,21 +160,15 @@ export function AgentPipeline({
   };
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-2.5 pt-2">
       <div className="flex items-center justify-between px-1">
-        <div>
-          <h2 className="text-sm font-medium text-[#141413]">
-            Live Multi-Agent Pipeline
-          </h2>
-          <p className="text-xs text-[#6E6E6A]">
-            Click any completed agent to inspect Shared Memory & tool calls
-          </p>
-        </div>
+        <p className="text-[11px] text-[#6E6E6A]">
+          Click any completed agent to inspect Shared Memory & tool calls
+        </p>
 
         {criticInitialScore !== undefined && criticFinalScore !== undefined && (
-          <div className="px-3 py-1 rounded-full dia-glass-subtle text-xs font-medium text-[#141413]">
-            Critic Loop:{' '}
-            <span className="text-amber-700">{criticInitialScore}</span> →{' '}
+          <div className="px-2.5 py-0.5 rounded-full bg-white/75 text-[11px] font-medium text-[#141413]">
+            Critic: <span className="text-amber-700">{criticInitialScore}</span> →{' '}
             <span className="text-emerald-700">{criticFinalScore}/100</span>
           </div>
         )}
@@ -183,12 +176,11 @@ export function AgentPipeline({
 
       {orchestrator && renderCard(orchestrator)}
 
-      {/* Parallel Fan-Out Group */}
-      <div className="relative pl-3 sm:pl-4 border-l border-black/10 space-y-2.5">
-        <span className="inline-block text-[10px] uppercase tracking-widest text-[#8E8E88] bg-[#F8F8F7] pr-2">
+      <div className="relative pl-3 border-l border-black/10 space-y-2">
+        <span className="inline-block text-[10px] uppercase tracking-widest text-[#8E8E88]">
           Parallel Fan-Out (asyncio)
         </span>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
           {parallelAgents.map(renderCard)}
         </div>
       </div>

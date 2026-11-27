@@ -20,7 +20,7 @@ export function TopBar({
           type="button"
           onClick={onToggleSidebar}
           aria-label={sidebarOpen ? 'Close sidebar' : 'Open sidebar'}
-          className="p-1.5 rounded-full hover:bg-white/70 text-[#4A4A46] transition cursor-pointer"
+          className="p-1.5 rounded-full hover:bg-white/80 text-[#4A4A46] transition cursor-pointer"
         >
           <PanelLeft className="w-4 h-4" />
         </button>
@@ -30,7 +30,7 @@ export function TopBar({
           <span className="text-sm font-medium tracking-tight text-[#141413]">
             AgentVerse
           </span>
-          <span className="text-[11px] px-2 py-0.5 rounded-full bg-white/70 border border-white/80 text-[#6E6E6A]">
+          <span className="text-[11px] px-2 py-0.5 rounded-full bg-white/80 border border-white text-[#6E6E6A]">
             {isLiveBackend ? 'Live API' : 'Multi-Agent'}
           </span>
         </div>
@@ -40,7 +40,7 @@ export function TopBar({
         <button
           type="button"
           onClick={onNewChat}
-          className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full text-xs font-medium dia-glass-subtle text-[#141413] hover:bg-white/80 transition cursor-pointer"
+          className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full text-xs font-medium dia-glass-subtle text-[#141413] hover:bg-white transition cursor-pointer"
         >
           <Plus className="w-3.5 h-3.5" />
           <span>New chat</span>

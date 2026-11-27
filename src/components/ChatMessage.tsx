@@ -56,26 +56,23 @@ export function ChatMessage({
 
   return (
     <div className="flex items-start gap-3">
-      {/* Assistant Avatar */}
       <div className="w-8 h-8 rounded-full dia-glass-subtle flex items-center justify-center shrink-0 mt-0.5">
-        <Sparkles className="w-3.5 h-3.5 text-emerald-700" />
+        <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
       </div>
 
       <div className="flex-1 min-w-0 space-y-3">
-        {/* Glowing Eclipse Orb while thinking */}
         {message.isStreaming && <ThinkingOrb statusText={orbStatusText} />}
 
-        {/* Collapsible Multi-Agent Trace Pill */}
         {message.agents && (
           <div className="dia-glass-subtle rounded-[22px] overflow-hidden transition-all duration-300">
             <button
               type="button"
               onClick={() => setTraceOpen((v) => !v)}
-              className="w-full px-4 py-2.5 flex items-center justify-between text-xs text-[#4A4A46] hover:bg-white/50 transition cursor-pointer"
+              className="w-full px-4 py-2.5 flex items-center justify-between text-xs text-[#4A4A46] hover:bg-white/60 transition cursor-pointer"
             >
               <div className="flex items-center gap-2">
                 {message.isStreaming ? (
-                  <Loader2 className="w-3.5 h-3.5 text-emerald-600 animate-spin" />
+                  <Loader2 className="w-3.5 h-3.5 text-indigo-600 animate-spin" />
                 ) : (
                   <span className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.5)]" />
                 )}
@@ -93,7 +90,7 @@ export function ChatMessage({
             </button>
 
             {traceOpen && (
-              <div className="p-3.5 pt-1 border-t border-white/60">
+              <div className="p-3.5 pt-1 border-t border-white/70">
                 <AgentPipeline
                   agents={message.agents}
                   criticInitialScore={result?.criticInitialScore}
@@ -104,14 +101,13 @@ export function ChatMessage({
           </div>
         )}
 
-        {/* Assistant Answer */}
         {result && (
           <div className="dia-glass rounded-[28px] p-5 sm:p-6 space-y-4">
             <div>
               <h3 className="text-base font-medium text-[#141413]">
                 {result.briefTitle}
               </h3>
-              <p className="mt-2 text-xs text-amber-900 bg-amber-100/45 backdrop-blur-md border border-amber-200/70 rounded-2xl px-3.5 py-2">
+              <p className="mt-2 text-xs text-amber-900 bg-amber-100/50 border border-amber-200/70 rounded-2xl px-3.5 py-2">
                 {result.criticNote}
               </p>
             </div>
@@ -135,7 +131,7 @@ export function ChatMessage({
                   <span
                     key={cite.id}
                     title={cite.snippet}
-                    className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/65 border border-white/80 text-[11px] text-[#3A3A37]"
+                    className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/70 border border-white text-[11px] text-[#3A3A37]"
                   >
                     <span className="font-semibold">[{cite.id}]</span>
                     <span>{cite.title}</span>
@@ -146,7 +142,6 @@ export function ChatMessage({
           </div>
         )}
 
-        {/* Rule #6 Inline Human Approval Card */}
         {action && (
           <div className="dia-glass rounded-[28px] p-5 space-y-3">
             <div className="flex items-center justify-between gap-2">
@@ -164,10 +159,10 @@ export function ChatMessage({
                 value={editedPayload}
                 onChange={(e) => setEditedPayload(e.target.value)}
                 rows={3}
-                className="w-full rounded-2xl bg-white/80 border border-white p-3 font-mono-code text-xs text-[#141413] focus:outline-none"
+                className="w-full rounded-2xl bg-white/85 border border-white p-3 font-mono-code text-xs text-[#141413] focus:outline-none"
               />
             ) : (
-              <pre className="rounded-2xl bg-white/55 border border-white/80 text-[#2A2A27] p-3.5 font-mono-code text-[11px] whitespace-pre-wrap overflow-x-auto">
+              <pre className="rounded-2xl bg-white/60 border border-white/85 text-[#2A2A27] p-3.5 font-mono-code text-[11px] whitespace-pre-wrap overflow-x-auto">
                 {action.payloadPreview}
               </pre>
             )}
@@ -191,7 +186,7 @@ export function ChatMessage({
                     if (!isEditing) setEditedPayload(action.payloadPreview);
                     setIsEditing(!isEditing);
                   }}
-                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full text-xs font-medium bg-white/70 hover:bg-white border border-white/90 text-[#141413] transition cursor-pointer"
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full text-xs font-medium bg-white/75 hover:bg-white border border-white text-[#141413] transition cursor-pointer"
                 >
                   <Edit3 className="w-3.5 h-3.5" />
                   <span>{isEditing ? 'Cancel' : 'Edit'}</span>
@@ -209,8 +204,8 @@ export function ChatMessage({
               <div
                 className={`px-3.5 py-2 rounded-2xl text-xs font-medium ${
                   action.status === 'approved'
-                    ? 'bg-emerald-50/80 text-emerald-900 border border-emerald-200/80'
-                    : 'bg-rose-50/80 text-rose-900 border border-rose-200/80'
+                    ? 'bg-emerald-50/85 text-emerald-900 border border-emerald-200/80'
+                    : 'bg-rose-50/85 text-rose-900 border border-rose-200/80'
                 }`}
               >
                 {action.executionNote}
