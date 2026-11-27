@@ -3,25 +3,51 @@ import { useEffect, useRef, useState } from 'react';
 interface ModelNode {
   id: string;
   name: string;
-  x: number; // percentage 0-100
-  y: number; // percentage 0-100
-  depth: number; // parallax factor
+  x: number;
+  y: number;
+  depth: number;
   duration: number;
   delay: number;
   accent: string;
-  glyph: 'gemini' | 'openai' | 'claude' | 'meta' | 'deepseek' | 'mistral' | 'groq' | 'qwen';
+  hasLimeRing?: boolean;
+  glyph:
+    | 'gemini'
+    | 'openai'
+    | 'claude'
+    | 'meta'
+    | 'deepseek'
+    | 'mistral'
+    | 'microsoft'
+    | 'cohere'
+    | 'groq'
+    | 'qwen';
 }
 
 const MODEL_NODES: ModelNode[] = [
-  { id: 'gemini', name: 'Gemini', x: 18, y: 26, depth: 24, duration: 16, delay: 0, accent: '#38bdf8', glyph: 'gemini' },
-  { id: 'openai', name: 'OpenAI', x: 76, y: 22, depth: 18, duration: 19, delay: -4, accent: '#10b981', glyph: 'openai' },
-  { id: 'claude', name: 'Claude', x: 64, y: 66, depth: 28, duration: 17, delay: -7, accent: '#f59e0b', glyph: 'claude' },
-  { id: 'meta', name: 'Llama', x: 26, y: 68, depth: 20, duration: 21, delay: -2, accent: '#3b82f6', glyph: 'meta' },
-  { id: 'deepseek', name: 'DeepSeek', x: 46, y: 18, depth: 15, duration: 22, delay: -9, accent: '#6366f1', glyph: 'deepseek' },
-  { id: 'mistral', name: 'Mistral', x: 84, y: 54, depth: 26, duration: 18, delay: -5, accent: '#f97316', glyph: 'mistral' },
-  { id: 'groq', name: 'Groq', x: 14, y: 48, depth: 22, duration: 20, delay: -11, accent: '#ec4899', glyph: 'groq' },
-  { id: 'qwen', name: 'Qwen', x: 48, y: 78, depth: 16, duration: 23, delay: -6, accent: '#8b5cf6', glyph: 'qwen' },
+  { id: 'microsoft', name: 'Microsoft', x: 11, y: 8, depth: 16, duration: 21, delay: -2, accent: '#38bdf8', glyph: 'microsoft' },
+  { id: 'cohere', name: 'Cohere', x: 69, y: 7, depth: 18, duration: 20, delay: -6, accent: '#fb7185', glyph: 'cohere' },
+  { id: 'meta', name: 'Meta Llama', x: 14, y: 24, depth: 24, duration: 18, delay: -1, accent: '#3b82f6', glyph: 'meta' },
+  { id: 'qwen', name: 'Qwen', x: 70, y: 23, depth: 20, duration: 19, delay: -8, accent: '#f5f5f4', glyph: 'qwen' },
+  { id: 'gemini', name: 'Gemini', x: 12, y: 44, depth: 26, duration: 16, delay: 0, accent: '#38bdf8', glyph: 'gemini' },
+  { id: 'mistral', name: 'Mistral', x: 87, y: 50, depth: 24, duration: 17, delay: -4, accent: '#f97316', glyph: 'mistral' },
+  { id: 'openai', name: 'OpenAI', x: 19, y: 69, depth: 28, duration: 15, delay: -3, accent: '#f5f5f4', hasLimeRing: true, glyph: 'openai' },
+  { id: 'claude', name: 'Anthropic', x: 56, y: 70, depth: 22, duration: 18, delay: -9, accent: '#f5f5f4', hasLimeRing: true, glyph: 'claude' },
+  { id: 'deepseek', name: 'DeepSeek', x: 17, y: 83, depth: 18, duration: 22, delay: -5, accent: '#3b82f6', hasLimeRing: true, glyph: 'deepseek' },
+  { id: 'groq', name: 'Groq', x: 76, y: 85, depth: 20, duration: 20, delay: -7, accent: '#34d399', glyph: 'groq' },
 ];
+
+// Deterministic starburst rays matching the wide elliptical constellation clusters
+const BURST_RAYS = Array.from({ length: 24 }, (_, i) => {
+  const angle = (i / 24) * Math.PI * 2;
+  const rx = 58 + ((i * 19) % 44);
+  const ry = 22 + ((i * 11) % 18);
+  return {
+    x2: Math.cos(angle) * rx,
+    y2: Math.sin(angle) * ry,
+    r: i % 5 === 0 ? 2.6 : i % 3 === 0 ? 1.8 : 1.1,
+    lime: i === 4 || i === 15,
+  };
+});
 
 function ModelGlyph({ glyph, accent }: { glyph: ModelNode['glyph']; accent: string }) {
   switch (glyph) {
@@ -34,14 +60,14 @@ function ModelGlyph({ glyph, accent }: { glyph: ModelNode['glyph']; accent: stri
     case 'openai':
       return (
         <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke={accent} strokeWidth="1.8">
-          <circle cx="12" cy="12" r="7.5" strokeDasharray="6 3" />
+          <circle cx="12" cy="12" r="7.5" strokeDasharray="5 3" />
           <circle cx="12" cy="12" r="3" />
         </svg>
       );
     case 'claude':
       return (
         <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke={accent} strokeWidth="2" strokeLinecap="round">
-          <path d="M7 18L11.5 6L16 18M9 14H14M18 6V18" />
+          <path d="M5.5 18L10 6L14.5 18M7.5 14H12.5M18 6V18" />
         </svg>
       );
     case 'meta':
@@ -53,12 +79,12 @@ function ModelGlyph({ glyph, accent }: { glyph: ModelNode['glyph']; accent: stri
     case 'mistral':
       return (
         <svg viewBox="0 0 24 24" className="w-4 h-4" fill={accent}>
-          <rect x="4" y="5" width="4" height="4" rx="1" />
-          <rect x="16" y="5" width="4" height="4" rx="1" />
-          <rect x="4" y="10" width="16" height="4" rx="1" />
-          <rect x="4" y="15" width="4" height="4" rx="1" />
-          <rect x="10" y="15" width="4" height="4" rx="1" />
-          <rect x="16" y="15" width="4" height="4" rx="1" />
+          <rect x="4" y="5" width="4" height="4" rx="0.8" />
+          <rect x="16" y="5" width="4" height="4" rx="0.8" />
+          <rect x="4" y="10" width="16" height="4" rx="0.8" />
+          <rect x="4" y="15" width="4" height="4" rx="0.8" />
+          <rect x="10" y="15" width="4" height="4" rx="0.8" />
+          <rect x="16" y="15" width="4" height="4" rx="0.8" />
         </svg>
       );
     case 'deepseek':
@@ -68,18 +94,34 @@ function ModelGlyph({ glyph, accent }: { glyph: ModelNode['glyph']; accent: stri
           <circle cx="14" cy="11" r="1" fill={accent} />
         </svg>
       );
+    case 'microsoft':
+      return (
+        <svg viewBox="0 0 24 24" className="w-3.5 h-3.5">
+          <rect x="4" y="4" width="7" height="7" fill="#f25022" />
+          <rect x="13" y="4" width="7" height="7" fill="#7fba00" />
+          <rect x="4" y="13" width="7" height="7" fill="#00a4ef" />
+          <rect x="13" y="13" width="7" height="7" fill="#ffb900" />
+        </svg>
+      );
+    case 'cohere':
+      return (
+        <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke={accent} strokeWidth="1.8" strokeLinecap="round">
+          <path d="M5 14c1.5-5 3.5-5 5 0s3.5 5 5 0 3.5-5 4-1" />
+        </svg>
+      );
     case 'groq':
       return (
         <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke={accent} strokeWidth="2" strokeLinecap="round">
-          <circle cx="12" cy="12" r="7" />
-          <path d="M12 12h5v4" />
+          <rect x="5" y="11" width="3" height="7" rx="1" fill={accent} />
+          <rect x="10.5" y="7" width="3" height="11" rx="1" fill={accent} />
+          <rect x="16" y="9" width="3" height="9" rx="1" fill={accent} />
         </svg>
       );
     case 'qwen':
       return (
-        <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke={accent} strokeWidth="1.9">
-          <polygon points="12,3 20,7.5 20,16.5 12,21 4,16.5 4,7.5" />
-          <circle cx="12" cy="12" r="2.2" fill={accent} />
+        <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke={accent} strokeWidth="2" strokeLinecap="round">
+          <circle cx="12" cy="10" r="4" />
+          <path d="M7 19c1.5-3 8.5-3 10 0" />
         </svg>
       );
   }
@@ -111,22 +153,27 @@ export function ModelConstellationBg() {
     <div
       aria-hidden="true"
       className="fixed inset-0 overflow-hidden pointer-events-none select-none"
+      style={{
+        background:
+          'radial-gradient(circle at 50% 42%, #191c22 0%, #0f1115 58%, #090a0d 100%)',
+      }}
     >
-      {/* Subtle orbital rings */}
+      {/* Curved Orbital Rings */}
       <svg
-        className="absolute inset-0 w-full h-full opacity-35 transition-transform duration-500 ease-out"
+        className="absolute inset-0 w-full h-full opacity-55 transition-transform duration-500 ease-out"
         viewBox="0 0 1440 900"
         preserveAspectRatio="xMidYMid slice"
         style={{
-          transform: `translate3d(${pointer.x * -10}px, ${pointer.y * -10}px, 0)`,
+          transform: `translate3d(${pointer.x * -12}px, ${pointer.y * -10}px, 0)`,
         }}
       >
-        <ellipse cx="720" cy="450" rx="680" ry="250" fill="none" stroke="rgba(20,20,19,0.09)" strokeWidth="1" />
-        <ellipse cx="720" cy="450" rx="520" ry="185" fill="none" stroke="rgba(20,20,19,0.08)" strokeWidth="1" />
-        <ellipse cx="720" cy="450" rx="840" ry="330" fill="none" stroke="rgba(20,20,19,0.06)" strokeWidth="1" />
+        <ellipse cx="720" cy="430" rx="880" ry="340" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="1" />
+        <ellipse cx="720" cy="430" rx="700" ry="260" fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="1" />
+        <ellipse cx="720" cy="430" rx="520" ry="185" fill="none" stroke="rgba(255,255,255,0.07)" strokeWidth="1" />
+        <ellipse cx="720" cy="430" rx="340" ry="115" fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="1" />
       </svg>
 
-      {/* Roaming AI Model Nodes with constellation bursts */}
+      {/* Roaming AI Model Nodes + Starburst Constellations */}
       {MODEL_NODES.map((node) => {
         const isHovered = hoveredId === node.id;
         return (
@@ -149,44 +196,49 @@ export function ModelConstellationBg() {
                 animationDelay: `${node.delay}s`,
               }}
             >
-              {/* Constellation rays & dots */}
+              {/* Wide Starburst Dot Cluster */}
               <svg
-                viewBox="-50 -50 100 100"
-                className={`w-28 h-28 -m-10 transition-opacity duration-300 ${
-                  isHovered ? 'opacity-90' : 'opacity-45'
+                viewBox="-115 -50 230 100"
+                className={`w-56 h-24 -mx-24 -my-8 transition-opacity duration-300 ${
+                  isHovered ? 'opacity-100' : 'opacity-70'
                 }`}
               >
-                {[0, 35, 75, 120, 165, 210, 255, 310].map((deg, idx) => {
-                  const rad = (deg * Math.PI) / 180;
-                  const len = idx % 2 === 0 ? 40 : 28;
-                  const x2 = Math.cos(rad) * len;
-                  const y2 = Math.sin(rad) * len;
-                  return (
-                    <g key={deg}>
-                      <line
-                        x1="0"
-                        y1="0"
-                        x2={x2}
-                        y2={y2}
-                        stroke="rgba(20,20,19,0.16)"
-                        strokeWidth="0.7"
-                      />
-                      <circle
-                        cx={x2}
-                        cy={y2}
-                        r={idx % 3 === 0 ? 2.1 : 1.3}
-                        fill={idx % 2 === 0 ? node.accent : 'rgba(20,20,19,0.28)'}
-                        fillOpacity="0.65"
-                      />
-                    </g>
-                  );
-                })}
+                {BURST_RAYS.map((ray, idx) => (
+                  <g key={idx}>
+                    <line
+                      x1="0"
+                      y1="0"
+                      x2={ray.x2}
+                      y2={ray.y2}
+                      stroke="rgba(255,255,255,0.12)"
+                      strokeWidth="0.6"
+                    />
+                    <circle
+                      cx={ray.x2}
+                      cy={ray.y2}
+                      r={ray.r}
+                      fill={ray.lime && node.hasLimeRing ? '#a3e635' : 'rgba(229,231,235,0.55)'}
+                    />
+                  </g>
+                ))}
+
+                {/* Signature Lime Hollow Ring Accent */}
+                {node.hasLimeRing && (
+                  <circle
+                    cx="38"
+                    cy="-8"
+                    r="11"
+                    fill="none"
+                    stroke="rgba(163, 230, 53, 0.45)"
+                    strokeWidth="1.1"
+                  />
+                )}
               </svg>
 
-              {/* Frosted Glass Model Icon Pill */}
+              {/* Dark Circular Model Badge */}
               <div
-                className={`absolute flex items-center justify-center w-10 h-10 rounded-full dia-glass transition-all duration-300 ${
-                  isHovered ? 'scale-125 shadow-lg' : 'scale-100'
+                className={`absolute flex items-center justify-center w-9 h-9 rounded-full bg-[#121418] border border-white/20 shadow-[0_0_20px_rgba(0,0,0,0.7)] transition-all duration-300 ${
+                  isHovered ? 'scale-125 border-white/50 shadow-[0_0_24px_rgba(163,230,53,0.28)]' : 'scale-100'
                 }`}
               >
                 <ModelGlyph glyph={node.glyph} accent={node.accent} />
@@ -194,7 +246,7 @@ export function ModelConstellationBg() {
 
               {/* Hover Label */}
               {isHovered && (
-                <span className="absolute top-8 px-2.5 py-0.5 rounded-full text-[10px] font-medium dia-glass text-[#141413] whitespace-nowrap shadow-sm">
+                <span className="absolute top-7 px-2.5 py-0.5 rounded-full text-[10px] font-medium bg-white/10 backdrop-blur-md border border-white/20 text-white whitespace-nowrap">
                   {node.name}
                 </span>
               )}

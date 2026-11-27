@@ -430,7 +430,7 @@ export default function App() {
   const isEmptyChat = !activeThread || activeThread.messages.length === 0;
 
   return (
-    <div className="relative h-screen flex overflow-hidden bg-[#F4F6F5]">
+    <div className="relative h-screen flex overflow-hidden bg-[#0d0f12]">
       {/* Interactive Roaming AI Model Constellation Background */}
       <ModelConstellationBg />
 
@@ -501,7 +501,7 @@ export default function App() {
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
                 title="Attach PDF, Log, or CSV"
-                className="p-2.5 rounded-full hover:bg-black/[0.05] text-[#5A5A55] transition cursor-pointer shrink-0"
+                className="p-2.5 rounded-full hover:bg-white/10 text-neutral-300 transition cursor-pointer shrink-0"
               >
                 <Paperclip className="w-4 h-4" />
               </button>
@@ -517,7 +517,7 @@ export default function App() {
                 }}
                 rows={1}
                 placeholder="Message AgentVerse..."
-                className="flex-1 resize-none bg-transparent py-2 text-sm text-[#141413] placeholder:text-[#9A9A94] focus:outline-none max-h-36"
+                className="flex-1 resize-none bg-transparent py-2 text-sm text-white placeholder:text-neutral-400 focus:outline-none max-h-36"
               />
 
               <button
@@ -525,7 +525,7 @@ export default function App() {
                 disabled={!input.trim() || isRunning}
                 onClick={() => void sendMessage()}
                 aria-label="Send message"
-                className="p-2.5 rounded-full bg-[#141413] text-white hover:bg-[#2A2A28] disabled:opacity-35 disabled:cursor-not-allowed transition cursor-pointer shrink-0"
+                className="p-2.5 rounded-full bg-white text-[#0d0f12] hover:bg-neutral-200 disabled:opacity-30 disabled:cursor-not-allowed transition cursor-pointer shrink-0"
               >
                 <ArrowUp className="w-4 h-4" />
               </button>
