@@ -156,12 +156,11 @@ export default function App() {
   const [attachedFile, setAttachedFile] = useState<File | null>(null);
   const [isRunning, setIsRunning] = useState(false);
   const [apiToken, setApiToken] = useState('');
-  const [manualToken, setManualToken] = useState(() => {
+  const [manualToken] = useState(() => {
     try { return sessionStorage.getItem('agentverse_api_token') ?? ''; }
     catch { return ''; }
   });
-  const tokenInputRef = useRef<HTMLInputElement>(null);
-  const requestToken = () => (tokenInputRef.current?.value || manualToken || apiToken).trim();
+  const requestToken = () => (manualToken || apiToken).trim();
   const [promptMode] = useState<'chat' | 'diligence'>('chat');
   const activeRequest = useRef<AbortController | null>(null);
 
@@ -630,21 +629,6 @@ export default function App() {
 
   return (
     <div className="relative h-screen w-screen overflow-hidden kraft-bg text-[#111113] flex">
-      {API_URL && promptMode === 'diligence' && (
-        <label className="fixed right-24 top-5 z-40 flex items-center gap-2 rounded-full bg-white/90 px-3 py-2 text-xs shadow-sm">
-          API access token
-          <input ref={tokenInputRef} type="password" aria-label="API access token" autoComplete="off"
-            placeholder="Enter workspace token" value={manualToken}
-            onChange={(event) => {
-              const value = event.target.value.trim();
-              setManualToken(value);
-              try {
-                if (value) sessionStorage.setItem('agentverse_api_token', value);
-                else sessionStorage.removeItem('agentverse_api_token');
-              } catch { /* In-memory access still works if storage is blocked. */ }
-            }} className="w-36 bg-transparent outline-none" />
-        </label>
-      )}
       {/* Splash backdrop that fades away to reveal main page */}
       {!splashHidden && (
         <div
