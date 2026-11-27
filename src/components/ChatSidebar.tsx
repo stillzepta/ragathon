@@ -57,15 +57,15 @@ export function ChatSidebar({
   };
 
   return (
-    <div className="relative z-40 flex md:h-full shrink-0">
+    <div className="relative z-40 flex lg:h-full shrink-0">
       {/* Expandable Glass Drawer */}
       {open && (
         <>
           <div
             onClick={onCloseDrawer}
-            className="fixed inset-0 z-30 bg-black/15 backdrop-blur-[2px] md:hidden"
+            className="fixed inset-0 z-30 bg-black/15 backdrop-blur-[2px] lg:hidden"
           />
-          <div className="fixed inset-x-3 bottom-20 top-16 md:static md:inset-auto md:my-3 md:mr-2 z-40 md:w-64 rounded-[28px] bg-white/85 md:bg-white/72 backdrop-blur-2xl border border-white/90 shadow-[0_24px_60px_rgba(30,34,90,0.18)] flex flex-col overflow-hidden animate-fade-slide">
+          <div className="fixed inset-x-3 bottom-20 top-16 lg:static lg:inset-auto lg:my-3 lg:mr-2 z-40 lg:w-64 rounded-[28px] bg-white/85 lg:bg-white/72 backdrop-blur-2xl border border-white/90 shadow-[0_24px_60px_rgba(30,34,90,0.18)] flex flex-col overflow-hidden animate-fade-slide">
             <div className="p-3.5 flex items-center justify-between border-b border-black/[0.05]">
               <span className="text-xs font-semibold text-[#111113]">
                 {activeDrawerTab === 'history' ? 'Recent Chats' : 'Quick Launch'}
@@ -151,7 +151,7 @@ export function ChatSidebar({
       )}
 
       {/* Desktop: Floating Clear-Glass Icon Rail on Right */}
-      <aside className="hidden md:flex relative z-40 my-3 mr-3 w-[56px] shrink-0 rounded-full bg-white/38 backdrop-blur-2xl border border-white/60 shadow-[0_16px_40px_rgba(30,34,90,0.12)] flex-col items-center justify-between py-3.5">
+      <aside className="hidden lg:flex relative z-40 my-3 mr-3 w-[56px] shrink-0 rounded-full bg-white/38 backdrop-blur-2xl border border-white/60 shadow-[0_16px_40px_rgba(30,34,90,0.12)] flex-col items-center justify-between py-3.5">
         {/* Top Icons */}
         <div className="flex flex-col items-center gap-2.5">
           {/* Glowing Brand Sparkle Ring */}
@@ -268,7 +268,7 @@ export function ChatSidebar({
       {/* Mobile: Sleek Bottom Floating Dock */}
       <nav
         aria-label="Mobile Navigation"
-        className="md:hidden fixed bottom-3 left-1/2 -translate-x-1/2 z-40 flex items-center gap-1.5 px-2.5 py-1.5 rounded-full bg-white/80 backdrop-blur-2xl border border-white shadow-[0_14px_36px_rgba(30,34,90,0.18)]"
+        className="lg:hidden fixed bottom-3 left-1/2 -translate-x-1/2 z-40 flex items-center gap-1.5 px-2.5 py-1.5 rounded-full bg-white/80 backdrop-blur-2xl border border-white shadow-[0_14px_36px_rgba(30,34,90,0.18)]"
       >
         <button
           type="button"

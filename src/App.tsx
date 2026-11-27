@@ -577,9 +577,9 @@ export default function App() {
       </button>
       <div className="relative flex-1 flex flex-col min-w-0">
         {/* Main Viewport */}
-        <div className="flex-1 overflow-y-auto px-4 sm:px-8 pt-16 md:pt-4 pb-20 md:pb-4">
+        <div className="flex-1 overflow-y-auto px-4 sm:px-8 pt-20 lg:pt-4 pb-24 lg:pb-4">
           {isEmptyChat ? (
-            <div className="max-w-6xl mx-auto min-h-full flex items-center py-4 sm:py-12">
+            <div className="max-w-6xl mx-auto min-h-full flex items-start lg:items-center py-4 lg:py-12">
               <div className="w-full grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-16 items-center">
                 {/* Left Editorial Column */}
                 <div className="lg:col-span-6 space-y-6 sm:space-y-9">
