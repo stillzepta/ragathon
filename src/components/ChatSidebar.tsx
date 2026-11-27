@@ -2,6 +2,8 @@ import {
   Clock,
   GraduationCap,
   LayoutGrid,
+  LogIn,
+  LogOut,
   MessageSquare,
   Search,
   Settings,
@@ -13,27 +15,34 @@ import {
 import { useState } from 'react';
 import { DEMO_PRESETS } from '../data/presets';
 import { ChatThread, DemoPreset } from '../types';
+import { AuthUser } from './LoginModal';
 
 interface ChatSidebarProps {
   open: boolean;
   threads: ChatThread[];
   activeThreadId: string | null;
+  user: AuthUser | null;
   onSelectThread: (id: string) => void;
   onNewChat: () => void;
   onSelectPreset: (preset: DemoPreset) => void;
   onToggleDrawer: () => void;
   onCloseDrawer: () => void;
+  onOpenLogin: () => void;
+  onLogout: () => void;
 }
 
 export function ChatSidebar({
   open,
   threads,
   activeThreadId,
+  user,
   onSelectThread,
   onNewChat,
   onSelectPreset,
   onToggleDrawer,
   onCloseDrawer,
+  onOpenLogin,
+  onLogout,
 }: ChatSidebarProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeDrawerTab, setActiveDrawerTab] = useState<'history' | 'presets'>('history');
@@ -220,8 +229,8 @@ export function ChatSidebar({
           </button>
         </div>
 
-        {/* Bottom Settings */}
-        <div className="flex flex-col items-center">
+        {/* Bottom Settings & Sign In / Out */}
+        <div className="flex flex-col items-center gap-2">
           <button
             type="button"
             onClick={() => openTab('presets')}
@@ -230,6 +239,29 @@ export function ChatSidebar({
           >
             <Settings className="w-4 h-4" />
           </button>
+
+          {user ? (
+            <button
+              type="button"
+              onClick={onLogout}
+              title={`Signed in as ${user.name} (Click to sign out)`}
+              className="w-9 h-9 rounded-full bg-[#111113] text-white text-xs font-semibold flex items-center justify-center shadow-sm hover:bg-rose-600 transition cursor-pointer group"
+            >
+              <span className="group-hover:hidden">
+                {user.name.charAt(0).toUpperCase()}
+              </span>
+              <LogOut className="w-3.5 h-3.5 hidden group-hover:block" />
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={onOpenLogin}
+              title="Sign in"
+              className="w-9 h-9 rounded-full bg-white/75 hover:bg-white text-[#111113] border border-white flex items-center justify-center shadow-2xs transition cursor-pointer"
+            >
+              <LogIn className="w-4 h-4" />
+            </button>
+          )}
         </div>
       </aside>
     </div>

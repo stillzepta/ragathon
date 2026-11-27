@@ -3,6 +3,7 @@ import { ChangeEvent, useEffect, useRef, useState } from 'react';
 import { ArtifactPanel } from './components/ArtifactPanel';
 import { ChatMessage } from './components/ChatMessage';
 import { ChatSidebar } from './components/ChatSidebar';
+import { AuthUser, LoginModal } from './components/LoginModal';
 import { DEMO_PRESETS } from './data/presets';
 import {
   AgentNode,
@@ -121,6 +122,15 @@ const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 export default function App() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [loginOpen, setLoginOpen] = useState(false);
+  const [user, setUser] = useState<AuthUser | null>(() => {
+    try {
+      const saved = localStorage.getItem('agentverse_user');
+      return saved ? (JSON.parse(saved) as AuthUser) : null;
+    } catch {
+      return null;
+    }
+  });
   const [threads, setThreads] = useState<ChatThread[]>([]);
   const [activeThreadId, setActiveThreadId] = useState<string | null>(null);
   const [selectedArtifactMsgId, setSelectedArtifactMsgId] = useState<string | null>(null);
@@ -794,11 +804,26 @@ export default function App() {
         open={sidebarOpen}
         threads={threads}
         activeThreadId={activeThreadId}
+        user={user}
         onSelectThread={(id) => setActiveThreadId(id)}
         onNewChat={handleNewChat}
         onSelectPreset={(preset) => void sendMessage(preset)}
         onToggleDrawer={() => setSidebarOpen((v) => !v)}
         onCloseDrawer={() => setSidebarOpen(false)}
+        onOpenLogin={() => setLoginOpen(true)}
+        onLogout={() => {
+          setUser(null);
+          localStorage.removeItem('agentverse_user');
+        }}
+      />
+
+      <LoginModal
+        open={loginOpen}
+        onClose={() => setLoginOpen(false)}
+        onLogin={(loggedInUser) => {
+          setUser(loggedInUser);
+          localStorage.setItem('agentverse_user', JSON.stringify(loggedInUser));
+        }}
       />
     </div>
   );
