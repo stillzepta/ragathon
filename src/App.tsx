@@ -443,8 +443,14 @@ export default function App() {
             .filter((message) => !message.isStreaming && !message.error && !message.result)
             .slice(-12)
             .map((message) => ({ role: message.role, content: message.text }))));
-          const { data: auth } = await supabase?.auth.getUser() ?? { data: { user: null } };
-          const signedInUser = auth.user;
+          let signedInUser: { id: string } | null = null;
+          try {
+            const { data: auth } = await supabase?.auth.getUser() ?? { data: { user: null } };
+            signedInUser = auth.user ? { id: auth.user.id } : null;
+          } catch {
+            // Chat replies must not depend on Supabase availability.
+            signedInUser = null;
+          }
           if (supabase && signedInUser) {
             const { error: threadError } = await supabase.from('chat_threads').upsert({
               id: targetThreadId,
@@ -452,12 +458,12 @@ export default function App() {
               title: activeThread?.title ?? text.slice(0, 38),
               updated_at: new Date().toISOString(),
             });
-            if (threadError) throw new Error('Could not save this chat.');
-            const { error: messageError } = await supabase.from('chat_messages').insert({
-              id: userMsg.id, thread_id: targetThreadId, user_id: signedInUser.id,
-              role: 'user', content: text,
-            });
-            if (messageError) throw new Error('Could not save this message.');
+            if (!threadError) {
+              await supabase.from('chat_messages').insert({
+                id: userMsg.id, thread_id: targetThreadId, user_id: signedInUser.id,
+                role: 'user', content: text,
+              });
+            }
           }
           const response = await api('/api/chat', requestToken(), {
             method: 'POST', body: formData, signal,
