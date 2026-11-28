@@ -3,6 +3,7 @@ import { ChangeEvent, ClipboardEvent, useEffect, useRef, useState } from 'react'
 import { ArtifactPanel } from './components/ArtifactPanel';
 import { ChatMessage } from './components/ChatMessage';
 import { ChatSidebar } from './components/ChatSidebar';
+import { EmailModal } from './components/EmailModal';
 import { AuthUser, LoginModal } from './components/LoginModal';
 import SplitText from './components/SplitText';
 import { api, API_URL } from './api';
@@ -166,6 +167,7 @@ export default function App() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [user, setUser] = useState<AuthUser | null>(null);
   const [loginOpen, setLoginOpen] = useState(false);
+  const [emailOpen, setEmailOpen] = useState(false);
   const [authReady, setAuthReady] = useState(false);
   const [hasUnlocked, setHasUnlocked] = useState<boolean>(() => {
     try {
@@ -1159,6 +1161,7 @@ export default function App() {
           onToggleDrawer={() => setSidebarOpen((v) => !v)}
           onCloseDrawer={() => setSidebarOpen(false)}
           onOpenLogin={() => setLoginOpen(true)}
+          onOpenEmail={() => setEmailOpen(true)}
           onLogout={() => {
             void supabase?.auth.signOut().finally(() => {
               setUser(null);
@@ -1169,6 +1172,13 @@ export default function App() {
           }}
         />
       )}
+
+      <EmailModal
+        open={emailOpen}
+        token={requestToken()}
+        senderName={user?.name}
+        onClose={() => setEmailOpen(false)}
+      />
 
       {authReady && (
         <LoginModal
