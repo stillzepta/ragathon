@@ -3,6 +3,7 @@ import {
   LayoutGrid,
   LogIn,
   LogOut,
+  Mail,
   MessageSquare,
   Search,
   Settings,
@@ -26,6 +27,7 @@ interface ChatSidebarProps {
   onToggleDrawer: () => void;
   onCloseDrawer: () => void;
   onOpenLogin: () => void;
+  onOpenEmail: () => void;
   onLogout: () => void;
 }
 
@@ -40,6 +42,7 @@ export function ChatSidebar({
   onToggleDrawer,
   onCloseDrawer,
   onOpenLogin,
+  onOpenEmail,
   onLogout,
 }: ChatSidebarProps) {
   const [searchQuery, setSearchQuery] = useState('');
@@ -205,6 +208,16 @@ export function ChatSidebar({
           >
             <Clock className="w-4 h-4" />
           </button>
+
+          {/* AI Mail Composer */}
+          <button
+            type="button"
+            onClick={onOpenEmail}
+            title="AI Mail Composer"
+            className="w-9 h-9 rounded-full hover:bg-white/60 text-[#22243a] hover:text-[#111113] flex items-center justify-center transition cursor-pointer"
+          >
+            <Mail className="w-4 h-4" />
+          </button>
         </div>
 
         {/* Bottom Settings & Sign In / Out */}
@@ -273,6 +286,14 @@ export function ChatSidebar({
           }`}
         >
           <Clock className="w-4 h-4" />
+        </button>
+        <button
+          type="button"
+          onClick={onOpenEmail}
+          title="AI Mail Composer"
+          className="w-9 h-9 rounded-full text-[#22243a] flex items-center justify-center cursor-pointer"
+        >
+          <Mail className="w-4 h-4" />
         </button>
         {user ? (
           <button

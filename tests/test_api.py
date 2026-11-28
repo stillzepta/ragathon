@@ -135,7 +135,7 @@ def test_chat_uses_one_model_with_fallback_and_no_workflow(client, monkeypatch):
 
     def gemini(self, system, prompt):
         calls.append(("gemini", prompt))
-        return " " if prompt == "hello" else "RAG retrieves evidence before answering."
+        return " " if prompt == "User: hello" else "RAG retrieves evidence before answering."
 
     def groq(self, system, prompt):
         calls.append(("groq", prompt))
@@ -154,7 +154,7 @@ def test_chat_uses_one_model_with_fallback_and_no_workflow(client, monkeypatch):
     assert client.post("/api/chat", data={"prompt": "What is RAG?"}).json() == {
         "reply": "RAG retrieves evidence before answering."
     }
-    assert calls == [("gemini", "hello"), ("groq", "hello"), ("gemini", "What is RAG?")]
+    assert calls == [("gemini", "User: hello"), ("groq", "User: hello"), ("gemini", "User: What is RAG?")]
 
 
 def test_public_chat_validates_origin_and_reports_model_unavailability(client):
