@@ -50,6 +50,7 @@ export function LoginModal({ open, onClose, onLogin }: LoginModalProps) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
   const [busy, setBusy] = useState(false);
 
   if (!open) return null;
@@ -62,6 +63,7 @@ export function LoginModal({ open, onClose, onLogin }: LoginModalProps) {
     }
     setBusy(true);
     setError('');
+    setSuccess('');
     const result = mode === 'signin'
       ? await supabase.auth.signInWithPassword({ email: email.trim(), password })
       : await supabase.auth.signUp({
@@ -74,6 +76,12 @@ export function LoginModal({ open, onClose, onLogin }: LoginModalProps) {
       setError(result.error.message);
       return;
     }
+    if (mode === 'signup' && !result.data.session) {
+      setSuccess('Account created. Please sign in.');
+      setMode('signin');
+      setPassword('');
+      return;
+    }
     if (result.data.user && (mode === 'signin' || result.data.session)) {
       const profileName = result.data.user.user_metadata?.full_name || name.trim() || result.data.user.email?.split('@')[0] || 'User';
       await supabase.from('profiles').upsert({ id: result.data.user.id, full_name: profileName }, { onConflict: 'id' });
@@ -81,10 +89,6 @@ export function LoginModal({ open, onClose, onLogin }: LoginModalProps) {
         name: profileName,
         email: result.data.user.email ?? email.trim(),
       });
-    }
-    if (mode === 'signup' && !result.data.session) {
-      setError('Account created. Check your email to confirm your account, then sign in.');
-      return;
     }
     onClose();
   };
@@ -235,12 +239,13 @@ export function LoginModal({ open, onClose, onLogin }: LoginModalProps) {
           </form>
 
           {error && <p className="text-xs text-rose-700 bg-rose-50 border border-rose-200 rounded-xl px-3 py-2">{error}</p>}
+          {success && <p role="status" className="text-xs text-emerald-800 bg-emerald-50 border border-emerald-200 rounded-xl px-3 py-2">{success}</p>}
 
           {/* Footer Toggle */}
           <div className="flex items-center justify-between text-xs text-[#4A4A58] pt-1">
             <button
               type="button"
-              onClick={() => setMode(mode === 'signin' ? 'signup' : 'signin')}
+              onClick={() => { setMode(mode === 'signin' ? 'signup' : 'signin'); setError(''); setSuccess(''); }}
               className="hover:text-[#111113] font-medium transition cursor-pointer"
             >
               {mode === 'signin'
