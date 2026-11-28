@@ -1,5 +1,9 @@
 import {
+  ArrowUpRight,
+  Bug,
   Clock,
+  LifeBuoy,
+  Lightbulb,
   LayoutGrid,
   LogIn,
   LogOut,
@@ -10,9 +14,38 @@ import {
   SquarePen,
   X,
 } from 'lucide-react';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { ChatThread } from '../types';
 import { AuthUser } from './LoginModal';
+
+const issueForm = 'https://github.com/stillzepta/ragathon/issues/new';
+const supportEmail = import.meta.env.VITE_SUPPORT_EMAIL?.trim();
+const feedbackLinks = [
+  {
+    icon: Bug,
+    label: 'Report a bug',
+    description: 'Describe the issue and optionally attach a screenshot.',
+    href: `${issueForm}?title=${encodeURIComponent('Bug: ')}&body=${encodeURIComponent(
+      'What went wrong?\n\nSteps to reproduce\n\nWhat did you expect?\n\nScreenshot (optional)\n',
+    )}`,
+  },
+  {
+    icon: Lightbulb,
+    label: 'Suggest a feature',
+    description: 'Tell us what you’d like Diablo to do next.',
+    href: `${issueForm}?title=${encodeURIComponent('Feature: ')}&body=${encodeURIComponent(
+      'What would you like Diablo to do?\n\nHow would it help?\n',
+    )}`,
+  },
+  {
+    icon: LifeBuoy,
+    label: 'Contact us',
+    description: 'Get help with your account or sign-in.',
+    href: supportEmail
+      ? `mailto:${supportEmail}?subject=Diablo%20support`
+      : `${issueForm}?title=${encodeURIComponent('Support: ')}`,
+  },
+];
 
 interface ChatSidebarProps {
   open: boolean;
@@ -45,13 +78,14 @@ export function ChatSidebar({
   onOpenEmail,
   onLogout,
 }: ChatSidebarProps) {
+  const searchRef = useRef<HTMLInputElement>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeDrawerTab, setActiveDrawerTab] = useState<'history' | 'apps' | 'settings'>('history');
 
   const drawerTitles = { history: 'Recent Chats', apps: 'Apps', settings: 'Workspace Settings' };
 
   const filteredThreads = threads.filter((t) =>
-    t.title.toLowerCase().includes(searchQuery.toLowerCase())
+    t.title.toLowerCase().includes(searchQuery.trim().toLowerCase())
   );
 
   const openTab = (tab: 'history' | 'apps' | 'settings') => {
@@ -68,7 +102,7 @@ export function ChatSidebar({
             onClick={onCloseDrawer}
             className="fixed inset-0 z-30 bg-black/15 backdrop-blur-[2px] lg:hidden"
           />
-          <div className="fixed inset-x-3 bottom-20 top-16 lg:static lg:inset-auto lg:my-3 lg:mr-2 z-40 lg:w-64 rounded-[28px] bg-white/85 lg:bg-white/72 backdrop-blur-2xl border border-white/90 shadow-[0_24px_60px_rgba(30,34,90,0.18)] flex flex-col overflow-hidden animate-fade-slide">
+          <div className="fixed inset-x-3 bottom-20 top-16 lg:static lg:inset-auto lg:my-3 lg:mr-2 z-40 lg:w-80 rounded-[28px] bg-white/85 lg:bg-white/72 backdrop-blur-2xl border border-white/90 shadow-[0_24px_60px_rgba(30,34,90,0.18)] flex flex-col overflow-hidden animate-fade-slide">
             <div className="p-3.5 flex items-center justify-between border-b border-black/[0.05]">
               <span className="text-xs font-semibold text-[#111113]">
                 {drawerTitles[activeDrawerTab]}
@@ -111,26 +145,72 @@ export function ChatSidebar({
                     </button>
                   )}
                 </div>
+                <section aria-labelledby="feedback-heading" className="space-y-2 border-t border-black/[0.06] pt-3">
+                  <h2 id="feedback-heading" className="text-xs font-semibold">Help & feedback</h2>
+                  {feedbackLinks.map(({ icon: Icon, label, description, href }) => (
+                    <a
+                      key={label}
+                      href={href}
+                      target={href.startsWith('https:') ? '_blank' : undefined}
+                      rel={href.startsWith('https:') ? 'noopener noreferrer' : undefined}
+                      className="flex items-start gap-2.5 rounded-xl border border-black/[0.06] bg-white/65 p-2.5 hover:bg-white"
+                    >
+                      <Icon className="mt-0.5 h-4 w-4 shrink-0 text-indigo-600" aria-hidden="true" />
+                      <span className="min-w-0 flex-1">
+                        <span className="block text-xs font-medium">{label}</span>
+                        <span className="mt-0.5 block text-[11px] text-[#4A4A58]">{description}</span>
+                      </span>
+                      <ArrowUpRight className="h-3.5 w-3.5 shrink-0 text-[#6E6E77]" aria-hidden="true" />
+                    </a>
+                  ))}
+                  <p className="text-[11px] leading-relaxed text-[#4A4A58]">
+                    GitHub issues are public. Keep account details and private information out of reports and screenshots.
+                  </p>
+                </section>
               </div>
             ) : activeDrawerTab === 'history' ? (
               <>
-                <div className="p-2.5">
-                  <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#F3F4FA] border border-black/[0.05]">
-                    <Search className="w-3.5 h-3.5 text-[#7A7A85]" />
+                <nav aria-label="Chat shortcuts" className="space-y-1.5 border-b border-indigo-950/[0.06] p-3">
+                  <button type="button" onClick={() => { onNewChat(); onCloseDrawer(); }}
+                    className="flex min-h-10 w-full items-center gap-2.5 rounded-xl bg-indigo-50 px-3 text-sm font-semibold text-indigo-950 hover:bg-indigo-100">
+                    <SquarePen className="h-4 w-4 text-indigo-600" aria-hidden="true" />
+                    New chat
+                  </button>
+                  <div className="grid grid-cols-3 gap-1">
+                    <button type="button" onClick={() => searchRef.current?.focus()}
+                      className="flex items-center justify-center gap-1.5 rounded-lg px-1 py-2 text-xs text-[#4A4A58] hover:bg-white">
+                      <Search className="h-3.5 w-3.5" aria-hidden="true" /> Search
+                    </button>
+                    <button type="button" onClick={() => openTab('apps')}
+                      className="flex items-center justify-center gap-1.5 rounded-lg px-1 py-2 text-xs text-[#4A4A58] hover:bg-white">
+                      <LayoutGrid className="h-3.5 w-3.5" aria-hidden="true" /> Apps
+                    </button>
+                    <button type="button" onClick={() => openTab('settings')}
+                      className="flex items-center justify-center gap-1.5 rounded-lg px-1 py-2 text-xs text-[#4A4A58] hover:bg-white">
+                      <Settings className="h-3.5 w-3.5" aria-hidden="true" /> Settings
+                    </button>
+                  </div>
+                </nav>
+                <div className="space-y-2 px-3 pb-2 pt-3">
+                  <h2 className="text-xs font-semibold text-[#4A4A58]">Chats</h2>
+                  <div className="flex items-center gap-2 rounded-xl border border-indigo-950/[0.06] bg-white/70 px-3 py-2 focus-within:border-indigo-300">
+                    <Search className="h-3.5 w-3.5 shrink-0 text-[#6E6E77]" aria-hidden="true" />
                     <input
-                      type="text"
+                      ref={searchRef}
+                      type="search"
+                      aria-label="Search chats"
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      placeholder="Search chats..."
-                      className="w-full bg-transparent text-xs text-[#111113] placeholder:text-[#8E8E99] focus:outline-none"
+                      placeholder="Search chats"
+                      className="w-full min-w-0 bg-transparent text-xs text-[#111113] placeholder:text-[#6E6E77] focus:outline-none"
                     />
                   </div>
                 </div>
 
-                <div className="flex-1 overflow-y-auto px-2.5 pb-4 space-y-1">
+                <div className="min-h-0 flex-1 space-y-0.5 overflow-y-auto px-3 pb-4">
                   {filteredThreads.length === 0 ? (
                     <p className="text-xs text-[#8E8E99] px-3 py-2">
-                      No chats yet
+                      {searchQuery.trim() ? 'No matching chats' : 'No chats yet'}
                     </p>
                   ) : (
                     filteredThreads.map((thread) => {
@@ -143,13 +223,15 @@ export function ChatSidebar({
                             onSelectThread(thread.id);
                             onCloseDrawer();
                           }}
-                          className={`w-full text-left flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs transition cursor-pointer ${
+                          aria-current={active ? 'true' : undefined}
+                          title={thread.title}
+                          className={`flex min-h-10 w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left text-sm transition cursor-pointer ${
                             active
-                              ? 'bg-white text-[#111113] font-medium shadow-2xs border border-black/[0.06]'
+                              ? 'bg-indigo-50 text-indigo-950 font-medium ring-1 ring-inset ring-indigo-100'
                               : 'text-[#4A4A58] hover:bg-white/70 hover:text-[#111113]'
                           }`}
                         >
-                          <MessageSquare className="w-3.5 h-3.5 shrink-0 text-indigo-500" />
+                          <MessageSquare className={`h-3.5 w-3.5 shrink-0 ${active ? 'text-indigo-600' : 'text-zinc-500'}`} aria-hidden="true" />
                           <span className="truncate">{thread.title}</span>
                         </button>
                       );
