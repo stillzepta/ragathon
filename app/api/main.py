@@ -256,8 +256,8 @@ async def queue_run(request, prompt, domain, file):
     prompt = prompt.strip()
     if not prompt:
         raise HTTPException(422, "Enter a due-diligence question.")
-    if domain not in {"auto", "bizintel"}:
-        raise HTTPException(422, "The connected workspace supports startup due diligence.")
+    if domain not in {"auto", "research", "bizintel"}:
+        raise HTTPException(422, "Unsupported research template.")
     reserve_submission(state)
     run_id = f"run-{uuid.uuid4().hex}"
     ready = asyncio.get_running_loop().create_future()
