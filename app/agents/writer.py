@@ -35,7 +35,11 @@ def writer_node(state: AgentState) -> AgentState:
             + ("For travel requests, write ## Trip plan with a direct budget feasibility verdict first. "
             "Use the supplied origin, destination, date, travelers and budget; never ask for details already supplied. "
             "Include ## How to reach, ## Stays and food, ## Budget, and ## Unknowns. "
-            "In the budget table distinguish verified costs from unknown costs, and include permits and return travel. "
+            "In the budget table distinguish advertised starting prices, explicit planning assumptions, and unknown costs. "
+            "Include permits and return travel. Use one budget table and make every headline total and verdict agree "
+            "with its arithmetic. For a two-day trip assume one night unless the user specifies otherwise, and state that assumption. "
+            "A fare for one direction does not establish the return fare; identify an assumed equal return fare as an assumption. "
+            "Do not claim room capacity, included taxes, bus class or journey time unless the evidence says so. "
             "Provide numeric price ranges when supported by operator or booking evidence. Label advertised starting "
             "prices and planning estimates explicitly, cite them, state the per-person/per-room units, and calculate "
             "totals for the supplied travelers and nights. Do not withhold all prices merely because live inventory "
@@ -43,6 +47,8 @@ def writer_node(state: AgentState) -> AgentState:
             "After clarifications, produce the updated itinerary and budget immediately; ask only essential missing questions. "
             "Do not present unknown fares as zero or claim the trip is affordable without evidence. "
             "Search excerpts are not live booking quotes: never label snippet prices as verified for the requested date. "
+            "Coupon discounts are not ticket prices. For hotel sale snippets distinguish struck-through/list prices "
+            "from advertised sale prices and extra taxes. If the excerpt is ambiguous, quote a range or mark it unknown. "
             "Do not invent airport names, routes or schedules. Only state these when supported by a cited excerpt. "
             "Omit unsupported route claims instead of filling gaps from memory. "
             "If evidence cannot establish feasibility, say the budget is not verified as feasible; "
@@ -60,7 +66,9 @@ def writer_node(state: AgentState) -> AgentState:
                 "critique_feedback": state.get("critique_feedback", ""),
                 "revision_count": state.get("revision_count", 0),
             }),
-            accept=lambda response: len(response.strip()) >= 120,
+            accept=lambda response: len(response.strip()) >= 120 and (not is_travel or not re.search(
+                r'(?<!not )\bverified (?:cost|price|fare|total)', response, re.IGNORECASE
+            )),
         )
     if not draft.strip():
         if is_travel:
@@ -80,7 +88,7 @@ def writer_node(state: AgentState) -> AgentState:
             )
             state["generation_mode"] = "fallback"
             price_sources = [item for item in state.get("citations", []) if re.search(
-                r'(?:₹|INR\s*|Rs\.?\s*)[\d,]+', item.get("snippet", ""), re.IGNORECASE
+                r'(?:₹|INR|Rs\.?)\s*[\d,]+', item.get("snippet", ""), re.IGNORECASE
             )]
             if price_sources:
                 draft += "\n\n## Advertised price references\n\nThese are search excerpts, not confirmed prices for your dates. Units, availability and taxes must be checked with the operator.\n\n"
