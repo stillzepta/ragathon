@@ -201,8 +201,9 @@ export default function App() {
     catch { return ''; }
   });
   const requestToken = () => (manualToken || apiToken).trim();
-  // Research is the primary path; casual chat is opt-in from the sidebar.
-  const [promptMode, setPromptMode] = useState<'chat' | 'diligence'>('diligence');
+  // Chat is the default. Task-shaped prompts are promoted to the workflow
+  // automatically; the sidebar can still force either mode explicitly.
+  const [promptMode, setPromptMode] = useState<'chat' | 'diligence'>('chat');
   const activeRequest = useRef<AbortController | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -393,8 +394,10 @@ export default function App() {
     const text = rawText || (attachedFile?.type.startsWith('image/') ? 'Analyze this image' : `Analyze ${attachedFile?.name ?? 'file'}`);
 
     const isImageAttachment = Boolean(attachedFile && attachedFile.type.startsWith('image/'));
-    const followUpRunId = !presetOverride && !forceDiligence && promptMode === 'chat' ? activeArtifactMsg?.result?.id : undefined;
-    const isChat = !followUpRunId && !presetOverride && (!attachedFile || isImageAttachment) && !forceDiligence && promptMode === 'chat';
+    const taskShape = /\b(plan|research|investigate|evaluate|compare|analy[sz]e|create|build|calculate|book|find|recommend|trip|itinerary|market|startup|competitor)\b/i.test(text);
+    const workflowRequested = forceDiligence || promptMode === 'diligence' || taskShape || Boolean(attachedFile && !isImageAttachment);
+    const followUpRunId = !presetOverride && !workflowRequested ? activeArtifactMsg?.result?.id : undefined;
+    const isChat = !followUpRunId && !presetOverride && (!attachedFile || isImageAttachment) && !workflowRequested;
     const authToken = requestToken();
     if (!presetOverride && !isChat && API_URL && !authToken) {
       if (forceDiligence) {

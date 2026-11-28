@@ -32,7 +32,7 @@ class ModelProvider:
 
         self.gemini_model = configured_model
         self.groq_model = os.getenv(
-            "GROQ_MODEL", "llama-3.3-70b-versatile"
+            "GROQ_MODEL", "openai/gpt-oss-20b"
         )
 
         self.gemini_api_key = (
@@ -205,6 +205,7 @@ class ModelProvider:
             headers={
                 "Authorization": f"Bearer {key}",
                 "Content-Type": "application/json",
+                "User-Agent": "diablo-research-workspace/1.0",
             },
             method="POST",
         )

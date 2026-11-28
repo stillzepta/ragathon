@@ -11,7 +11,9 @@ def analyst_node(state: AgentState) -> AgentState:
     model = provider()
     evidence = state["citations"]
     revision = state["critique_feedback"]
-    is_diligence = any(term in state["user_goal"].lower() for term in ("due diligence", "startup", "invest", "competitor", "company"))
+    goal_lower = state["user_goal"].lower()
+    is_travel = any(term in goal_lower for term in ("trip", "travel", "itinerary", "vacation", "holiday", "journey"))
+    is_diligence = any(term in goal_lower for term in ("due diligence", "startup", "invest", "competitor", "company"))
     draft = (
         "## Direct answer\n\nThe available evidence does not support a definitive conclusion yet. "
         "The strongest supported findings are summarized below.\n\n"
@@ -19,7 +21,20 @@ def analyst_node(state: AgentState) -> AgentState:
         "## Limitations and unanswered questions\n\nSome claims require additional primary evidence or a narrower scope.\n\n"
         "## Recommendation and next steps\n\nValidate the highest-impact unknowns before relying on this result."
     )
-    if is_diligence:
+    if is_travel:
+        draft = (
+            "## Trip plan\n\nI can prepare the itinerary, transport, stays, food, and activities. "
+            "To make it useful rather than guess, confirm the destination, travel dates, trip length, "
+            "number of travelers, budget, preferred transport, and interests.\n\n"
+            "## What I will cover\n\n"
+            "- How to reach the destination and compare transport options.\n"
+            "- A day-by-day itinerary matched to the available time.\n"
+            "- Areas and stay types that fit the budget.\n"
+            "- Local food and practical booking considerations.\n\n"
+            "## Unconfirmed details\n\n"
+            "Live prices, availability, weather, and opening hours must be checked for the exact dates."
+        )
+    elif is_diligence:
         draft = (
             "## Market and risks\n\nAssess market size bottom-up. Validate retention, distribution cost, "
             "differentiation, and regulatory exposure.\n\n"

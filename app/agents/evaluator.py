@@ -10,7 +10,15 @@ SECOND_REVIEW_THRESHOLD = 90
 
 def review_draft(state: AgentState) -> tuple[str, str] | None:
     model = provider()
-    if not state.get("allow_external_analysis", True) or not model.live:
+    if (
+        not state.get("allow_external_analysis", True)
+        or not model.live
+        or not model.requested
+        # The second critic is intentionally a Gemini/Groq cross-check; an
+        # OpenRouter-only configuration should not silently turn this into a
+        # same-provider review.
+        or not (model.gemini_api_key or model.groq_api_key)
+    ):
         return None
 
     def parse_verdict(response: str) -> tuple[str, str] | None:
