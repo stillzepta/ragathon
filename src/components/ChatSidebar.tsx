@@ -5,7 +5,6 @@ import {
   LifeBuoy,
   Lightbulb,
   LayoutGrid,
-  LogIn,
   LogOut,
   MessageSquare,
   Search,
@@ -82,9 +81,9 @@ export function ChatSidebar({
 }: ChatSidebarProps) {
   const searchDialog = useRef<HTMLDialogElement>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeDrawerTab, setActiveDrawerTab] = useState<'history' | 'apps' | 'settings'>('history');
+  const [activeDrawerTab, setActiveDrawerTab] = useState<'history' | 'apps' | 'settings' | 'profile'>('history');
 
-  const drawerTitles = { history: 'Recent Chats', apps: 'Apps', settings: 'Workspace Settings' };
+  const drawerTitles = { history: 'Recent Chats', apps: 'Apps', settings: 'Workspace Settings', profile: 'Profile' };
 
   const query = searchQuery.trim().toLowerCase();
   const searchResults = threads.filter((thread) =>
@@ -108,7 +107,7 @@ export function ChatSidebar({
     if (!window.matchMedia('(min-width: 1024px)').matches) onCloseDrawer();
   };
 
-  const openTab = (tab: 'history' | 'apps' | 'settings') => {
+  const openTab = (tab: 'history' | 'apps' | 'settings' | 'profile') => {
     setActiveDrawerTab(tab);
     if (!open) onToggleDrawer();
   };
@@ -173,7 +172,31 @@ export function ChatSidebar({
               </button>
             </div>
 
-            {activeDrawerTab === 'settings' ? (
+            {activeDrawerTab === 'profile' && user ? (
+              <div className="space-y-4 p-3.5">
+                <div className="flex items-center gap-3">
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-indigo-100 text-sm font-semibold text-indigo-950">
+                    {user.name.charAt(0).toUpperCase()}
+                  </span>
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-semibold">{user.name}</p>
+                    {user.email && <p className="break-all text-xs text-zinc-600">{user.email}</p>}
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveDrawerTab('history');
+                    onCloseDrawer();
+                    onLogout();
+                  }}
+                  className="flex w-full items-center gap-2 rounded-xl border border-rose-100 px-3 py-2 text-left text-sm font-medium text-rose-700 hover:bg-rose-50"
+                >
+                  <LogOut className="h-4 w-4" aria-hidden="true" />
+                  Sign out
+                </button>
+              </div>
+            ) : activeDrawerTab === 'settings' ? (
               <div className="space-y-4 overflow-y-auto p-3.5">
                 <label className="block space-y-2 text-xs font-medium">
                   <span>Prompt mode</span>
@@ -362,7 +385,7 @@ export function ChatSidebar({
 
         </div>
 
-        {/* Bottom Settings & Sign In / Out */}
+        {/* Bottom Settings & Profile */}
         <div className="flex flex-col items-center gap-2">
           <button
             type="button"
@@ -375,26 +398,16 @@ export function ChatSidebar({
             <Settings className="w-4 h-4" />
           </button>
 
-          {user ? (
+          {user && (
             <button
               type="button"
-              onClick={onLogout}
-              title={`Signed in as ${user.name} (Click to sign out)`}
-              className="w-9 h-9 rounded-full bg-[#111113] text-white text-xs font-semibold flex items-center justify-center shadow-sm hover:bg-rose-600 transition cursor-pointer group"
+              onClick={() => openTab('profile')}
+              title="Profile"
+              aria-label="Profile"
+              aria-expanded={open && activeDrawerTab === 'profile'}
+              className="flex h-9 w-9 items-center justify-center rounded-full bg-[#111113] text-xs font-semibold text-white transition hover:bg-indigo-700"
             >
-              <span className="group-hover:hidden">
-                {user.name.charAt(0).toUpperCase()}
-              </span>
-              <LogOut className="w-3.5 h-3.5 hidden group-hover:block" />
-            </button>
-          ) : (
-            <button
-              type="button"
-              onClick={onOpenLogin}
-              title="Sign in"
-              className="w-9 h-9 rounded-full bg-white/75 hover:bg-white text-[#111113] border border-white flex items-center justify-center shadow-2xs transition cursor-pointer"
-            >
-              <LogIn className="w-4 h-4" />
+              {user.name.charAt(0).toUpperCase()}
             </button>
           )}
         </div>
@@ -433,23 +446,26 @@ export function ChatSidebar({
         >
           <Clock className="w-4 h-4" />
         </button>
-        {user ? (
+        <button
+          type="button"
+          onClick={() => openTab('settings')}
+          title="Workspace Settings"
+          aria-label="Workspace Settings"
+          aria-expanded={open && activeDrawerTab === 'settings'}
+          className="flex h-9 w-9 items-center justify-center rounded-full text-[#22243a] hover:bg-white"
+        >
+          <Settings className="h-4 w-4" aria-hidden="true" />
+        </button>
+        {user && (
           <button
             type="button"
-            onClick={onLogout}
-            title="Sign out"
-            className="w-9 h-9 rounded-full bg-[#111113] text-white text-xs font-semibold flex items-center justify-center cursor-pointer"
+            onClick={() => openTab('profile')}
+            title="Profile"
+            aria-label="Profile"
+            aria-expanded={open && activeDrawerTab === 'profile'}
+            className="flex h-9 w-9 items-center justify-center rounded-full bg-[#111113] text-xs font-semibold text-white transition hover:bg-indigo-700"
           >
             {user.name.charAt(0).toUpperCase()}
-          </button>
-        ) : (
-          <button
-            type="button"
-            onClick={onOpenLogin}
-            title="Sign in"
-            className="w-9 h-9 rounded-full bg-[#111113] text-white flex items-center justify-center cursor-pointer"
-          >
-            <LogIn className="w-4 h-4" />
           </button>
         )}
       </nav>
