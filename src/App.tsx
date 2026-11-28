@@ -201,7 +201,7 @@ export default function App() {
     catch { return ''; }
   });
   const requestToken = () => (manualToken || apiToken).trim();
-  const [promptMode, setPromptMode] = useState<'chat' | 'diligence'>('chat');
+  const [promptMode] = useState<'chat' | 'diligence'>('chat');
   const activeRequest = useRef<AbortController | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -351,7 +351,6 @@ export default function App() {
     const authToken = requestToken();
     if (!presetOverride && !isChat && API_URL && !authToken) {
       if (forceDiligence) {
-        setPromptMode('diligence');
         setHeroInput(text);
       }
       setLoginOpen(true);
@@ -786,19 +785,6 @@ export default function App() {
         />
       </button>
       <div className="relative flex-1 flex flex-col min-w-0">
-        {API_URL && (
-          <div className="flex justify-end px-5 pt-3 sm:px-8">
-            <select
-              aria-label="Prompt mode"
-              value={promptMode}
-              onChange={(event) => setPromptMode(event.target.value === 'diligence' ? 'diligence' : 'chat')}
-              className="rounded-full border border-black/10 bg-white/85 px-3 py-2 text-xs"
-            >
-              <option value="chat">Chat</option>
-              <option value="diligence">Due diligence</option>
-            </select>
-          </div>
-        )}
         {/* Main Viewport */}
         <div className="flex-1 overflow-y-auto px-4 sm:px-8 pt-20 lg:pt-4 pb-24 lg:pb-4">
           {isEmptyChat ? (
