@@ -14,7 +14,7 @@ class HybridRetriever:
         self._chunk_ids: set[str] = set()
         self._embeddings: dict[str, list[float]] = {}
         self._embedding_provider = OpenRouterEmbeddings()
-        for chunk in chunks or seed_chunks():
+        for chunk in seed_chunks() if chunks is None else chunks:
             self._add_chunk(chunk)
 
     def add_text(self, text: str, source_url: str = "upload://user-document", title: str = "User document") -> None:

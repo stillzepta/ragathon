@@ -65,7 +65,9 @@ def run_due_diligence(
 ) -> AgentState:
     state = initial_state(goal, criteria or [], run_id or f"run-{uuid.uuid4().hex}")
     state["allow_external_analysis"] = not source_text or os.getenv("ALLOW_EXTERNAL_UPLOADS", "false").lower() == "true"
-    retriever = HybridRetriever()
+    travel = any(term in goal.lower() for term in ("trip", "travel", "itinerary", "vacation", "holiday", "journey"))
+    # Startup demo documents are not evidence for a travel request.
+    retriever = HybridRetriever(chunks=[] if travel else None)
     if source_text:
         retriever.add_text(source_text, title=source_name or "User document")
 

@@ -161,9 +161,10 @@ Auth = Depends(authorize)
 
 def mission_result(state: dict, prompt: str, filename: str | None) -> dict:
     drafts = state["drafts"]
+    travel = any(task.get("id") == "write_itinerary" for task in state.get("plan", []))
     return {
         "id": state["run_id"],
-        "domain": "bizintel",
+        "domain": "research" if travel else "bizintel",
         "prompt": prompt,
         "attachedFileName": filename,
         "createdAt": datetime.now(timezone.utc).isoformat(),
@@ -174,8 +175,8 @@ def mission_result(state: dict, prompt: str, filename: str | None) -> dict:
         "drafts": drafts,
         "plan": state.get("plan", []),
         "taskStatuses": state.get("task_statuses", {}),
-        "briefTitle": "AgentVerse Startup Due-Diligence Memo",
-        "briefSections": [{"heading": "Investment Memo", "body": state["final_output"]}],
+        "briefTitle": "Diablo Trip Analysis" if travel else "AgentVerse Startup Due-Diligence Memo",
+        "briefSections": [{"heading": "Trip Plan" if travel else "Investment Memo", "body": state["final_output"]}],
         "citations": state["citations"],
         "singleLlmComparison": "",
         "proposedAction": {

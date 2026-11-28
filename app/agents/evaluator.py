@@ -57,7 +57,8 @@ def evaluate_node(state: AgentState) -> AgentState:
     lower = draft.lower()
     is_travel = any(term in state["user_goal"].lower() for term in ("trip", "travel", "itinerary", "vacation", "holiday", "journey"))
     checks = ([
-        (30, "## trip plan" in lower, "State the trip plan."),
+        (15, "## trip plan" in lower, "State the trip plan."),
+        (15, "budget" in lower and any(word in lower for word in ("feasib", "afford", "exceed", "insufficient", "impossible")), "Give a direct budget feasibility verdict."),
         (20, "how to reach" in lower, "Explain how to reach the destination."),
         (20, "stay" in lower, "Include stay guidance."),
         (15, "food" in lower, "Include food guidance."),
@@ -68,6 +69,10 @@ def evaluate_node(state: AgentState) -> AgentState:
         (20, "## competitor comparison" in lower, "Add a competitor comparison."),
         (20, "## financial assumptions" in lower, "Add financial assumptions."),
     ])
+    if is_travel and "confirm the destination, travel dates" in lower:
+        checks = [(weight, False, feedback) for weight, _, feedback in checks]
+    if is_travel and "travel writing model is unavailable" in lower:
+        checks = [(weight, False, "Retry synthesis when the model is available.") for weight, _, _ in checks]
     checks += [
         (15, (
             all(quote in sources.get(int(source), "") for quote, source in quotes)
