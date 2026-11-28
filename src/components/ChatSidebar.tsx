@@ -118,7 +118,7 @@ export function ChatSidebar({
   };
 
   return (
-    <div className="relative z-40 flex shrink-0 lg:sticky lg:top-0 lg:h-dvh">
+    <div className="relative z-40 flex shrink-0 lg:h-full">
       <dialog
         ref={searchDialog}
         aria-label="Search chat history"
@@ -289,7 +289,7 @@ export function ChatSidebar({
               <>
                 <h2 className="px-4 pb-2 pt-4 text-xs font-semibold text-[#4A4A58]">Chats</h2>
 
-                <div className="min-h-0 flex-1 space-y-0.5 overflow-y-auto px-3 pb-4">
+                <div className="min-h-0 flex-1 space-y-0.5 overflow-y-auto overscroll-contain px-3 pb-4">
                   {threads.length === 0 ? (
                     <p className="text-xs text-[#8E8E99] px-3 py-2">
                       No chats yet

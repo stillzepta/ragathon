@@ -1,6 +1,43 @@
-# Diablo
+# Diablo · AgentVerse
 
-Diablo is a research workspace with chat, document retrieval, and a multi-agent due-diligence workflow. Investigations produce a memo with source excerpts, draft reviews, and a recorded follow-up decision.
+**Hackathon submission for Question 10 — The Multi-Agent Challenge**
+
+Diablo helps a small investment team turn a startup question or pitch deck into a due-diligence memo. The workflow gathers relevant evidence, identifies gaps, drafts a recommendation, and uses reviewer feedback to improve the memo. The result includes sources, revision history, and questions the team can verify before deciding.
+
+## How Diablo solves Question 10
+
+| Challenge requirement | Implementation |
+| --- | --- |
+| Specialized agents | The [Planner](app/agents/planner.py) assigns tasks. The [Researcher](app/agents/researcher.py) retrieves evidence, the [Analyst](app/agents/analyst.py) compares findings, the [Writer](app/agents/writer.py) produces the memo, and the [Evaluator](app/agents/evaluator.py) reviews it. |
+| Communication and shared context | Agents read and update [shared LangGraph state](app/state.py) containing task status, evidence, the current draft, and review feedback. |
+| Central orchestration | The [LangGraph workflow](app/orchestrator/graph.py) schedules the stages, sends feedback back through analysis and drafting, and stops after the configured revision logic has run. |
+| End-to-end completion | FastAPI exposes progress, the reviewed memo, and Markdown/PDF export. The [API test](tests/test_api.py) exercises the run from submission through export. |
+| Autonomy bonus | The workflow evaluates and revises within a bounded loop. With model access configured, an eligible draft scoring **90 or higher** can also receive a second critique. The task plan and stage order follow predefined rules. |
+
+**Stack** · React/Vite frontend, FastAPI, LangGraph, local document retrieval with optional web search, SQLite for run records, and Supabase for authentication and saved chats.
+
+## Reproduce a complete run
+
+After installing the Python dependencies below, run this from the repo root. It uses the included research material and excludes live model credentials.
+
+```sh
+env -u GEMINI_API_KEY -u GOOGLE_API_KEY -u GROQ_API_KEY -u OPENROUTER_API_KEY \
+  MODEL_PROVIDER=mock WEB_SEARCH_ENABLED=false DIABLO_LOAD_DOTENV=false \
+  python - <<'PYTHON'
+from app.orchestrator.graph import run_due_diligence
+
+state = run_due_diligence(
+    "Should we invest in an AI accounting startup?",
+    persist_checkpoint=False,
+)
+print("Assigned agents:", ", ".join(task["owner"] for task in state["plan"]))
+for number, draft in enumerate(state["drafts"], start=1):
+    print(f"Draft {number}: {draft['score']}/100. {draft['feedback']}")
+print(state["final_output"])
+PYTHON
+```
+
+In the verified local run, **Draft 1 scored 60/100**. The evaluator requested a competitor comparison and financial assumptions. **Draft 2 added both sections and scored 100/100** on the local rubric. The memo cited one retrieved source and identified unverified company facts. The run reported **“Second review unavailable”** because live model access was disabled. The local score measures rubric coverage and citation consistency.
 
 ## Run locally
 
@@ -22,7 +59,7 @@ npm ci
 VITE_API_URL=http://localhost:8000 npm run dev
 ```
 
-Without `VITE_API_URL`, Vite runs Studio simulation. With the API connected, enter a startup question. The dashboard shows real stage updates, earlier drafts, and downloads. It records approval or rejection for the suggested follow-up.
+Open the URL printed by Vite. Select **Settings → Prompt mode → Due diligence** and ask about a startup. The API records progress, earlier drafts, and follow-up decisions. Use **Chat** for quick questions when a model provider is configured.
 
 ## Data and deployment
 
@@ -57,13 +94,13 @@ python -m pytest
 npm run build
 ```
 
-CI runs the same checks on pull requests and pushes to `main`. See [implementation status](IMPLEMENTATION_STATUS.md) and [the target architecture](ARCHITECTURE.md).
+For more detail, see [implementation status](IMPLEMENTATION_STATUS.md) and [the target architecture](ARCHITECTURE.md).
 
 ## Vercel + Google OAuth
 
 Apply both SQL files in `supabase/migrations` to your Supabase project before enabling saved chats.
 The `chat_threads` and `chat_messages` tables use row-level security so signed-in users
-can access only their own history. Chat mode sends the latest 12 messages to FastAPI
+can access only their own history. Chat mode sends recent messages to FastAPI
 as conversation context. The backend still uses document RAG separately for diligence runs.
 Guests without Supabase sign-in can chat during the open page session, but their chats
 are not saved across reloads.
