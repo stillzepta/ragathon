@@ -209,7 +209,7 @@ export default function App() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const heroInputRef = useRef<HTMLInputElement>(null);
   const chatInputRef = useRef<HTMLTextAreaElement>(null);
-  const bottomRef = useRef<HTMLDivElement>(null);
+  const messagesRef = useRef<HTMLDivElement>(null);
   const runTokenRef = useRef(0);
   const historyOwner = useRef<string | null>(null);
   const historyGeneration = useRef(0);
@@ -354,7 +354,8 @@ export default function App() {
   }, [isHome, isPreviewPaused, heroInput]);
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+    const messages = messagesRef.current;
+    messages?.scrollTo({ top: messages.scrollHeight, behavior: 'smooth' });
   }, [activeThread?.messages.length, isRunning]);
 
   const updateAssistantMessage = (
@@ -743,7 +744,7 @@ export default function App() {
   const showArtifact = false;
 
   return (
-    <div className="relative min-h-screen w-screen overflow-x-hidden overflow-y-auto kraft-bg text-[#111113] flex">
+    <div className="relative flex h-dvh w-full overflow-hidden kraft-bg text-[#111113]">
       {/* Splash backdrop that fades away to reveal main page */}
       {!splashHidden && (
         <div
@@ -784,9 +785,9 @@ export default function App() {
           }}
         />
       </button>
-      <div className="relative flex-1 flex flex-col min-w-0 min-h-screen">
+      <div className="relative flex min-h-0 min-w-0 flex-1 flex-col">
         {/* Main Viewport */}
-        <div className="flex-1 overflow-y-auto px-4 sm:px-8 pt-20 lg:pt-4 pb-24 lg:pb-4">
+        <div className={`min-h-0 flex-1 px-4 pb-24 pt-20 sm:px-8 lg:pb-4 lg:pt-4 ${isHome ? 'overflow-y-auto' : 'overflow-hidden'}`}>
           {isHome ? (
             <div className="max-w-6xl mx-auto min-h-full flex items-start lg:items-center py-4 lg:py-12">
               <div className="w-full grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-16 items-center">
@@ -975,7 +976,7 @@ export default function App() {
               </div>
             </div>
           ) : (
-            <div className="max-w-7xl mx-auto h-full py-2 grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
+            <div className="mx-auto grid h-full max-w-7xl auto-rows-[minmax(0,1fr)] grid-cols-1 items-stretch gap-6 py-2 lg:grid-cols-12">
               {/* Left Document & Code Panel */}
               {showArtifact && activeArtifactMsg && (
                 <div className="lg:col-span-7 min-h-[420px] pb-3 order-2 lg:order-1">
@@ -994,7 +995,7 @@ export default function App() {
                   showArtifact ? 'lg:col-span-5 order-1 lg:order-2' : 'lg:col-span-8 lg:col-start-3'
                 } flex flex-col min-h-0`}
               >
-                <div className="flex-1 min-h-0 overflow-y-auto -mx-6 px-6 pt-3 pb-24 space-y-4">
+                <div ref={messagesRef} className="-mx-6 min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain px-6 pb-4 pt-3">
                   {activeThread?.messages.map((msg) => (
                     <ChatMessage
                       key={msg.id}
@@ -1005,11 +1006,10 @@ export default function App() {
                     onSelectArtifact={undefined}
                     />
                   ))}
-                  <div ref={bottomRef} />
                 </div>
 
                 {/* Chat Input Bar */}
-                <div className="pt-2 pb-3">
+                <div className="shrink-0 pb-3 pt-2">
                   <div
                     onClick={() => chatInputRef.current?.focus()}
                     className="rounded-full bg-white/90 backdrop-blur-xl border border-white px-3 py-2 shadow-[0_14px_36px_rgba(38,43,102,0.14)] transition-all duration-300 ease-out cursor-text focus-within:bg-white focus-within:scale-[1.02] focus-within:-translate-y-0.5 focus-within:shadow-[0_20px_48px_rgba(38,43,102,0.22)]"
