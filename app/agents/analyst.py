@@ -43,23 +43,24 @@ def analyst_node(state: AgentState) -> AgentState:
             "## Recommendation\n\nRequest primary evidence before making an investment decision."
         )
     previous = state["draft_deliverable"]
-    if "Add a competitor comparison." in revision or "## Competitor comparison" in previous:
+    if is_diligence and ("Add a competitor comparison." in revision or "## Competitor comparison" in previous):
         draft += (
             "\n\n## Competitor comparison\n\nCompare direct alternatives on price, "
             "distribution, switching costs, and customer retention. Request customer interviews "
             "and current pricing to fill the comparison."
         )
-    if "Add financial assumptions." in revision or "## Financial assumptions" in previous:
+    if is_diligence and ("Add financial assumptions." in revision or "## Financial assumptions" in previous):
         draft += (
             "\n\n## Financial assumptions\n\nModel revenue as paying customers × annual price. "
             "Test low, base, and high adoption scenarios, and verify gross margin, burn, and runway."
         )
-    candidates = [
-        f"> {item['snippet'][:400].rstrip()} [{item['id']}]"
-        for item in evidence if item["snippet"].strip()
-    ]
-    if candidates:
-        draft += "\n\n## Retrieved evidence\n\n" + "\n\n".join(candidates)
+    # Evidence is passed to the writer as structured input. Never paste raw
+    # retrieval chunks into the fallback draft: a loosely related search hit
+    # must not become an apparent fact in the user-facing answer.
+    if evidence:
+        draft += "\n\n## Sources consulted\n\n" + "\n".join(
+            f"- [{item['id']}] {item['title']}" for item in evidence
+        )
     generated = ""
     if state.get("allow_external_analysis", True):
         generated = model.generate(

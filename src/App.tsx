@@ -737,7 +737,10 @@ export default function App() {
     requestAnimationFrame(() => chatInputRef.current?.focus());
   };
 
-  const showArtifact = Boolean(activeArtifactMsg && (hasUnlocked || user));
+  // The final reviewed answer is the single source of truth in the chat.
+  // Reports remain downloadable through the report endpoint, but the raw
+  // artifact/trace pane must not duplicate or distract from the answer.
+  const showArtifact = false;
 
   return (
     <div className="relative min-h-screen w-screen overflow-x-hidden overflow-y-auto kraft-bg text-[#111113] flex">
@@ -999,7 +1002,7 @@ export default function App() {
                       isSelected={activeArtifactMsg?.id === msg.id}
                       locked={!hasUnlocked && !user}
                       onUnlock={() => setLoginOpen(true)}
-                      onSelectArtifact={(id) => setSelectedArtifactMsgId(id)}
+                    onSelectArtifact={undefined}
                     />
                   ))}
                   <div ref={bottomRef} />

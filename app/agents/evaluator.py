@@ -5,6 +5,7 @@ from app.providers.gemini import provider
 from app.state import AgentState
 
 EVIDENCE_LINE = re.compile(r'^> (.+) \[(\d+)\]$', re.MULTILINE)
+CITATION_REF = re.compile(r'\[(\d+)\]')
 SECOND_REVIEW_THRESHOLD = 90
 
 
@@ -54,15 +55,26 @@ def evaluate_node(state: AgentState) -> AgentState:
     sources = {item["id"]: item["snippet"] for item in state["citations"]}
     quotes = EVIDENCE_LINE.findall(draft)
     lower = draft.lower()
-    checks = [
+    is_travel = any(term in state["user_goal"].lower() for term in ("trip", "travel", "itinerary", "vacation", "holiday", "journey"))
+    checks = ([
+        (30, "## trip plan" in lower, "State the trip plan."),
+        (20, "how to reach" in lower, "Explain how to reach the destination."),
+        (20, "stay" in lower, "Include stay guidance."),
+        (15, "food" in lower, "Include food guidance."),
+    ] if is_travel else [
         (15, "## market and risks" in lower, "Cover market and risks."),
         (15, "## recommendation" in lower, "Add a recommendation."),
         (15, "## unknowns" in lower, "Explain what remains unknown."),
         (20, "## competitor comparison" in lower, "Add a competitor comparison."),
         (20, "## financial assumptions" in lower, "Add financial assumptions."),
-        (15, bool(quotes) and all(
-            quote in sources.get(int(source), "") for quote, source in quotes
-        ), "Quote supporting evidence with valid citation IDs."),
+    ])
+    checks += [
+        (15, (
+            all(quote in sources.get(int(source), "") for quote, source in quotes)
+            if quotes else bool(CITATION_REF.search(draft)) and all(
+                int(source) in sources for source in CITATION_REF.findall(draft)
+            )
+        ), "Cite supporting evidence with valid citation IDs."),
     ]
     score = sum(weight for weight, passed, _ in checks if passed)
     missing = [feedback for _, passed, feedback in checks if not passed]

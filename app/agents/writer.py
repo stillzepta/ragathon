@@ -15,7 +15,11 @@ def writer_node(state: AgentState) -> AgentState:
     model = provider()
     # Keep the synthesis call on the configured OpenRouter path. The local
     # deterministic mode remains useful for tests and offline demos.
-    if state.get("allow_external_analysis", True) and model.provider_name == "openrouter":
+    if (
+        state.get("allow_external_analysis", True)
+        and model.provider_name == "openrouter"
+        and state.get("generation_mode") == "openrouter"
+    ):
         draft = model.generate(
             "You are the senior report writer in a multi-agent research workflow. "
             "Write a well-reasoned, decision-ready report from the supplied analysis and evidence. "

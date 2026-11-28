@@ -12,7 +12,10 @@ try:
 except ImportError:
     load_dotenv = None
 
-if load_dotenv:
+# Production starts (uvicorn --env-file, Vercel, or the process manager) own
+# environment loading. Avoid implicitly reading a developer's .env during
+# tests or library imports, which can turn a deterministic run into a live run.
+if load_dotenv and os.getenv("DIABLO_LOAD_DOTENV", "false").lower() == "true":
     load_dotenv()
 
 logger = logging.getLogger(__name__)
