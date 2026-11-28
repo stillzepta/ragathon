@@ -3,7 +3,7 @@
 @layer base {
   body {
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-    background-color: #000000;
+    background-color: #ffffff;
     color: #111113;
   }
 }
@@ -20,8 +20,11 @@
   font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
 }
 
+/* KRAFT White-to-Indigo Mist Background */
 .kraft-bg {
-  background: #000;
+  background:
+    radial-gradient(120% 75% at 50% 105%, #2f336e 0%, #5257a3 36%, #99a0de 64%, rgba(255, 255, 255, 0) 86%),
+    linear-gradient(180deg, #ffffff 0%, #ffffff 34%, #e9ecfa 72%, #7d84cb 100%);
 }
 
 /* Frosted White Glass Surface */

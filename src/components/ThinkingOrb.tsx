@@ -49,7 +49,7 @@ export function ThinkingOrb({ statusText = 'Thinking...' }: ThinkingOrbProps) {
         </svg>
       </div>
 
-      <p className="mt-2 text-xs font-medium text-zinc-300 tracking-tight text-center">
+      <p className="mt-2 text-xs font-medium text-[#4A4A58] tracking-tight text-center">
         {statusText}
       </p>
     </div>
