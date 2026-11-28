@@ -176,13 +176,6 @@ export default function App() {
   const [loginOpen, setLoginOpen] = useState(false);
   const [emailOpen, setEmailOpen] = useState(false);
   const [authReady, setAuthReady] = useState(false);
-  const [hasUnlocked, setHasUnlocked] = useState<boolean>(() => {
-    try {
-      return Boolean(localStorage.getItem('agentverse_user'));
-    } catch {
-      return false;
-    }
-  });
   const [threads, setThreads] = useState<ChatThread[]>([]);
   const [blankChatOpen, setBlankChatOpen] = useState(false);
   const [activeThreadId, setActiveThreadId] = useState<string | null>(null);
@@ -400,13 +393,6 @@ export default function App() {
     const followUpRunId = !presetOverride && !workflowRequested ? activeArtifactMsg?.result?.id : undefined;
     const isChat = !followUpRunId && !presetOverride && (!attachedFile || isImageAttachment) && !workflowRequested;
     const authToken = requestToken();
-    if (!presetOverride && !isChat && API_URL && !authToken) {
-      if (forceDiligence) {
-        setHeroInput(text);
-      }
-      setLoginOpen(true);
-      return;
-    }
 
     const token = ++runTokenRef.current;
     const nowLabel = new Date().toLocaleTimeString([], {
@@ -515,9 +501,6 @@ export default function App() {
           updateAssistantMessage(targetThreadId, assistantMsgId, (m) => ({
             ...m, text: reply, isStreaming: false,
           }));
-          if (!hasUnlocked && !user) {
-            setLoginOpen(true);
-          }
           if (supabase && signedInUser) {
             const { error: saveError } = await supabase.from('chat_messages').insert({
               id: assistantMsgId, thread_id: targetThreadId, user_id: signedInUser.id,
@@ -1001,9 +984,7 @@ export default function App() {
                       key={msg.id}
                       message={msg}
                       isSelected={activeArtifactMsg?.id === msg.id}
-                      locked={!hasUnlocked && !user}
-                      onUnlock={() => setLoginOpen(true)}
-                    onSelectArtifact={undefined}
+                      onSelectArtifact={undefined}
                     />
                   ))}
                 </div>
@@ -1114,7 +1095,6 @@ export default function App() {
             void supabase?.auth.signOut().finally(() => {
               signingOut.current = false;
               setUser(null);
-              setHasUnlocked(false);
               setApiToken('');
               localStorage.removeItem('agentverse_user');
             });
@@ -1133,12 +1113,10 @@ export default function App() {
         <LoginModal
           open={loginOpen}
           onClose={() => {
-            setHasUnlocked(true);
             setLoginOpen(false);
           }}
           onLogin={(loggedInUser) => {
             setUser(loggedInUser);
-            setHasUnlocked(true);
             localStorage.setItem('agentverse_user', JSON.stringify(loggedInUser));
             setLoginOpen(false);
           }}
