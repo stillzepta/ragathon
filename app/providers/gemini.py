@@ -31,7 +31,13 @@ class ModelProvider:
 
     @property
     def live(self) -> bool:
-        return self.requested and bool(self.gemini_api_key or self.groq_api_key or self.openrouter_api_key)
+        if self.provider_name == "openrouter":
+            return bool(self.openrouter_api_key)
+        if self.provider_name == "gemini":
+            return bool(self.gemini_api_key or self.groq_api_key)
+        if self.provider_name == "groq":
+            return bool(self.groq_api_key or self.gemini_api_key)
+        return False
 
     def generate(
         self, system: str, prompt: str, *,

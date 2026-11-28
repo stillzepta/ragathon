@@ -2,6 +2,8 @@
 
 import asyncio
 import base64
+import hashlib
+import hmac
 import json
 import logging
 import os
@@ -170,6 +172,8 @@ def mission_result(state: dict, prompt: str, filename: str | None) -> dict:
         "criticFinalScore": drafts[-1]["score"],
         "criticNote": f"First review: {drafts[0]['feedback']} Final review: {drafts[-1]['feedback']}",
         "drafts": drafts,
+        "plan": state.get("plan", []),
+        "taskStatuses": state.get("task_statuses", {}),
         "briefTitle": "AgentVerse Startup Due-Diligence Memo",
         "briefSections": [{"heading": "Investment Memo", "body": state["final_output"]}],
         "citations": state["citations"],
@@ -395,6 +399,18 @@ class Decision(BaseModel):
     status: str = Field(default="approved", pattern="^(approved|rejected)$")
 
 
+class BookingHandoff(BaseModel):
+    run_id: str = Field(min_length=1, max_length=80)
+    provider: str = Field(min_length=1, max_length=120)
+    booking_url: str = Field(pattern=r"^https://")
+    selection: dict[str, object] = Field(min_length=1)
+    user_confirmed: bool = False
+
+
+class FollowUpRequest(BaseModel):
+    prompt: str = Field(min_length=1, max_length=4000)
+
+
 @app.post("/api/approve", dependencies=[Auth])
 def approve(request: Request, decision: Decision):
     action = request.app.state.store.decide(decision.mission_id, decision.status, decision.payload)
@@ -403,6 +419,70 @@ def approve(request: Request, decision: Decision):
     if action is False:
         raise HTTPException(409, "A different decision was already saved.")
     return {"status": action["status"], "mission_id": decision.mission_id, "action": action}
+
+
+@app.post("/api/booking/handoff", dependencies=[Auth])
+async def booking_handoff(request: Request, handoff: BookingHandoff):
+    """Send an explicitly approved travel selection to n8n and return its checkout URL."""
+    if not handoff.user_confirmed:
+        raise HTTPException(400, "Confirm the selected booking before continuing.")
+    webhook = os.getenv("N8N_BOOKING_WEBHOOK_URL", "").strip()
+    secret = os.getenv("N8N_BOOKING_WEBHOOK_SECRET", "").strip()
+    if not webhook or not secret:
+        raise HTTPException(503, "Booking handoff is not configured.")
+    payload = {
+        "run_id": handoff.run_id,
+        "provider": handoff.provider,
+        "booking_url": handoff.booking_url,
+        "selection": handoff.selection,
+        "user_confirmed": True,
+        "requested_at": datetime.now(timezone.utc).isoformat(),
+    }
+    body = json.dumps(payload, separators=(",", ":"), sort_keys=True).encode()
+    signature = hmac.new(secret.encode(), body, hashlib.sha256).hexdigest()
+    try:
+        import httpx
+        async with httpx.AsyncClient(timeout=10) as client:
+            response = await client.post(webhook, content=body, headers={
+                "Content-Type": "application/json",
+                "X-Diablo-Signature": f"sha256={signature}",
+                "X-Diablo-Idempotency-Key": handoff.run_id,
+            })
+    except httpx.HTTPError as exc:
+        raise HTTPException(502, "Could not reach the booking workflow.") from exc
+    if response.status_code >= 400:
+        raise HTTPException(502, "The booking workflow rejected this handoff.")
+    response_data = response.json() if response.content else {}
+    redirect_url = response_data.get("redirect_url") or handoff.booking_url
+    if not isinstance(redirect_url, str) or not redirect_url.startswith("https://"):
+        raise HTTPException(502, "The booking workflow returned an invalid redirect.")
+    return {"status": "handoff_created", "redirect_url": redirect_url}
+
+
+@app.post("/api/runs/{run_id}/follow-up", dependencies=[Auth])
+async def follow_up(request: Request, run_id: str, follow_up_request: FollowUpRequest):
+    """Answer a follow-up using the completed run's report and cited evidence."""
+    record = require_run(request.app.state.store, run_id)
+    if record["status"] != "completed" or not record.get("result"):
+        raise HTTPException(409, "Follow-ups are available after the research run completes.")
+    result = record["result"]
+    context = json.dumps({
+        "original_request": result.get("prompt", ""),
+        "report": result.get("briefSections", []),
+        "citations": result.get("citations", []),
+    })
+    model = provider()
+    if not model.live:
+        raise HTTPException(503, "Follow-up model access is not configured.")
+    answer = await run_in_threadpool(
+        model.generate,
+        "Answer the follow-up using only the supplied investigation context. Cite source IDs when making factual claims, distinguish unknowns, and do not claim new research was performed.",
+        f"Context:\n{context}\n\nFollow-up:\n{follow_up_request.prompt}",
+        accept=lambda value: bool(value.strip()),
+    )
+    if not answer:
+        raise HTTPException(503, "The follow-up model is unavailable. Try again shortly.")
+    return {"run_id": run_id, "reply": answer.strip(), "citations": result.get("citations", [])}
 
 
 @app.get("/api/runs/{run_id}/report/{format}", dependencies=[Auth])

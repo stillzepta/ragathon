@@ -39,6 +39,9 @@ def review_draft(state: AgentState) -> tuple[str, str] | None:
 
 
 def evaluate_node(state: AgentState) -> AgentState:
+    critique_tasks = [task for task in state.get("plan", []) if task.get("owner") == "evaluator"]
+    for task in critique_tasks:
+        state["task_statuses"][task["id"]] = "running"
     draft = state["draft_deliverable"]
     sources = {item["id"]: item["snippet"] for item in state["citations"]}
     quotes = EVIDENCE_LINE.findall(draft)
@@ -71,5 +74,7 @@ def evaluate_node(state: AgentState) -> AgentState:
             if verdict == "revise" and state["revision_count"] >= 2:
                 state["critique_feedback"] += " Revision limit reached. Draft remains unapproved."
     state["drafts"] = [*state["drafts"], {"body": draft, "score": score, "feedback": state["critique_feedback"]}]
+    for task in critique_tasks:
+        state["task_statuses"][task["id"]] = "completed"
     state["agent_logs"].append({"agent_name": "critic", "action": "evaluate", "message": f"Scored draft {score}/100. {state['critique_feedback']}"})
     return state

@@ -22,6 +22,7 @@ const STAGE_IDS: Record<string, AgentNode['id'] | undefined> = {
   planner: 'orchestrator',
   researcher: 'rag',
   analyst: 'planner',
+  writer: 'planner',
   evaluator: 'critic',
   revision: 'planner',
 };
@@ -166,8 +167,6 @@ const INITIAL_AGENTS: AgentNode[] = [
     summary: 'Scoring output and triggering self-correction if < 85.',
   },
 ];
-
-const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 export default function App() {
   const [introDocked, setIntroDocked] = useState(false);
@@ -354,7 +353,8 @@ export default function App() {
     const text = rawText || (attachedFile?.type.startsWith('image/') ? 'Analyze this image' : `Analyze ${attachedFile?.name ?? 'file'}`);
 
     const isImageAttachment = Boolean(attachedFile && attachedFile.type.startsWith('image/'));
-    const isChat = !presetOverride && (!attachedFile || isImageAttachment) && !forceDiligence && promptMode === 'chat';
+    const followUpRunId = !presetOverride && !forceDiligence && promptMode === 'chat' ? activeArtifactMsg?.result?.id : undefined;
+    const isChat = !followUpRunId && !presetOverride && (!attachedFile || isImageAttachment) && !forceDiligence && promptMode === 'chat';
     const authToken = requestToken();
     if (!presetOverride && !isChat && API_URL && !authToken) {
       if (forceDiligence) {
@@ -423,6 +423,17 @@ export default function App() {
       try {
         const formData = new FormData();
         formData.append('prompt', text);
+        if (followUpRunId) {
+          const response = await api(`/api/runs/${followUpRunId}/follow-up`, requestToken(), {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ prompt: text }),
+            signal,
+          });
+          const { reply } = await response.json() as { reply: string };
+          updateAssistantMessage(targetThreadId, assistantMsgId, (m) => ({ ...m, text: reply, isStreaming: false }));
+          return;
+        }
         if (isChat) {
           if (currentFile && currentFile.type.startsWith('image/')) {
             formData.append('file', currentFile);
@@ -477,7 +488,7 @@ export default function App() {
         updateAssistantMessage(targetThreadId, assistantMsgId, (m) => ({
           ...m, agents: CONNECTED_AGENTS,
         }));
-        formData.append('domain', 'bizintel');
+        formData.append('domain', 'research');
         if (currentFile) formData.append('file', currentFile);
 
         const response = await api('/api/runs', authToken, {
@@ -498,7 +509,7 @@ export default function App() {
           status: string; result?: MissionResult & { error?: string };
         };
         if (status !== 'completed' || !result) {
-          throw new Error(result?.error ?? 'The due-diligence run did not finish.');
+          throw new Error(result?.error ?? 'The research run did not finish.');
         }
         updateAssistantMessage(targetThreadId, assistantMsgId, (m) => ({
           ...m, isStreaming: false, result,
@@ -529,87 +540,12 @@ export default function App() {
       setIsRunning(false);
       return;
     }
-    const activeMission = presetOverride;
-    const t = activeMission.timeline;
-
-    patchAgentInMessage(targetThreadId, assistantMsgId, 'orchestrator', {
-      status: 'running',
-      summary: 'Analyzing request and assigning specialized agents...',
-    });
-    await sleep(500);
-    if (runTokenRef.current !== token) return;
-    patchAgentInMessage(targetThreadId, assistantMsgId, 'orchestrator', {
-      status: 'done',
-      ...t.orchestrator,
-    });
-
-    patchAgentInMessage(targetThreadId, assistantMsgId, 'rag', {
-      status: 'running',
-      summary: 'Previewing the retrieval step...',
-    });
-    patchAgentInMessage(targetThreadId, assistantMsgId, 'tools', {
-      status: 'running',
-      summary: 'Previewing the tool step...',
-    });
-    await sleep(850);
-    if (runTokenRef.current !== token) return;
-    patchAgentInMessage(targetThreadId, assistantMsgId, 'rag', { status: 'done', ...t.rag });
-    patchAgentInMessage(targetThreadId, assistantMsgId, 'tools', {
-      status: 'done',
-      ...t.tools,
-    });
-
-    patchAgentInMessage(targetThreadId, assistantMsgId, 'planner', {
-      status: 'running',
-      summary: 'Synthesizing Shared Memory into Draft v1...',
-    });
-    await sleep(550);
-    if (runTokenRef.current !== token) return;
-    patchAgentInMessage(targetThreadId, assistantMsgId, 'planner', {
-      status: 'done',
-      ...t.planner,
-      badge: 'Draft v1',
-    });
-
-    patchAgentInMessage(targetThreadId, assistantMsgId, 'critic', {
-      status: 'rejected',
-      ...t.criticFirst,
-    });
-    await sleep(800);
-    if (runTokenRef.current !== token) return;
-
-    patchAgentInMessage(targetThreadId, assistantMsgId, 'planner', {
-      status: 'running',
-      summary: 'Applying Critic feedback for Draft v2...',
-    });
-    await sleep(550);
-    if (runTokenRef.current !== token) return;
-    patchAgentInMessage(targetThreadId, assistantMsgId, 'planner', {
-      status: 'done',
-      ...t.planner,
-    });
-    patchAgentInMessage(targetThreadId, assistantMsgId, 'critic', {
-      status: 'done',
-      ...t.criticFinal,
-    });
-
-    const finalResult: MissionResult = {
-      ...activeMission.result,
-      mode: 'simulation',
-      id: `mission-${Date.now()}`,
-      createdAt: nowLabel,
-    };
-
-    updateAssistantMessage(targetThreadId, assistantMsgId, (m) => ({
-      ...m,
+    updateAssistantMessage(targetThreadId, assistantMsgId, (message) => ({
+      ...message,
       isStreaming: false,
-      result: finalResult,
+      error: 'Live research requires the FastAPI backend. Set VITE_API_URL and try again.',
     }));
-    setSelectedArtifactMsgId(assistantMsgId);
     setIsRunning(false);
-    if (!hasUnlocked && !user) {
-      setLoginOpen(true);
-    }
   };
 
   const handleDecision = async (
@@ -753,7 +689,7 @@ export default function App() {
   const showArtifact = Boolean(activeArtifactMsg && (hasUnlocked || user));
 
   return (
-    <div className="relative h-screen w-screen overflow-hidden kraft-bg text-[#111113] flex">
+    <div className="relative min-h-screen w-screen overflow-x-hidden overflow-y-auto kraft-bg text-[#111113] flex">
       {/* Splash backdrop that fades away to reveal main page */}
       {!splashHidden && (
         <div
@@ -794,7 +730,7 @@ export default function App() {
           }}
         />
       </button>
-      <div className="relative flex-1 flex flex-col min-w-0">
+      <div className="relative flex-1 flex flex-col min-w-0 min-h-screen">
         {/* Main Viewport */}
         <div className="flex-1 overflow-y-auto px-4 sm:px-8 pt-20 lg:pt-4 pb-24 lg:pb-4">
           {isEmptyChat ? (
@@ -1004,7 +940,7 @@ export default function App() {
                   showArtifact ? 'lg:col-span-5 order-1 lg:order-2' : 'lg:col-span-8 lg:col-start-3'
                 } flex flex-col min-h-0`}
               >
-                <div className="flex-1 overflow-y-auto -mx-6 px-6 pt-3 pb-10 space-y-4">
+                <div className="flex-1 min-h-0 overflow-y-auto -mx-6 px-6 pt-3 pb-24 space-y-4">
                   {activeThread.messages.map((msg) => (
                     <ChatMessage
                       key={msg.id}

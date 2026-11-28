@@ -1,6 +1,7 @@
 import { ArrowUpRight, CheckCircle2, Paperclip, Sparkles } from 'lucide-react';
 import { ChatMessageItem } from '../types';
 import { ThinkingOrb } from './ThinkingOrb';
+import { MarkdownContent } from './MarkdownContent';
 
 interface ChatMessageProps {
   message: ChatMessageItem;
@@ -74,9 +75,9 @@ export function ChatMessage({
 
             {result && (
               <div className="dia-glass-blend rounded-[26px] p-4 space-y-2.5 animate-fade-slide">
-                <p className="whitespace-pre-wrap break-words text-sm text-[#1E1E26] leading-relaxed">
-                  {result.briefSections[0]?.body ?? result.criticNote}
-                </p>
+                <div className="break-words text-sm text-[#1E1E26] leading-relaxed">
+                  <MarkdownContent text={result.briefSections[0]?.body ?? result.criticNote} />
+                </div>
 
                 {onSelectArtifact && (
                   <button

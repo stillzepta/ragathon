@@ -5,16 +5,28 @@ from app.state import AgentState
 
 
 def analyst_node(state: AgentState) -> AgentState:
+    tasks = [task for task in state.get("plan", []) if task.get("owner") == "analyst"]
+    for task in tasks:
+        state["task_statuses"][task["id"]] = "running"
     model = provider()
     evidence = state["citations"]
     revision = state["critique_feedback"]
+    is_diligence = any(term in state["user_goal"].lower() for term in ("due diligence", "startup", "invest", "competitor", "company"))
     draft = (
-        "## Market and risks\n\nAssess market size bottom-up. Validate retention, "
-        "distribution cost, differentiation, and regulatory exposure.\n\n"
-        "## Unknowns\n\nCompany-specific facts remain unverified. The evidence below "
-        "may describe general diligence methods.\n\n"
-        "## Recommendation\n\nRequest primary evidence before making an investment decision."
+        "## Direct answer\n\nThe available evidence does not support a definitive conclusion yet. "
+        "The strongest supported findings are summarized below.\n\n"
+        "## Evidence synthesis\n\nSeparate sourced facts from inference, assumptions, and unknowns.\n\n"
+        "## Limitations and unanswered questions\n\nSome claims require additional primary evidence or a narrower scope.\n\n"
+        "## Recommendation and next steps\n\nValidate the highest-impact unknowns before relying on this result."
     )
+    if is_diligence:
+        draft = (
+            "## Market and risks\n\nAssess market size bottom-up. Validate retention, distribution cost, "
+            "differentiation, and regulatory exposure.\n\n"
+            "## Unknowns\n\nCompany-specific facts remain unverified. The evidence below may describe "
+            "general diligence methods.\n\n"
+            "## Recommendation\n\nRequest primary evidence before making an investment decision."
+        )
     previous = state["draft_deliverable"]
     if "Add a competitor comparison." in revision or "## Competitor comparison" in previous:
         draft += (
@@ -55,6 +67,8 @@ def analyst_node(state: AgentState) -> AgentState:
         draft += "\n\n## Model-suggested questions\n\n" + "\n".join(f"- {q}" for q in questions)
     external_requested = model.requested and state.get("allow_external_analysis", True)
     state["generation_mode"] = model.used_provider if questions else "fallback" if external_requested else "local"
-    state["analysis_report"] = state["draft_deliverable"] = draft
-    state["agent_logs"].append({"agent_name": "analyst", "action": "synthesize", "message": f"Prepared memo draft using {state['generation_mode']} generation."})
+    state["analysis_report"] = draft
+    for task in tasks:
+        state["task_statuses"][task["id"]] = "completed"
+    state["agent_logs"].append({"agent_name": "analyst", "action": "synthesize", "message": f"Executed {len(tasks)} analysis/writer task(s) and prepared the draft using {state['generation_mode']} generation."})
     return state

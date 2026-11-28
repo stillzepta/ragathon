@@ -62,6 +62,8 @@ export interface MissionResult {
   citations: Citation[];
   singleLlmComparison: string;
   proposedAction: ProposedAction;
+  plan?: { id: string; owner: string; instruction: string; depends_on: string[]; success_criteria: string[] }[];
+  taskStatuses?: Record<string, string>;
   createdAt: string;
 }
 

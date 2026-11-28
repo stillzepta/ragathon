@@ -5,6 +5,18 @@ from typing import List, Literal, Optional
 from pydantic import BaseModel, Field
 
 
+class PlanTask(BaseModel):
+    id: str = Field(pattern=r"^[a-z][a-z0-9_]{2,63}$")
+    owner: Literal["researcher", "analyst", "writer", "evaluator"]
+    instruction: str = Field(min_length=1)
+    depends_on: list[str] = Field(default_factory=list)
+    success_criteria: list[str] = Field(min_length=1)
+
+
+class TaskPlan(BaseModel):
+    tasks: list[PlanTask] = Field(min_length=1, max_length=12)
+
+
 class RetrievedChunk(BaseModel):
     chunk_id: str
     document_id: str

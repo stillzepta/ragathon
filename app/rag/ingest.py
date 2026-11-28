@@ -25,7 +25,8 @@ SEED_DOCUMENTS = [
 
 
 def chunk_document(document: dict[str, Any], size: int = 200) -> list[dict[str, Any]]:
-    words = re.findall(r"\S{1,200}", document["text"])
+    normalized = re.sub(r"\s+", " ", str(document["text"])).strip()
+    words = re.findall(r"\S{1,200}", normalized)
     chunks = []
     for index in range(0, len(words), size):
         text = " ".join(words[index : index + size])
@@ -42,5 +43,9 @@ def chunk_document(document: dict[str, Any], size: int = 200) -> list[dict[str, 
 
 
 def seed_chunks() -> list[dict[str, Any]]:
-    return [chunk for document in SEED_DOCUMENTS for chunk in chunk_document(document)]
+    unique: dict[str, dict[str, Any]] = {}
+    for document in SEED_DOCUMENTS:
+        for chunk in chunk_document(document):
+            unique[chunk["chunk_id"]] = chunk
+    return list(unique.values())
 

@@ -8,7 +8,7 @@ import {
   ShieldCheck,
   X,
 } from 'lucide-react';
-import { useState } from 'react';
+import { ReactNode, useState } from 'react';
 import { ChatMessageItem } from '../types';
 import { AgentPipeline } from './AgentPipeline';
 
@@ -21,6 +21,53 @@ interface ArtifactPanelProps {
 }
 
 type PanelTab = 'document' | 'trace' | 'code';
+
+function inlineMarkdown(text: string): ReactNode[] {
+  return text.split(/(\*\*[^*]+\*\*|`[^`]+`)/g).map((part, index) => {
+    if (part.startsWith('**') && part.endsWith('**')) {
+      return <strong key={index}>{part.slice(2, -2)}</strong>;
+    }
+    if (part.startsWith('`') && part.endsWith('`')) {
+      return <code key={index} className="rounded bg-black/[0.06] px-1 py-0.5 text-[0.9em]">{part.slice(1, -1)}</code>;
+    }
+    return <span key={index}>{part}</span>;
+  });
+}
+
+function MarkdownContent({ text }: { text: string }) {
+  const lines = text.replace(/\\r/g, '').split('\n');
+  const blocks: ReactNode[] = [];
+  let index = 0;
+  while (index < lines.length) {
+    const line = lines[index];
+    if (line.includes('|') && index + 1 < lines.length && /^\s*\|?\s*:?-{3,}/.test(lines[index + 1])) {
+      const parseRow = (row: string) => row.trim().replace(/^\|/, '').replace(/\|$/, '').split('|').map((cell) => cell.trim());
+      const headers = parseRow(line);
+      const rows: string[][] = [];
+      index += 2;
+      while (index < lines.length && lines[index].includes('|') && lines[index].trim()) {
+        rows.push(parseRow(lines[index]));
+        index += 1;
+      }
+      blocks.push(
+        <div key={`table-${index}`} className="my-3 overflow-x-auto rounded-xl border border-black/10">
+          <table className="w-full min-w-[420px] border-collapse text-left text-sm">
+            <thead className="bg-black/[0.04]"><tr>{headers.map((cell, cellIndex) => <th key={cellIndex} className="border-b border-black/10 px-3 py-2 font-semibold">{inlineMarkdown(cell)}</th>)}</tr></thead>
+            <tbody>{rows.map((row, rowIndex) => <tr key={rowIndex} className="even:bg-black/[0.02]">{headers.map((_, cellIndex) => <td key={cellIndex} className="border-b border-black/[0.06] px-3 py-2 align-top">{inlineMarkdown(row[cellIndex] ?? '')}</td>)}</tr>)}</tbody>
+          </table>
+        </div>,
+      );
+      continue;
+    }
+    if (!line.trim()) { index += 1; continue; }
+    if (line.startsWith('### ')) blocks.push(<h5 key={index} className="mt-3 font-semibold">{inlineMarkdown(line.slice(4))}</h5>);
+    else if (line.startsWith('## ')) blocks.push(<h4 key={index} className="mt-3 font-semibold">{inlineMarkdown(line.slice(3))}</h4>);
+    else if (line.startsWith('- ')) blocks.push(<li key={index} className="ml-5 list-disc">{inlineMarkdown(line.slice(2))}</li>);
+    else blocks.push(<p key={index}>{inlineMarkdown(line.replace(/^>\s?/, ''))}</p>);
+    index += 1;
+  }
+  return <div className="space-y-2">{blocks}</div>;
+}
 
 export function ArtifactPanel({
   message,
@@ -38,6 +85,7 @@ export function ArtifactPanel({
 
   const result = message.result;
   if (!result) return null;
+  const taskStatuses = result.taskStatuses ?? {};
 
   const action = result.proposedAction;
   const simulation = !result.mode || result.mode === 'simulation';
@@ -105,7 +153,7 @@ export function ArtifactPanel({
                   <div key={index} className="mt-2 max-h-40 overflow-auto rounded-xl bg-white/70 p-3">
                     <p className="font-semibold">Draft {index + 1} · {draft.score}/100</p>
                     <p>{draft.feedback}</p>
-                    <p className="mt-2 whitespace-pre-wrap break-words">{draft.body}</p>
+                    <div className="mt-2 break-words"><MarkdownContent text={draft.body} /></div>
                   </div>
                 ))}
               </details>
@@ -194,15 +242,32 @@ export function ArtifactPanel({
                 {result.criticNote}
               </div>
 
+              {result.plan && result.plan.length > 0 && (
+                <details open className="rounded-3xl bg-white/65 border border-white/90 px-4 py-3 text-xs text-[#2A2A35]">
+                  <summary className="cursor-pointer font-semibold">Task plan and agent assignments</summary>
+                  <div className="mt-3 space-y-2">
+                    {result.plan.map((task) => (
+                      <div key={task.id} className="rounded-xl bg-white/75 px-3 py-2">
+                        <div className="flex items-center justify-between gap-3">
+                          <span className="font-medium">{task.id}</span>
+                          <span className="rounded-full bg-indigo-50 px-2 py-0.5 text-[10px] uppercase tracking-wide text-indigo-800">{taskStatuses?.[task.id] ?? 'queued'} · {task.owner}</span>
+                        </div>
+                        <p className="mt-1 text-[#555565]">{task.instruction}</p>
+                      </div>
+                    ))}
+                  </div>
+                </details>
+              )}
+
               <div className="space-y-4 px-1">
                 {result.briefSections.map((sec) => (
                   <div key={sec.heading}>
                     <h4 className="text-[11px] font-semibold uppercase tracking-wider text-[#555565]">
                       {sec.heading}
                     </h4>
-                    <p className="mt-1 whitespace-pre-wrap break-words text-sm text-[#1E1E26] leading-relaxed">
-                      {sec.body}
-                    </p>
+                    <div className="mt-1 break-words text-sm text-[#1E1E26] leading-relaxed">
+                      <MarkdownContent text={sec.body} />
+                    </div>
                   </div>
                 ))}
               </div>

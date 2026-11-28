@@ -5,7 +5,8 @@ from typing import Any, TypedDict
 
 class AgentState(TypedDict, total=False):
     user_goal: str
-    plan: list[str]
+    plan: list[dict[str, Any]]
+    task_statuses: dict[str, str]
     current_step: int
     research_data: list[dict[str, Any]]
     analysis_report: str
@@ -28,6 +29,7 @@ def initial_state(goal: str, criteria: list[str], run_id: str) -> AgentState:
     return {
         "user_goal": goal,
         "plan": [],
+        "task_statuses": {},
         "current_step": 0,
         "research_data": [],
         "analysis_report": "",

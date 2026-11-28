@@ -9,8 +9,10 @@ from typing import Any
 
 from app.agents.analyst import analyst_node
 from app.agents.evaluator import SECOND_REVIEW_THRESHOLD, evaluate_node
-from app.agents.planner import plan_node
+from app.agents.planner import plan_node, validate_plan
+from app.models import TaskPlan
 from app.agents.researcher import research_node
+from app.agents.writer import writer_node
 from app.rag.retriever import HybridRetriever
 from app.state import AgentState, initial_state
 
@@ -40,7 +42,8 @@ def build_langgraph(nodes: dict[str, Callable], checkpointer: Any) -> Any:
     graph.set_entry_point("planner")
     graph.add_edge("planner", "researcher")
     graph.add_edge("researcher", "analyst")
-    graph.add_edge("analyst", "evaluator")
+    graph.add_edge("analyst", "writer")
+    graph.add_edge("writer", "evaluator")
     graph.add_conditional_edges("evaluator", _route, {"revision": "revision", "done": END})
     graph.add_edge("revision", "analyst")
     return graph.compile(checkpointer=checkpointer)
@@ -80,17 +83,25 @@ def run_due_diligence(
         "planner": plan_node,
         "researcher": lambda state: research_node(state, retriever),
         "analyst": analyst_node,
+        "writer": writer_node,
         "evaluator": evaluate_node,
         "revision": _revise_node,
     }.items()}
 
+    planner = nodes["planner"]
+    def validated_planner(current: AgentState) -> AgentState:
+        result = planner(current)
+        validate_plan(TaskPlan.model_validate({"tasks": result["plan"]}))
+        return result
+    nodes["planner"] = validated_planner
+
     try:
         from langgraph.checkpoint.sqlite import SqliteSaver
     except ImportError:
-        for name in ("planner", "researcher", "analyst", "evaluator"):
+        for name in ("planner", "researcher", "analyst", "writer", "evaluator"):
             state = nodes[name](state)
         while _route(state) == "revision":
-            for name in ("revision", "analyst", "evaluator"):
+            for name in ("revision", "analyst", "writer", "evaluator"):
                 state = nodes[name](state)
     else:
         path = checkpoint_path() if persist_checkpoint else ":memory:"
