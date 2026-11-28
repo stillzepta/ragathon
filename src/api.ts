@@ -3,7 +3,25 @@ export const API_URL = import.meta.env.VITE_API_URL?.replace(/\/$/, '') ?? '';
 export async function api(path: string, token: string, options: RequestInit = {}) {
   const headers = new Headers(options.headers);
   if (token) headers.set('Authorization', `Bearer ${token}`);
-  const response = await fetch(`${API_URL}${path}`, { ...options, headers });
+  let response: Response;
+  try {
+    response = await fetch(`${API_URL}${path}`, { ...options, headers });
+  } catch (error) {
+    if (options.signal?.aborted) throw error;
+    // Retry only chat transport failures. Never replay run creation, approvals,
+    // bookings, or HTTP errors such as a provider rate limit.
+    if (path !== '/api/chat' || !(error instanceof TypeError)) {
+      throw error;
+    }
+    await new Promise((resolve) => setTimeout(resolve, 700));
+    if (options.signal?.aborted) throw error;
+    try {
+      response = await fetch(`${API_URL}${path}`, { ...options, headers });
+    } catch (retryError) {
+      if (options.signal?.aborted) throw retryError;
+      throw new Error('The connection to Diablo was interrupted. Your message is still visible; please send it again.');
+    }
+  }
   if (!response.ok) {
     const body = await response.json().catch(() => null);
     throw new Error(typeof body?.detail === 'string' ? body.detail : `Request failed (${response.status}).`);
