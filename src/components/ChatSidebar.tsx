@@ -56,6 +56,7 @@ interface ChatSidebarProps {
   onPromptModeChange: (mode: 'chat' | 'diligence') => void;
   onSelectThread: (id: string) => void;
   onNewChat: () => void;
+  onHome: () => void;
   onToggleDrawer: () => void;
   onCloseDrawer: () => void;
   onOpenLogin: () => void;
@@ -72,21 +73,40 @@ export function ChatSidebar({
   onPromptModeChange,
   onSelectThread,
   onNewChat,
+  onHome,
   onToggleDrawer,
   onCloseDrawer,
   onOpenLogin,
   onOpenEmail,
   onLogout,
 }: ChatSidebarProps) {
-  const searchRef = useRef<HTMLInputElement>(null);
+  const searchDialog = useRef<HTMLDialogElement>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeDrawerTab, setActiveDrawerTab] = useState<'history' | 'apps' | 'settings'>('history');
 
   const drawerTitles = { history: 'Recent Chats', apps: 'Apps', settings: 'Workspace Settings' };
 
-  const filteredThreads = threads.filter((t) =>
-    t.title.toLowerCase().includes(searchQuery.trim().toLowerCase())
+  const query = searchQuery.trim().toLowerCase();
+  const searchResults = threads.filter((thread) =>
+    thread.title.toLowerCase().includes(query) ||
+    thread.messages.some((message) => message.text.toLowerCase().includes(query))
   );
+
+  const openSearch = () => {
+    setSearchQuery('');
+    searchDialog.current?.showModal();
+  };
+
+  const startChat = () => {
+    setActiveDrawerTab('history');
+    onNewChat();
+  };
+
+  const selectChat = (id: string) => {
+    setActiveDrawerTab('history');
+    onSelectThread(id);
+    if (!window.matchMedia('(min-width: 1024px)').matches) onCloseDrawer();
+  };
 
   const openTab = (tab: 'history' | 'apps' | 'settings') => {
     setActiveDrawerTab(tab);
@@ -95,6 +115,42 @@ export function ChatSidebar({
 
   return (
     <div className="relative z-40 flex lg:h-full shrink-0">
+      <dialog
+        ref={searchDialog}
+        aria-label="Search chat history"
+        className="fixed inset-0 m-auto max-h-[min(36rem,85vh)] w-[min(34rem,calc(100vw-2rem))] overflow-hidden rounded-3xl border border-indigo-100 bg-[#F9F9FE] text-[#111113] shadow-xl backdrop:bg-indigo-950/35 backdrop:backdrop-blur-sm"
+      >
+        <div className="flex items-center gap-3 border-b border-indigo-100 px-4 py-3">
+          <Search className="h-5 w-5 shrink-0 text-indigo-600" aria-hidden="true" />
+          <input
+            type="search"
+            autoFocus
+            aria-label="Search chats"
+            placeholder="Search chat titles and messages"
+            value={searchQuery}
+            onChange={(event) => setSearchQuery(event.target.value)}
+            className="min-w-0 flex-1 bg-transparent py-2 text-sm outline-none"
+          />
+          <button type="button" aria-label="Close search" onClick={() => searchDialog.current?.close()}
+            className="rounded-full p-2 text-zinc-600 hover:bg-indigo-50">
+            <X className="h-4 w-4" aria-hidden="true" />
+          </button>
+        </div>
+        <div className="max-h-[min(28rem,65vh)] space-y-1 overflow-y-auto p-3">
+          <h2 className="px-2 pb-1 text-xs font-semibold text-zinc-600">{query ? 'Search results' : 'Recent chats'}</h2>
+          {searchResults.length === 0 && (
+            <p className="px-2 py-3 text-sm text-zinc-600">{query ? 'No matching chats' : 'No chats yet'}</p>
+          )}
+          {searchResults.map((thread) => (
+            <button key={thread.id} type="button"
+              onClick={() => { searchDialog.current?.close(); selectChat(thread.id); }}
+              className="flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2.5 text-left text-sm hover:bg-indigo-50 focus-visible:bg-indigo-50">
+              <MessageSquare className="h-4 w-4 shrink-0 text-indigo-600" aria-hidden="true" />
+              <span className="truncate">{thread.title}</span>
+            </button>
+          ))}
+        </div>
+      </dialog>
       {/* Expandable Glass Drawer */}
       {open && (
         <>
@@ -171,58 +227,41 @@ export function ChatSidebar({
             ) : activeDrawerTab === 'history' ? (
               <>
                 <nav aria-label="Chat shortcuts" className="space-y-1.5 border-b border-indigo-950/[0.06] p-3">
-                  <button type="button" onClick={() => { onNewChat(); onCloseDrawer(); }}
+                  <button type="button" onClick={startChat}
                     className="flex min-h-10 w-full items-center gap-2.5 rounded-xl bg-indigo-50 px-3 text-sm font-semibold text-indigo-950 hover:bg-indigo-100">
                     <SquarePen className="h-4 w-4 text-indigo-600" aria-hidden="true" />
                     New chat
                   </button>
-                  <div className="grid grid-cols-3 gap-1">
-                    <button type="button" onClick={() => searchRef.current?.focus()}
-                      className="flex items-center justify-center gap-1.5 rounded-lg px-1 py-2 text-xs text-[#4A4A58] hover:bg-white">
+                  <div className="space-y-0.5">
+                    <button type="button" onClick={openSearch}
+                      className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-[#4A4A58] hover:bg-white">
                       <Search className="h-3.5 w-3.5" aria-hidden="true" /> Search
                     </button>
                     <button type="button" onClick={() => openTab('apps')}
-                      className="flex items-center justify-center gap-1.5 rounded-lg px-1 py-2 text-xs text-[#4A4A58] hover:bg-white">
+                      className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-[#4A4A58] hover:bg-white">
                       <LayoutGrid className="h-3.5 w-3.5" aria-hidden="true" /> Apps
                     </button>
                     <button type="button" onClick={() => openTab('settings')}
-                      className="flex items-center justify-center gap-1.5 rounded-lg px-1 py-2 text-xs text-[#4A4A58] hover:bg-white">
+                      className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-[#4A4A58] hover:bg-white">
                       <Settings className="h-3.5 w-3.5" aria-hidden="true" /> Settings
                     </button>
                   </div>
                 </nav>
-                <div className="space-y-2 px-3 pb-2 pt-3">
-                  <h2 className="text-xs font-semibold text-[#4A4A58]">Chats</h2>
-                  <div className="flex items-center gap-2 rounded-xl border border-indigo-950/[0.06] bg-white/70 px-3 py-2 focus-within:border-indigo-300">
-                    <Search className="h-3.5 w-3.5 shrink-0 text-[#6E6E77]" aria-hidden="true" />
-                    <input
-                      ref={searchRef}
-                      type="search"
-                      aria-label="Search chats"
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      placeholder="Search chats"
-                      className="w-full min-w-0 bg-transparent text-xs text-[#111113] placeholder:text-[#6E6E77] focus:outline-none"
-                    />
-                  </div>
-                </div>
+                <h2 className="px-4 pb-2 pt-4 text-xs font-semibold text-[#4A4A58]">Chats</h2>
 
                 <div className="min-h-0 flex-1 space-y-0.5 overflow-y-auto px-3 pb-4">
-                  {filteredThreads.length === 0 ? (
+                  {threads.length === 0 ? (
                     <p className="text-xs text-[#8E8E99] px-3 py-2">
-                      {searchQuery.trim() ? 'No matching chats' : 'No chats yet'}
+                      No chats yet
                     </p>
                   ) : (
-                    filteredThreads.map((thread) => {
+                    threads.map((thread) => {
                       const active = thread.id === activeThreadId;
                       return (
                         <button
                           key={thread.id}
                           type="button"
-                          onClick={() => {
-                            onSelectThread(thread.id);
-                            if (!window.matchMedia('(min-width: 1024px)').matches) onCloseDrawer();
-                          }}
+                          onClick={() => selectChat(thread.id)}
                           aria-current={active ? 'true' : undefined}
                           title={thread.title}
                           className={`flex min-h-10 w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left text-sm transition cursor-pointer ${
@@ -268,8 +307,8 @@ export function ChatSidebar({
           {/* Glowing Brand Sparkle Ring */}
           <button
             type="button"
-            onClick={onNewChat}
-            title="AgentVerse Home"
+            onClick={onHome}
+            title="Diablo Home"
             className="w-9 h-9 rounded-full bg-white/85 border border-white shadow-[0_4px_14px_rgba(79,86,184,0.16)] flex items-center justify-center hover:scale-105 transition cursor-pointer"
           >
             <Sparkles className="w-4 h-4 text-indigo-600" />
@@ -278,7 +317,7 @@ export function ChatSidebar({
           {/* New Chat */}
           <button
             type="button"
-            onClick={onNewChat}
+            onClick={startChat}
             title="New chat"
             className="w-9 h-9 rounded-full bg-white/60 hover:bg-white text-[#111113] flex items-center justify-center transition cursor-pointer"
           >
@@ -288,7 +327,7 @@ export function ChatSidebar({
           {/* Search */}
           <button
             type="button"
-            onClick={() => openTab('history')}
+            onClick={openSearch}
             title="Search chats"
             className="w-9 h-9 rounded-full hover:bg-white/60 text-[#22243a] hover:text-[#111113] flex items-center justify-center transition cursor-pointer"
           >
@@ -368,7 +407,7 @@ export function ChatSidebar({
       >
         <button
           type="button"
-          onClick={onNewChat}
+          onClick={startChat}
           title="New chat"
           className="w-9 h-9 rounded-full bg-[#F2F3FA] text-[#111113] flex items-center justify-center cursor-pointer"
         >

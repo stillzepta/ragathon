@@ -184,6 +184,7 @@ export default function App() {
     }
   });
   const [threads, setThreads] = useState<ChatThread[]>([]);
+  const [blankChatOpen, setBlankChatOpen] = useState(false);
   const [activeThreadId, setActiveThreadId] = useState<string | null>(null);
   const [selectedArtifactMsgId, setSelectedArtifactMsgId] = useState<string | null>(null);
 
@@ -212,13 +213,13 @@ export default function App() {
 
   const activeThread = threads.find((t) => t.id === activeThreadId) ?? null;
   const activeShowcase = SHOWCASE_ITEMS[activeShowcaseIdx] ?? SHOWCASE_ITEMS[0];
-  const isEmptyChat = !activeThread || activeThread.messages.length === 0;
+  const isHome = !activeThread && !blankChatOpen;
 
   useEffect(() => {
-    if (!isEmptyChat && window.matchMedia('(min-width: 1024px)').matches) {
+    if (!isHome && window.matchMedia('(min-width: 1024px)').matches) {
       setSidebarOpen(true);
     }
-  }, [isEmptyChat]);
+  }, [isHome]);
 
   const latestArtifactMsg =
     [...(activeThread?.messages ?? [])].reverse().find((m) => m.result) ?? null;
@@ -306,12 +307,12 @@ export default function App() {
   }, [apiToken]);
 
   useEffect(() => {
-    if (API_URL || !isEmptyChat || isPreviewPaused || heroInput.trim()) return;
+    if (API_URL || !isHome || isPreviewPaused || heroInput.trim()) return;
     const timer = setInterval(() => {
       setActiveShowcaseIdx((prev) => (prev + 1) % SHOWCASE_ITEMS.length);
     }, 2000);
     return () => clearInterval(timer);
-  }, [isEmptyChat, isPreviewPaused, heroInput]);
+  }, [isHome, isPreviewPaused, heroInput]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -665,7 +666,7 @@ export default function App() {
       if (imageFile) {
         e.preventDefault();
         setAttachedFile(imageFile);
-        if (activeThreadId) {
+        if (!isHome) {
           chatInputRef.current?.focus();
         } else {
           heroInputRef.current?.focus();
@@ -674,9 +675,9 @@ export default function App() {
     };
     window.addEventListener('paste', onWindowPaste);
     return () => window.removeEventListener('paste', onWindowPaste);
-  }, [activeThreadId]);
+  }, [isHome]);
 
-  const handleNewChat = () => {
+  const resetChat = () => {
     runTokenRef.current++;
     activeRequest.current?.abort();
     activeRequest.current = null;
@@ -685,6 +686,18 @@ export default function App() {
     setInput('');
     setHeroInput('');
     setAttachedFile(null);
+  };
+
+  const handleHome = () => {
+    resetChat();
+    setBlankChatOpen(false);
+  };
+
+  const handleNewChat = () => {
+    resetChat();
+    setBlankChatOpen(true);
+    setSidebarOpen(window.matchMedia('(min-width: 1024px)').matches);
+    requestAnimationFrame(() => chatInputRef.current?.focus());
   };
 
   const showArtifact = Boolean(activeArtifactMsg && (hasUnlocked || user));
@@ -704,7 +717,7 @@ export default function App() {
       {/* Morphing "diablo" bubble logo: starts upper-center, bounces & shrinks into top-left corner */}
       <button
         type="button"
-        onClick={handleNewChat}
+        onClick={handleHome}
         title="Diablo Home"
         style={{ transformOrigin: 'center center' }}
         className={`fixed z-50 -translate-x-1/2 -translate-y-1/2 transition-all duration-[850ms] ease-[cubic-bezier(0.34,1.45,0.64,1)] cursor-pointer ${
@@ -734,7 +747,7 @@ export default function App() {
       <div className="relative flex-1 flex flex-col min-w-0 min-h-screen">
         {/* Main Viewport */}
         <div className="flex-1 overflow-y-auto px-4 sm:px-8 pt-20 lg:pt-4 pb-24 lg:pb-4">
-          {isEmptyChat ? (
+          {isHome ? (
             <div className="max-w-6xl mx-auto min-h-full flex items-start lg:items-center py-4 lg:py-12">
               <div className="w-full grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-16 items-center">
                 {/* Left Editorial Column */}
@@ -942,7 +955,7 @@ export default function App() {
                 } flex flex-col min-h-0`}
               >
                 <div className="flex-1 min-h-0 overflow-y-auto -mx-6 px-6 pt-3 pb-24 space-y-4">
-                  {activeThread.messages.map((msg) => (
+                  {activeThread?.messages.map((msg) => (
                     <ChatMessage
                       key={msg.id}
                       message={msg}
@@ -1047,6 +1060,7 @@ export default function App() {
           onPromptModeChange={setPromptMode}
           onSelectThread={(id) => setActiveThreadId(id)}
           onNewChat={handleNewChat}
+          onHome={handleHome}
           onToggleDrawer={() => setSidebarOpen((v) => !v)}
           onCloseDrawer={() => setSidebarOpen(false)}
           onOpenLogin={() => setLoginOpen(true)}
