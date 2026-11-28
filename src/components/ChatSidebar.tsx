@@ -3,7 +3,6 @@ import {
   LayoutGrid,
   LogIn,
   LogOut,
-  Mail,
   MessageSquare,
   Search,
   Settings,
@@ -12,8 +11,7 @@ import {
   X,
 } from 'lucide-react';
 import { useState } from 'react';
-import { DEMO_PRESETS } from '../data/presets';
-import { ChatThread, DemoPreset } from '../types';
+import { ChatThread } from '../types';
 import { AuthUser } from './LoginModal';
 
 interface ChatSidebarProps {
@@ -25,7 +23,6 @@ interface ChatSidebarProps {
   onPromptModeChange: (mode: 'chat' | 'diligence') => void;
   onSelectThread: (id: string) => void;
   onNewChat: () => void;
-  onSelectPreset: (preset: DemoPreset) => void;
   onToggleDrawer: () => void;
   onCloseDrawer: () => void;
   onOpenLogin: () => void;
@@ -42,7 +39,6 @@ export function ChatSidebar({
   onPromptModeChange,
   onSelectThread,
   onNewChat,
-  onSelectPreset,
   onToggleDrawer,
   onCloseDrawer,
   onOpenLogin,
@@ -50,15 +46,15 @@ export function ChatSidebar({
   onLogout,
 }: ChatSidebarProps) {
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeDrawerTab, setActiveDrawerTab] = useState<'history' | 'presets' | 'settings'>('history');
+  const [activeDrawerTab, setActiveDrawerTab] = useState<'history' | 'apps' | 'settings'>('history');
 
-  const drawerTitles = { history: 'Recent Chats', presets: 'Quick Launch', settings: 'Workspace Settings' };
+  const drawerTitles = { history: 'Recent Chats', apps: 'Apps', settings: 'Workspace Settings' };
 
   const filteredThreads = threads.filter((t) =>
     t.title.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const openTab = (tab: 'history' | 'presets' | 'settings') => {
+  const openTab = (tab: 'history' | 'apps' | 'settings') => {
     setActiveDrawerTab(tab);
     if (!open) onToggleDrawer();
   };
@@ -163,24 +159,20 @@ export function ChatSidebar({
               </>
             ) : (
               <div className="flex-1 overflow-y-auto p-2.5 space-y-1.5">
-                {DEMO_PRESETS.map((preset) => (
-                  <button
-                    key={preset.id}
-                    type="button"
-                    onClick={() => {
-                      onSelectPreset(preset);
-                      onCloseDrawer();
-                    }}
-                    className="w-full text-left p-3 rounded-2xl bg-white/70 hover:bg-white border border-black/[0.05] transition cursor-pointer"
-                  >
-                    <p className="text-xs font-medium text-[#111113]">
-                      {preset.label}
-                    </p>
-                    <p className="text-[11px] text-[#6E6E77] mt-0.5 line-clamp-2">
-                      {preset.prompt}
-                    </p>
-                  </button>
-                ))}
+                <button
+                  type="button"
+                  onClick={() => {
+                    onCloseDrawer();
+                    onOpenEmail();
+                  }}
+                  className="flex w-full items-center gap-3 rounded-2xl border border-black/[0.05] bg-white/70 p-3 text-left transition hover:bg-white"
+                >
+                  <img src={`${import.meta.env.BASE_URL}gmail.png`} alt="" className="h-9 w-9 shrink-0 rounded-lg object-contain" />
+                  <span>
+                    <span className="block text-xs font-medium text-[#111113]">Gmail</span>
+                    <span className="mt-0.5 block text-[11px] text-[#6E6E77]">Compose an email</span>
+                  </span>
+                </button>
               </div>
             )}
           </div>
@@ -221,11 +213,13 @@ export function ChatSidebar({
             <Search className="w-4 h-4" />
           </button>
 
-          {/* Quick Presets Grid */}
+          {/* Apps */}
           <button
             type="button"
-            onClick={() => openTab('presets')}
-            title="Quick Scenarios"
+            onClick={() => openTab('apps')}
+            title="Apps"
+            aria-label="Apps"
+            aria-expanded={open && activeDrawerTab === 'apps'}
             className="w-9 h-9 rounded-full hover:bg-white/60 text-[#22243a] hover:text-[#111113] flex items-center justify-center transition cursor-pointer"
           >
             <LayoutGrid className="w-4 h-4" />
@@ -245,15 +239,6 @@ export function ChatSidebar({
             <Clock className="w-4 h-4" />
           </button>
 
-          {/* AI Mail Composer */}
-          <button
-            type="button"
-            onClick={onOpenEmail}
-            title="AI Mail Composer"
-            className="w-9 h-9 rounded-full hover:bg-white/60 text-[#22243a] hover:text-[#111113] flex items-center justify-center transition cursor-pointer"
-          >
-            <Mail className="w-4 h-4" />
-          </button>
         </div>
 
         {/* Bottom Settings & Sign In / Out */}
@@ -309,8 +294,10 @@ export function ChatSidebar({
         </button>
         <button
           type="button"
-          onClick={() => openTab('presets')}
-          title="Quick Scenarios"
+          onClick={() => openTab('apps')}
+          title="Apps"
+          aria-label="Apps"
+          aria-expanded={open && activeDrawerTab === 'apps'}
           className="w-9 h-9 rounded-full text-[#22243a] flex items-center justify-center cursor-pointer"
         >
           <LayoutGrid className="w-4 h-4" />
@@ -324,14 +311,6 @@ export function ChatSidebar({
           }`}
         >
           <Clock className="w-4 h-4" />
-        </button>
-        <button
-          type="button"
-          onClick={onOpenEmail}
-          title="AI Mail Composer"
-          className="w-9 h-9 rounded-full text-[#22243a] flex items-center justify-center cursor-pointer"
-        >
-          <Mail className="w-4 h-4" />
         </button>
         {user ? (
           <button

@@ -1104,7 +1104,6 @@ export default function App() {
           onPromptModeChange={setPromptMode}
           onSelectThread={(id) => setActiveThreadId(id)}
           onNewChat={handleNewChat}
-          onSelectPreset={(preset) => void sendMessage(preset)}
           onToggleDrawer={() => setSidebarOpen((v) => !v)}
           onCloseDrawer={() => setSidebarOpen(false)}
           onOpenLogin={() => setLoginOpen(true)}
