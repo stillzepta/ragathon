@@ -14,6 +14,8 @@ def writer_node(state: AgentState) -> AgentState:
     draft = ""
     model = provider()
     is_travel = any(term in state["user_goal"].lower() for term in ("trip", "travel", "itinerary", "vacation", "holiday", "journey"))
+    if is_travel:
+        model.max_output_tokens = 1800
     # Keep the synthesis call on the configured OpenRouter path. The local
     # deterministic mode remains useful for tests and offline demos.
     if (
@@ -34,6 +36,9 @@ def writer_node(state: AgentState) -> AgentState:
             "Include ## How to reach, ## Stays and food, ## Budget, and ## Unknowns. "
             "In the budget table distinguish verified costs from unknown costs, and include permits and return travel. "
             "Do not present unknown fares as zero or claim the trip is affordable without evidence. "
+            "Search excerpts are not live booking quotes: never label snippet prices as verified for the requested date. "
+            "Do not invent airport names, routes or schedules. Only state these when supported by a cited excerpt. "
+            "Omit unsupported route claims instead of filling gaps from memory. "
             "If evidence cannot establish feasibility, say the budget is not verified as feasible; "
             "explain the constraints and realistic next steps. Do not force an itinerary that exceeds the budget. "
             "Never include startup or investment sections. " if is_travel else

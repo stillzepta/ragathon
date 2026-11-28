@@ -1,6 +1,7 @@
 from app.rag.retriever import HybridRetriever
 from app.state import AgentState
 from app.tools.search import search_web
+from urllib.parse import urlparse
 
 
 def research_node(state: AgentState, retriever: HybridRetriever) -> AgentState:
@@ -8,8 +9,16 @@ def research_node(state: AgentState, retriever: HybridRetriever) -> AgentState:
     for task in tasks:
         state["task_statuses"][task["id"]] = "running"
     queries = [task["instruction"] for task in tasks] or [state["user_goal"]]
+    travel = any(task.get("id") == "research_trip_options" for task in tasks)
+    if travel:
+        queries = [state["user_goal"] + " official tourism transport entry permit"]
+        if "lakshadweep" in state["user_goal"].lower():
+            queries = ["Lakshadweep how to reach Agatti Kochi ships entry permit site:lakshadweep.gov.in"]
     for query in queries:
-        for result in search_web(query, max_results=3):
+        for result in search_web(query, max_results=5 if travel else 3):
+            host = (urlparse(result.get("url", "")).hostname or "").lower()
+            if travel and not (host.endswith(".gov.in") or host.endswith(".gov") or host.endswith(".nic.in")):
+                continue
             if result.get("text"):
                 retriever.add_text(result["text"], result.get("url") or "web://search", result.get("title") or "Web result")
     ranked: dict[str, dict] = {}

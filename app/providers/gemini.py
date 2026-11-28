@@ -137,7 +137,7 @@ class ModelProvider:
                 contents=prompt,
                 config={
                     "system_instruction": system,
-                    "max_output_tokens": 600,
+                    "max_output_tokens": getattr(self, "max_output_tokens", 600),
                 },
             )
 
@@ -194,7 +194,7 @@ class ModelProvider:
 
         payload = json.dumps({
             "model": model,
-            "max_tokens": 600,
+            "max_tokens": getattr(self, "max_output_tokens", 600),
             "messages": [
                 {"role": "system", "content": system},
                 {"role": "user", "content": user_content},

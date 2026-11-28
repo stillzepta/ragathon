@@ -53,3 +53,17 @@ def test_private_upload_does_not_reach_travel_writer(monkeypatch):
     state['analysis_report'] = 'Private analysis'
     monkeypatch.setattr(ModelProvider, 'generate', lambda *a, **k: (_ for _ in ()).throw(AssertionError('external call')))
     assert 'not verified as feasible' in writer_node(state)['draft_deliverable']
+
+
+def test_travel_research_excludes_social_media_prices(monkeypatch):
+    monkeypatch.setenv('MODEL_PROVIDER', 'mock')
+    monkeypatch.setenv('WEB_SEARCH_ENABLED', 'false')
+    monkeypatch.setattr('app.agents.researcher.search_web', lambda *a, **k: [
+        {'url': 'https://instagram.com/reel/123', 'title': 'Cheap trip', 'text': 'Lakshadweep trip flight costs 7000'},
+        {'url': 'https://lakshadweep.gov.in/tourism/how-to-reach/', 'title': 'Official transport',
+         'text': 'Lakshadweep can be reached by ships and flights operated from Kochi.'},
+    ])
+    state = run_due_diligence(GOAL, persist_checkpoint=False)
+    assert state['citations']
+    assert all('lakshadweep.gov.in' in item['source'] for item in state['citations'])
+    assert '7000' not in state['final_output']
