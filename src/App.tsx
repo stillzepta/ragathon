@@ -214,6 +214,12 @@ export default function App() {
   const activeShowcase = SHOWCASE_ITEMS[activeShowcaseIdx] ?? SHOWCASE_ITEMS[0];
   const isEmptyChat = !activeThread || activeThread.messages.length === 0;
 
+  useEffect(() => {
+    if (!isEmptyChat && window.matchMedia('(min-width: 1024px)').matches) {
+      setSidebarOpen(true);
+    }
+  }, [isEmptyChat]);
+
   const latestArtifactMsg =
     [...(activeThread?.messages ?? [])].reverse().find((m) => m.result) ?? null;
   const activeArtifactMsg =

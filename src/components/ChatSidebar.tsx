@@ -221,7 +221,7 @@ export function ChatSidebar({
                           type="button"
                           onClick={() => {
                             onSelectThread(thread.id);
-                            onCloseDrawer();
+                            if (!window.matchMedia('(min-width: 1024px)').matches) onCloseDrawer();
                           }}
                           aria-current={active ? 'true' : undefined}
                           title={thread.title}
