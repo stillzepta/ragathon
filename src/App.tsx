@@ -214,12 +214,13 @@ export default function App() {
   const activeThread = threads.find((t) => t.id === activeThreadId) ?? null;
   const activeShowcase = SHOWCASE_ITEMS[activeShowcaseIdx] ?? SHOWCASE_ITEMS[0];
   const isHome = !activeThread && !blankChatOpen;
+  const showChatSidebar = !isHome || Boolean(heroInput.trim());
 
   useEffect(() => {
-    if (!isHome && window.matchMedia('(min-width: 1024px)').matches) {
+    if (showChatSidebar && window.matchMedia('(min-width: 1024px)').matches) {
       setSidebarOpen(true);
     }
-  }, [isHome]);
+  }, [showChatSidebar]);
 
   const latestArtifactMsg =
     [...(activeThread?.messages ?? [])].reverse().find((m) => m.result) ?? null;
@@ -697,6 +698,7 @@ export default function App() {
   const handleHome = () => {
     resetChat();
     setBlankChatOpen(false);
+    setSidebarOpen(false);
   };
 
   const handleNewChat = () => {
@@ -1055,10 +1057,11 @@ export default function App() {
         </div>
       </div>
 
-      {/* Gemini-Style Slim Icon Rail on Right Side (hidden during splash) */}
+      {/* Workspace navigation */}
       {introDocked && (
         <ChatSidebar
           open={sidebarOpen}
+          chatContext={showChatSidebar}
           threads={threads}
           activeThreadId={activeThreadId}
           user={user}
