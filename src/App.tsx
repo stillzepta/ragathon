@@ -6,7 +6,7 @@ import { ChatSidebar } from './components/ChatSidebar';
 import { EmailModal } from './components/EmailModal';
 import { AuthUser, LoginModal } from './components/LoginModal';
 import SplitText from './components/SplitText';
-import { api, API_URL } from './api';
+import { api, API_URL, watchRun } from './api';
 import { supabase } from './lib/supabase';
 import { DEMO_PRESETS } from './data/presets';
 import {
@@ -17,6 +17,14 @@ import {
   MissionResult,
   ProposedAction,
 } from './types';
+
+const STAGE_IDS: Record<string, AgentNode['id'] | undefined> = {
+  planner: 'orchestrator',
+  researcher: 'rag',
+  analyst: 'planner',
+  evaluator: 'critic',
+  revision: 'planner',
+};
 
 const CONNECTED_AGENTS: AgentNode[] = [
   { id: 'orchestrator', name: 'Planner', role: 'Planning', status: 'idle', summary: 'Queued' },
@@ -193,7 +201,7 @@ export default function App() {
     catch { return ''; }
   });
   const requestToken = () => (manualToken || apiToken).trim();
-  const [promptMode] = useState<'chat' | 'diligence'>('chat');
+  const [promptMode, setPromptMode] = useState<'chat' | 'diligence'>('chat');
   const activeRequest = useRef<AbortController | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -340,6 +348,16 @@ export default function App() {
     const text = rawText || (attachedFile?.type.startsWith('image/') ? 'Analyze this image' : `Analyze ${attachedFile?.name ?? 'file'}`);
 
     const isChat = !presetOverride && !attachedFile && !forceDiligence && promptMode === 'chat';
+    const authToken = requestToken();
+    if (!presetOverride && !isChat && API_URL && !authToken) {
+      if (forceDiligence) {
+        setPromptMode('diligence');
+        setHeroInput(text);
+      }
+      setLoginOpen(true);
+      return;
+    }
+
     const token = ++runTokenRef.current;
     const nowLabel = new Date().toLocaleTimeString([], {
       hour: '2-digit',
@@ -384,98 +402,6 @@ export default function App() {
         )
       );
     }
-
-    const buildCustomMission = (userPrompt: string, fileName?: string): DemoPreset => ({
-      id: `custom-${Date.now()}`,
-      domain: 'auto',
-      label: 'Custom Chat',
-      prompt: userPrompt,
-      fileName,
-      timeline: {
-        orchestrator: {
-          summary: 'Auto-detected intent and initialized Shared Memory.',
-          badge: 'Auto Route',
-          memorySnapshot: {
-            goal: userPrompt.slice(0, 90),
-            attached_file: fileName ?? null,
-          },
-        },
-        rag: {
-          summary: `Retrieved relevant context${
-            fileName ? ` from ${fileName}` : ' from knowledge base'
-          }.`,
-          badge: '2 RAG hits',
-          ragSources: [
-            fileName ? `${fileName}#chunk-1` : 'Knowledge-Base.md#L12',
-            'Diablo-Context.md#L4',
-          ],
-        },
-        tools: {
-          summary: 'Executed domain tools and structured signal checks.',
-          badge: '2 tools run',
-          toolCall: 'auto_tool_runner() → verified structured signals in 380ms',
-          memorySnapshot: { status: 'verified' },
-        },
-        planner: {
-          summary: 'Synthesized Shared Memory into a grounded response.',
-          badge: 'Draft v1 → v2',
-        },
-        criticFirst: {
-          summary: 'Rejected v1 (68/100): Requested clearer verification constraints.',
-          badge: '68/100 · Revising',
-        },
-        criticFinal: {
-          summary: 'Approved v2 (92/100): Grounded, concise, and verified.',
-          badge: '92/100 · Verified',
-        },
-      },
-      result: {
-        domain: 'auto',
-        prompt: userPrompt,
-        attachedFileName: fileName,
-        criticInitialScore: 68,
-        criticFinalScore: 92,
-        criticNote:
-          'Critic flagged missing verification constraints in Draft 1 (68/100) and refined the response (92/100).',
-        briefTitle: 'Diablo Response',
-        briefSections: [
-          {
-            heading: 'Analysis',
-            body: `Processed "${userPrompt.slice(0, 140)}${
-              userPrompt.length > 140 ? '...' : ''
-            }" across parallel RAG retrieval and live tool checks [1].`,
-          },
-          {
-            heading: 'Recommended Next Step',
-            body: `Review the grounded findings${
-              fileName ? ` from ${fileName}` : ''
-            } and approve the proposed action below if you want the agents to execute it [2].`,
-          },
-        ],
-        citations: [
-          {
-            id: 1,
-            title: fileName ? `Uploaded: ${fileName}` : 'Domain Knowledge Base',
-            source: fileName ?? 'Knowledge-Base.md',
-            snippet: 'Extracted into Shared Memory during parallel RAG pass.',
-          },
-          {
-            id: 2,
-            title: 'Tool Execution Trace',
-            source: 'auto_tool_runner()',
-            snippet: 'Verified by Critic Evaluator before presenting.',
-          },
-        ],
-        singleLlmComparison: '',
-        proposedAction: {
-          title: 'Execute Proposed Action & Save to Memory',
-          description: 'Requires your approval before running any external action.',
-          riskLevel: 'Medium',
-          payloadPreview: `ACTION: EXECUTE_WORKFLOW\nPROMPT: "${userPrompt.slice(0, 80)}"`,
-          status: 'pending',
-        },
-      },
-    });
 
     setInput('');
     setHeroInput('');
@@ -545,18 +471,28 @@ export default function App() {
         formData.append('domain', 'bizintel');
         if (currentFile) formData.append('file', currentFile);
 
-        const response = await api('/api/run', requestToken(), {
+        const response = await api('/api/runs', authToken, {
           method: 'POST', body: formData, signal,
         });
-        const missionResult = await response.json() as MissionResult & { error?: string };
-        if (missionResult.error) {
-          throw new Error(missionResult.error);
+        const { id } = await response.json() as { id: string };
+        await watchRun(id, authToken, signal, (event) => {
+          const agent = event.stage && STAGE_IDS[event.stage];
+          if (agent) {
+            patchAgentInMessage(targetThreadId, assistantMsgId, agent, {
+              status: event.action === 'started' ? 'running' : 'done',
+              summary: event.message,
+            });
+          }
+        });
+        const snapshot = await api(`/api/runs/${id}`, authToken, { signal });
+        const { status, result } = await snapshot.json() as {
+          status: string; result?: MissionResult & { error?: string };
+        };
+        if (status !== 'completed' || !result) {
+          throw new Error(result?.error ?? 'The due-diligence run did not finish.');
         }
         updateAssistantMessage(targetThreadId, assistantMsgId, (m) => ({
-          ...m,
-          isStreaming: false,
-          result: missionResult,
-          agents: m.agents?.map((a) => ({ ...a, status: 'done' })),
+          ...m, isStreaming: false, result,
         }));
       } catch (error) {
         updateAssistantMessage(targetThreadId, assistantMsgId, (m) => ({
@@ -575,10 +511,16 @@ export default function App() {
       return;
     }
 
-    const activeMission =
-      presetOverride ??
-      DEMO_PRESETS.find((p) => p.prompt === text) ??
-      buildCustomMission(text, currentFile?.name);
+    if (!presetOverride) {
+      updateAssistantMessage(targetThreadId, assistantMsgId, (message) => ({
+        ...message,
+        isStreaming: false,
+        error: 'Live analysis is unavailable because no backend is connected.',
+      }));
+      setIsRunning(false);
+      return;
+    }
+    const activeMission = presetOverride;
     const t = activeMission.timeline;
 
     patchAgentInMessage(targetThreadId, assistantMsgId, 'orchestrator', {
@@ -844,6 +786,19 @@ export default function App() {
         />
       </button>
       <div className="relative flex-1 flex flex-col min-w-0">
+        {API_URL && (
+          <div className="flex justify-end px-5 pt-3 sm:px-8">
+            <select
+              aria-label="Prompt mode"
+              value={promptMode}
+              onChange={(event) => setPromptMode(event.target.value === 'diligence' ? 'diligence' : 'chat')}
+              className="rounded-full border border-black/10 bg-white/85 px-3 py-2 text-xs"
+            >
+              <option value="chat">Chat</option>
+              <option value="diligence">Due diligence</option>
+            </select>
+          </div>
+        )}
         {/* Main Viewport */}
         <div className="flex-1 overflow-y-auto px-4 sm:px-8 pt-20 lg:pt-4 pb-24 lg:pb-4">
           {isEmptyChat ? (
@@ -1013,7 +968,7 @@ export default function App() {
                             <button
                               key={item.label}
                               type="button"
-                              onClick={() => void sendMessage(undefined, item.prompt)}
+                              onClick={() => void sendMessage(undefined, item.prompt, activeShowcaseIdx > 0)}
                               className="w-full text-left flex items-center justify-between gap-3 px-3.5 py-2.5 rounded-xl bg-white hover:bg-indigo-50/70 border border-indigo-100/80 hover:border-indigo-300 text-[13px] text-[#1E1E26] transition cursor-pointer group"
                             >
                               <span className="leading-snug">{item.label}</span>
