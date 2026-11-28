@@ -469,8 +469,15 @@ export default function App() {
             body: JSON.stringify({ prompt: text }),
             signal,
           });
-          const { reply } = await response.json() as { reply: string };
-          updateAssistantMessage(targetThreadId, assistantMsgId, (m) => ({ ...m, text: reply, isStreaming: false }));
+          const { reply, result, run_id, access_token } = await response.json() as {
+            reply: string; result?: MissionResult; run_id?: string; access_token?: string;
+          };
+          if (run_id && access_token) {
+            guestRunTokens.current.set(run_id, access_token);
+            try { sessionStorage.setItem('diablo_guest_runs', JSON.stringify([...guestRunTokens.current])); }
+            catch { /* Keep current-page access when storage is unavailable. */ }
+          }
+          updateAssistantMessage(targetThreadId, assistantMsgId, (m) => ({ ...m, text: result ? '' : reply, result, isStreaming: false }));
           return;
         }
         if (isChat) {

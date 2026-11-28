@@ -92,6 +92,24 @@ def test_guest_runs_are_accessible_only_with_their_run_token(client, prompt):
     assert client.post("/api/run", data=form, headers=headers).status_code == 401
 
 
+def test_guest_trip_clarification_researches_updated_request(client):
+    original = client.post('/api/runs', data={'prompt': 'Plan a trip from Mysore to Udupi', 'domain': 'research'}, headers={'Authorization': ''}).json()
+    access = {'Authorization': 'Bearer ' + original['access_token']}
+    client.get(f"/api/runs/{original['id']}/events", headers=access)
+    updated = client.post(f"/api/runs/{original['id']}/follow-up", json={
+        'prompt': '12 December 2026, 2 days, 3 people, INR 10000, bus, palace and art'
+    }, headers=access)
+    assert updated.status_code == 200
+    result = updated.json()
+    assert result['run_id'] != original['id']
+    assert 'Mysore to Udupi' in result['result']['prompt']
+    assert '3 people, INR 10000' in result['result']['prompt']
+    assert client.get('/api/runs/' + result['run_id'], headers={
+        'Authorization': 'Bearer ' + result['access_token']
+    }).status_code == 200
+    assert client.get('/api/runs/' + result['run_id'], headers=access).status_code == 401
+
+
 def test_access_body_and_scope_limits(client):
     assert client.get("/api/runs/missing", headers={"Authorization": ""}).status_code == 401
     assert client.post("/api/runs", content=b"x" * (MAX_BODY_BYTES + 1)).status_code == 413

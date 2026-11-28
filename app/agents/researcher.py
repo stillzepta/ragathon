@@ -2,6 +2,7 @@ from app.rag.retriever import HybridRetriever
 from app.state import AgentState
 from app.tools.search import search_web
 from urllib.parse import urlparse
+import re
 
 
 def research_node(state: AgentState, retriever: HybridRetriever) -> AgentState:
@@ -11,13 +12,21 @@ def research_node(state: AgentState, retriever: HybridRetriever) -> AgentState:
     queries = [task["instruction"] for task in tasks] or [state["user_goal"]]
     travel = any(task.get("id") == "research_trip_options" for task in tasks)
     if travel:
-        queries = [state["user_goal"] + " official tourism transport entry permit"]
+        route = re.search(r'\bfrom\s+(.+?)\s+to\s+(.+?)(?=\s+(?:for|on|departing|under|with)\b|[.\n]|$)', state["user_goal"], re.IGNORECASE)
+        route_query = f"{route[1]} to {route[2]}" if route else state["user_goal"].split('\n')[0][:200]
+        queries = [
+            route_query + " bus train fare ticket price",
+            (route[2] if route else route_query) + " budget hotel room price per night",
+            route_query + " official tourism entry fees",
+        ]
         if "lakshadweep" in state["user_goal"].lower():
-            queries = ["Lakshadweep how to reach Agatti Kochi ships entry permit site:lakshadweep.gov.in"]
+            queries = ["Lakshadweep how to reach ships entry permit fare site:lakshadweep.gov.in", state["user_goal"] + " flight fare hotel price"]
     for query in queries:
         for result in search_web(query, max_results=5 if travel else 3):
             host = (urlparse(result.get("url", "")).hostname or "").lower()
-            if travel and not (host.endswith(".gov.in") or host.endswith(".gov") or host.endswith(".nic.in")):
+            booking_domains = ("redbus.in", "abhibus.com", "makemytrip.com", "goibibo.com", "booking.com", "irctc.co.in", "ksrtc.in", "ksrtc.org", "airindia.com", "goindigo.in")
+            operator = any(host == domain or host.endswith('.' + domain) for domain in booking_domains)
+            if travel and not (host.endswith(".gov.in") or host.endswith(".gov") or host.endswith(".nic.in") or operator):
                 continue
             if result.get("text"):
                 retriever.add_text(result["text"], result.get("url") or "web://search", result.get("title") or "Web result")

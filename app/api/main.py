@@ -492,6 +492,20 @@ async def follow_up(request: Request, run_id: str, follow_up_request: FollowUpRe
     if record["status"] != "completed" or not record.get("result"):
         raise HTTPException(409, "Follow-ups are available after the research run completes.")
     result = record["result"]
+    if any(task.get("id") == "write_itinerary" for task in result.get("plan", [])):
+        # New dates, party size or budget require fresh research, not a response
+        # restricted to the old report's incomplete evidence.
+        goal = result.get("prompt", "") + "\n\nUpdated trip details (override earlier details): " + follow_up_request.prompt
+        if len(goal) > 4000:
+            raise HTTPException(422, "Start a new trip request with the latest details; this conversation is too long.")
+        next_id, job = await queue_run(request, goal, "research", None)
+        await asyncio.shield(job)
+        updated = require_run(request.app.state.store, next_id)
+        if updated["status"] != "completed":
+            raise HTTPException(503, "The updated trip research could not finish. Try again shortly.")
+        report = updated["result"]
+        return {"run_id": next_id, "access_token": run_access_token(request, next_id),
+                "reply": report["briefSections"][0]["body"], "result": report, "citations": report.get("citations", [])}
     context = json.dumps({
         "original_request": result.get("prompt", ""),
         "report": result.get("briefSections", []),

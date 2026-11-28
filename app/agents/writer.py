@@ -1,6 +1,7 @@
 """Writer agent: turns the analyst's synthesis into a polished deliverable."""
 
 import json
+import re
 
 from app.providers.gemini import provider
 from app.state import AgentState
@@ -35,6 +36,11 @@ def writer_node(state: AgentState) -> AgentState:
             "Use the supplied origin, destination, date, travelers and budget; never ask for details already supplied. "
             "Include ## How to reach, ## Stays and food, ## Budget, and ## Unknowns. "
             "In the budget table distinguish verified costs from unknown costs, and include permits and return travel. "
+            "Provide numeric price ranges when supported by operator or booking evidence. Label advertised starting "
+            "prices and planning estimates explicitly, cite them, state the per-person/per-room units, and calculate "
+            "totals for the supplied travelers and nights. Do not withhold all prices merely because live inventory "
+            "is unavailable; report sourced indicative prices separately from confirmed quotes. "
+            "After clarifications, produce the updated itinerary and budget immediately; ask only essential missing questions. "
             "Do not present unknown fares as zero or claim the trip is affordable without evidence. "
             "Search excerpts are not live booking quotes: never label snippet prices as verified for the requested date. "
             "Do not invent airport names, routes or schedules. Only state these when supported by a cited excerpt. "
@@ -73,6 +79,12 @@ def writer_node(state: AgentState) -> AgentState:
                 "then retry when model access is available."
             )
             state["generation_mode"] = "fallback"
+            price_sources = [item for item in state.get("citations", []) if re.search(
+                r'(?:₹|INR\s*|Rs\.?\s*)[\d,]+', item.get("snippet", ""), re.IGNORECASE
+            )]
+            if price_sources:
+                draft += "\n\n## Advertised price references\n\nThese are search excerpts, not confirmed prices for your dates. Units, availability and taxes must be checked with the operator.\n\n"
+                draft += "\n".join(f"- [{item['id']}] {item['title']}: {item['snippet'][:300]}" for item in price_sources[:5])
         else:
             draft = analysis
     if not draft:
