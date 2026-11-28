@@ -201,8 +201,7 @@ export default function App() {
     catch { return ''; }
   });
   const requestToken = () => (manualToken || apiToken).trim();
-  // Research is the primary action; casual chat remains available from the sidebar mode switch.
-  const [promptMode, setPromptMode] = useState<'chat' | 'diligence'>('diligence');
+  const [promptMode, setPromptMode] = useState<'chat' | 'diligence'>('chat');
   const activeRequest = useRef<AbortController | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
