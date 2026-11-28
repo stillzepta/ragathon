@@ -1,6 +1,7 @@
 """FastAPI endpoints for the due-diligence dashboard."""
 
 import asyncio
+import base64
 import json
 import logging
 import os
@@ -278,13 +279,27 @@ Attachment = Annotated[UploadFile | None, File()]
 
 
 @app.post("/api/chat")
-async def chat(request: Request, prompt: Prompt, history: Annotated[str, Form()] = "[]") -> dict[str, str]:
+async def chat(
+    request: Request,
+    prompt: Prompt,
+    history: Annotated[str, Form()] = "[]",
+    file: Attachment = None,
+) -> dict[str, str]:
     origin = request.headers.get("origin")
     if origin and origin not in ALLOWED_ORIGINS:
         raise HTTPException(403, "This dashboard origin is not allowed.")
     prompt = prompt.strip()
     if not prompt:
         raise HTTPException(422, "Enter a message.")
+    image_data_url: str | None = None
+    if file is not None:
+        data = await file.read(MAX_UPLOAD_BYTES + 1)
+        if len(data) > MAX_UPLOAD_BYTES:
+            raise HTTPException(413, "Images must be at most 2 MB.")
+        mime = (file.content_type or "").lower()
+        if not mime.startswith("image/"):
+            raise HTTPException(422, "Only image attachments are supported in chat.")
+        image_data_url = f"data:{mime};base64,{base64.b64encode(data).decode()}"
     try:
         previous = json.loads(history)
     except (TypeError, ValueError) as exc:
@@ -312,6 +327,7 @@ async def chat(request: Request, prompt: Prompt, history: Annotated[str, Form()]
         "user's latest message using the conversation context. Be concise and never claim you ran tools or reviewed evidence.",
         conversation,
         accept=lambda answer: bool(answer.strip()),
+        image_data_url=image_data_url,
     ))
     state.jobs.add(job)
     job.add_done_callback(state.jobs.discard)

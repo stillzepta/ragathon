@@ -37,6 +37,7 @@ class ModelProvider:
         self, system: str, prompt: str, *,
         preferred_provider: str | None = None,
         accept: Callable[[str], bool] = bool,
+        image_data_url: str | None = None,
     ) -> str:
         self.used_provider = None
         if not self.live:
@@ -50,9 +51,12 @@ class ModelProvider:
 
         for provider_name in providers:
             try:
-                generators = {"gemini": self._generate_gemini, "groq": self._generate_groq,
-                              "openrouter": self._generate_openrouter}
-                response = generators[provider_name](system, prompt)
+                if provider_name == "openrouter":
+                    response = self._generate_openrouter(system, prompt, image_data_url=image_data_url)
+                elif provider_name == "groq":
+                    response = self._generate_groq(system, prompt)
+                else:
+                    response = self._generate_gemini(system, prompt)
                 if response and accept(response):
                     self.used_provider = provider_name
                     return response
@@ -72,10 +76,10 @@ class ModelProvider:
             )
         return response.text or ""
 
-    def _generate_openrouter(self, system: str, prompt: str) -> str:
+    def _generate_openrouter(self, system: str, prompt: str, image_data_url: str | None = None) -> str:
         return self._chat_completion(
             "https://openrouter.ai/api/v1/chat/completions",
-            self.openrouter_api_key, self.openrouter_model, system, prompt,
+            self.openrouter_api_key, self.openrouter_model, system, prompt, image_data_url=image_data_url,
         )
 
     def _generate_groq(self, system: str, prompt: str) -> str:
@@ -84,13 +88,29 @@ class ModelProvider:
             self.groq_api_key, self.groq_model, system, prompt,
         )
 
-    def _chat_completion(self, url: str, key: str | None, model: str, system: str, prompt: str) -> str:
+    def _chat_completion(
+        self,
+        url: str,
+        key: str | None,
+        model: str,
+        system: str,
+        prompt: str,
+        image_data_url: str | None = None,
+    ) -> str:
         if not key:
             return ""
+        user_content: str | list[dict] = (
+            [
+                {"type": "text", "text": prompt},
+                {"type": "image_url", "image_url": {"url": image_data_url}},
+            ]
+            if image_data_url
+            else prompt
+        )
         payload = json.dumps({
             "model": model,
             "max_tokens": 600,
-            "messages": [{"role": "system", "content": system}, {"role": "user", "content": prompt}],
+            "messages": [{"role": "system", "content": system}, {"role": "user", "content": user_content}],
             "temperature": 0.2,
         }).encode()
         req = request.Request(

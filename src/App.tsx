@@ -347,7 +347,8 @@ export default function App() {
     if ((!rawText && !attachedFile) || isRunning) return;
     const text = rawText || (attachedFile?.type.startsWith('image/') ? 'Analyze this image' : `Analyze ${attachedFile?.name ?? 'file'}`);
 
-    const isChat = !presetOverride && !attachedFile && !forceDiligence && promptMode === 'chat';
+    const isImageAttachment = Boolean(attachedFile && attachedFile.type.startsWith('image/'));
+    const isChat = !presetOverride && (!attachedFile || isImageAttachment) && !forceDiligence && promptMode === 'chat';
     const authToken = requestToken();
     if (!presetOverride && !isChat && API_URL && !authToken) {
       if (forceDiligence) {
@@ -417,6 +418,9 @@ export default function App() {
         const formData = new FormData();
         formData.append('prompt', text);
         if (isChat) {
+          if (currentFile && currentFile.type.startsWith('image/')) {
+            formData.append('file', currentFile);
+          }
           formData.append('history', JSON.stringify((activeThread?.messages ?? [])
             .filter((message) => !message.isStreaming && !message.error && !message.result)
             .slice(-12)
