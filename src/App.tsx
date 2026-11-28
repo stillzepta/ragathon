@@ -773,14 +773,14 @@ export default function App() {
         <SplitText
           text="diablo"
           tag="h1"
-          className="font-display text-6xl sm:text-8xl font-bold tracking-[-0.04em] text-[#111113]"
+          className="font-display text-6xl sm:text-8xl font-bold tracking-[-0.04em] text-white"
           effect="pop"
           splitType="chars"
           delay={55}
           duration={0.95}
           staggerFrom="start"
           trigger="load"
-          accentColor="#4f56b8"
+          accentColor="#a5b4fc"
           textAlign="center"
           onLetterAnimationComplete={() => {
             setTimeout(() => setIntroDocked(true), 360);
@@ -796,7 +796,7 @@ export default function App() {
               <div className="w-full grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-16 items-center">
                 {/* Left Editorial Column */}
                 <div className="lg:col-span-6 space-y-6 sm:space-y-9">
-                  <h1 className="font-display text-[34px] sm:text-5xl lg:text-6xl font-bold tracking-[-0.04em] leading-[1.06] text-[#111113]">
+                  <h1 className="font-display text-[34px] sm:text-5xl lg:text-6xl font-bold tracking-[-0.04em] leading-[1.06] text-white">
                     One workspace
                     <br />
                     for the work that{' '}
@@ -819,8 +819,8 @@ export default function App() {
                           <span
                             className={`text-sm font-mono-code pt-0.5 transition-colors ${
                               isActive
-                                ? 'text-[#2e3278] font-semibold'
-                                : 'text-[#252850]/65 group-hover:text-[#111113]'
+                                ? 'text-indigo-300 font-semibold'
+                                : 'text-zinc-400 group-hover:text-white'
                             }`}
                           >
                             {item.num}
@@ -829,14 +829,14 @@ export default function App() {
                             <p
                               className={`text-base sm:text-[17px] font-medium transition-colors ${
                                 isActive
-                                  ? 'text-[#111113]'
-                                  : 'text-[#1c1e36]/75 group-hover:text-[#111113]'
+                                  ? 'text-white'
+                                  : 'text-zinc-400 group-hover:text-white'
                               }`}
                             >
                               {item.title}
                             </p>
                             {isActive && (
-                              <p className="mt-1.5 text-sm text-[#24263b] leading-relaxed max-w-md">
+                              <p className="mt-1.5 text-sm text-zinc-300 leading-relaxed max-w-md">
                                 {item.description}
                               </p>
                             )}
