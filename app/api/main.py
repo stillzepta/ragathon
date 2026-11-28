@@ -89,6 +89,7 @@ async def lifespan(app: FastAPI):
     if os.getenv("RAGATHON_PUBLIC", "false").lower() == "true" and len(token) < 32:
         raise RuntimeError("Public mode requires a private API token of at least 32 characters.")
     app.state.token = token
+    app.state.run_token_key = token.encode() if token else secrets.token_bytes(32)
     default_db_path = "/tmp/runs.sqlite3" if os.getenv("VERCEL") else "runs.sqlite3"
     app.state.store = RunStore(os.getenv("RUN_DB_PATH", default_db_path))
     app.state.store.recover()
@@ -112,10 +113,14 @@ async def prune_runs(store: RunStore, retention: int):
         await run_in_threadpool(store.prune, retention)
 
 
-async def authorize(request: Request, authorization: Annotated[str | None, Header()] = None):
+def check_origin(request: Request):
     origin = request.headers.get("origin")
     if origin and origin not in ALLOWED_ORIGINS:
         raise HTTPException(403, "This dashboard origin is not allowed.")
+
+
+async def authorize(request: Request, authorization: Annotated[str | None, Header()] = None):
+    check_origin(request)
     token = request.app.state.token
     provided = (authorization or "").removeprefix("Bearer ").strip()
     supabase_secret = os.getenv("SUPABASE_JWT_SECRET", "")
@@ -148,6 +153,25 @@ async def authorize(request: Request, authorization: Annotated[str | None, Heade
         raise HTTPException(401, "Sign in or enter the API access token.", headers={"WWW-Authenticate": "Bearer"})
 
 
+def run_access_token(request: Request, run_id: str) -> str:
+    signature = hmac.new(
+        request.app.state.run_token_key, f"guest-run:{run_id}".encode(), hashlib.sha256
+    ).hexdigest()
+    return f"run-access-{signature}"
+
+
+async def authorize_run(
+    request: Request, run_id: str, authorization: Annotated[str | None, Header()] = None
+):
+    check_origin(request)
+    provided = (authorization or "").removeprefix("Bearer ").strip()
+    if provided and secrets.compare_digest(
+        provided.encode(), run_access_token(request, run_id).encode()
+    ):
+        return
+    await authorize(request, authorization)
+
+
 app = FastAPI(title="AgentVerse API", version="0.2.0", lifespan=lifespan)
 app.add_middleware(BodyLimit)
 app.add_middleware(
@@ -157,6 +181,7 @@ app.add_middleware(
     allow_headers=["Authorization", "Content-Type", "Last-Event-ID"],
 )
 Auth = Depends(authorize)
+RunAuth = Depends(authorize_run)
 
 
 def mission_result(state: dict, prompt: str, filename: str | None) -> dict:
@@ -342,10 +367,10 @@ async def chat(
     return {"reply": reply.strip()}
 
 
-@app.post("/api/runs", dependencies=[Auth], status_code=202)
+@app.post("/api/runs", dependencies=[Depends(check_origin)], status_code=202)
 async def create_run(request: Request, prompt: Prompt, domain: Annotated[str, Form()] = "bizintel", file: Attachment = None):
     run_id, _ = await queue_run(request, prompt, domain, file)
-    return {"id": run_id}
+    return {"id": run_id, "access_token": run_access_token(request, run_id)}
 
 
 @app.post("/api/run", dependencies=[Auth])
@@ -365,12 +390,12 @@ def require_run(store, run_id):
     return record
 
 
-@app.get("/api/runs/{run_id}", dependencies=[Auth])
+@app.get("/api/runs/{run_id}", dependencies=[RunAuth])
 def get_run(request: Request, run_id: str):
     return require_run(request.app.state.store, run_id)
 
 
-@app.get("/api/runs/{run_id}/events", dependencies=[Auth])
+@app.get("/api/runs/{run_id}/events", dependencies=[RunAuth])
 async def events(request: Request, run_id: str, last_event_id: Annotated[int, Header(ge=0)] = 0):
     store = request.app.state.store
     await run_in_threadpool(require_run, store, run_id)
@@ -460,7 +485,7 @@ async def booking_handoff(request: Request, handoff: BookingHandoff):
     return {"status": "handoff_created", "redirect_url": redirect_url}
 
 
-@app.post("/api/runs/{run_id}/follow-up", dependencies=[Auth])
+@app.post("/api/runs/{run_id}/follow-up", dependencies=[RunAuth])
 async def follow_up(request: Request, run_id: str, follow_up_request: FollowUpRequest):
     """Answer a follow-up using the completed run's report and cited evidence."""
     record = require_run(request.app.state.store, run_id)
@@ -475,18 +500,23 @@ async def follow_up(request: Request, run_id: str, follow_up_request: FollowUpRe
     model = provider()
     if not model.live:
         raise HTTPException(503, "Follow-up model access is not configured.")
-    answer = await run_in_threadpool(
+    state = request.app.state
+    reserve_submission(state)
+    job = asyncio.create_task(run_in_threadpool(
         model.generate,
         "Answer the follow-up using only the supplied investigation context. Cite source IDs when making factual claims, distinguish unknowns, and do not claim new research was performed.",
         f"Context:\n{context}\n\nFollow-up:\n{follow_up_request.prompt}",
         accept=lambda value: bool(value.strip()),
-    )
+    ))
+    state.jobs.add(job)
+    job.add_done_callback(state.jobs.discard)
+    answer = await asyncio.shield(job)
     if not answer:
         raise HTTPException(503, "The follow-up model is unavailable. Try again shortly.")
     return {"run_id": run_id, "reply": answer.strip(), "citations": result.get("citations", [])}
 
 
-@app.get("/api/runs/{run_id}/report/{format}", dependencies=[Auth])
+@app.get("/api/runs/{run_id}/report/{format}", dependencies=[RunAuth])
 def report(request: Request, run_id: str, format: str):
     record = require_run(request.app.state.store, run_id)
     if record["status"] != "completed":

@@ -203,6 +203,15 @@ export default function App() {
   const heroInputRef = useRef<HTMLInputElement>(null);
   const chatInputRef = useRef<HTMLTextAreaElement>(null);
   const messagesRef = useRef<HTMLDivElement>(null);
+  const [initialGuestRunTokens] = useState(() => {
+    try {
+      const entries: unknown = JSON.parse(sessionStorage.getItem('diablo_guest_runs') ?? '[]');
+      return new Map<string, string>(Array.isArray(entries) ? entries.filter(
+        (entry): entry is [string, string] => Array.isArray(entry) && entry.length === 2 && entry.every((value) => typeof value === 'string')
+      ) : []);
+    } catch { return new Map<string, string>(); }
+  });
+  const guestRunTokens = useRef(initialGuestRunTokens);
   const runTokenRef = useRef(0);
   const historyOwner = useRef<string | null>(null);
   const historyGeneration = useRef(0);
@@ -454,7 +463,7 @@ export default function App() {
         const formData = new FormData();
         formData.append('prompt', text);
         if (followUpRunId) {
-          const response = await api(`/api/runs/${followUpRunId}/follow-up`, requestToken(), {
+          const response = await api(`/api/runs/${followUpRunId}/follow-up`, guestRunTokens.current.get(followUpRunId) ?? authToken, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ prompt: text }),
@@ -527,8 +536,14 @@ export default function App() {
         const response = await api('/api/runs', authToken, {
           method: 'POST', body: formData, signal,
         });
-        const { id } = await response.json() as { id: string };
-        await watchRun(id, authToken, signal, (event) => {
+        const { id, access_token } = await response.json() as { id: string; access_token?: string };
+        if (access_token) {
+          guestRunTokens.current.set(id, access_token);
+          try { sessionStorage.setItem('diablo_guest_runs', JSON.stringify([...guestRunTokens.current])); }
+          catch { /* Keep current-page access when storage is unavailable. */ }
+        }
+        const runAccess = access_token ?? authToken;
+        await watchRun(id, runAccess, signal, (event) => {
           const agent = event.stage && STAGE_IDS[event.stage];
           if (agent) {
             patchAgentInMessage(targetThreadId, assistantMsgId, agent, {
@@ -537,7 +552,7 @@ export default function App() {
             });
           }
         });
-        const snapshot = await api(`/api/runs/${id}`, authToken, { signal });
+        const snapshot = await api(`/api/runs/${id}`, runAccess, { signal });
         const { status, result } = await snapshot.json() as {
           status: string; result?: MissionResult & { error?: string };
         };
@@ -620,7 +635,7 @@ export default function App() {
   };
 
   const downloadReport = async (runId: string, format: 'md' | 'pdf') => {
-    const response = await api(`/api/runs/${runId}/report/${format}`, requestToken(), {
+    const response = await api(`/api/runs/${runId}/report/${format}`, guestRunTokens.current.get(runId) ?? requestToken(), {
       signal: AbortSignal.timeout(15_000),
     });
     const url = URL.createObjectURL(await response.blob());
@@ -1092,6 +1107,8 @@ export default function App() {
             historyOwner.current = null;
             clearChatHistory();
             setEmailOpen(false);
+            guestRunTokens.current.clear();
+            try { sessionStorage.removeItem('diablo_guest_runs'); } catch { /* Storage may be unavailable. */ }
             void supabase?.auth.signOut().finally(() => {
               signingOut.current = false;
               setUser(null);

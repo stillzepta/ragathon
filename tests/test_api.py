@@ -68,6 +68,30 @@ def test_results_events_decision_and_exports(client):
     assert client.get("/api/runs/missing/events").status_code == 404
 
 
+@pytest.mark.parametrize("prompt", [
+    "Plan a 3-day trip from Delhi to Jaipur for two people",
+    "Research the accounting startup market",
+])
+def test_guest_runs_are_accessible_only_with_their_run_token(client, prompt):
+    form = {"prompt": prompt, "domain": "research"}
+    guest = {"Authorization": ""}
+    assert client.post("/api/runs", data=form, headers={
+        **guest, "Origin": "https://untrusted.example",
+    }).status_code == 403
+    created = client.post("/api/runs", data=form, headers=guest)
+    assert created.status_code == 202
+    run = created.json()
+    route = f"/api/runs/{run['id']}"
+    headers = {"Authorization": f"Bearer {run['access_token']}"}
+    assert client.get(route, headers=guest).status_code == 401
+    assert client.get("/api/runs/different-run", headers=headers).status_code == 401
+    assert '"status": "completed"' in client.get(f"{route}/events", headers=headers).text
+    assert client.get(route, headers=headers).json()["status"] == "completed"
+    assert client.get(f"{route}/report/md", headers=headers).status_code == 200
+    assert client.get(f"{route}/report/md", headers=guest).status_code == 401
+    assert client.post("/api/run", data=form, headers=headers).status_code == 401
+
+
 def test_access_body_and_scope_limits(client):
     assert client.get("/api/runs/missing", headers={"Authorization": ""}).status_code == 401
     assert client.post("/api/runs", content=b"x" * (MAX_BODY_BYTES + 1)).status_code == 413
