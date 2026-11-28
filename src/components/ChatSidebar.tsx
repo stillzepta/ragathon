@@ -21,6 +21,8 @@ interface ChatSidebarProps {
   threads: ChatThread[];
   activeThreadId: string | null;
   user: AuthUser | null;
+  promptMode: 'chat' | 'diligence';
+  onPromptModeChange: (mode: 'chat' | 'diligence') => void;
   onSelectThread: (id: string) => void;
   onNewChat: () => void;
   onSelectPreset: (preset: DemoPreset) => void;
@@ -36,6 +38,8 @@ export function ChatSidebar({
   threads,
   activeThreadId,
   user,
+  promptMode,
+  onPromptModeChange,
   onSelectThread,
   onNewChat,
   onSelectPreset,
@@ -46,13 +50,15 @@ export function ChatSidebar({
   onLogout,
 }: ChatSidebarProps) {
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeDrawerTab, setActiveDrawerTab] = useState<'history' | 'presets'>('history');
+  const [activeDrawerTab, setActiveDrawerTab] = useState<'history' | 'presets' | 'settings'>('history');
+
+  const drawerTitles = { history: 'Recent Chats', presets: 'Quick Launch', settings: 'Workspace Settings' };
 
   const filteredThreads = threads.filter((t) =>
     t.title.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const openTab = (tab: 'history' | 'presets') => {
+  const openTab = (tab: 'history' | 'presets' | 'settings') => {
     setActiveDrawerTab(tab);
     if (!open) onToggleDrawer();
   };
@@ -69,18 +75,48 @@ export function ChatSidebar({
           <div className="fixed inset-x-3 bottom-20 top-16 lg:static lg:inset-auto lg:my-3 lg:mr-2 z-40 lg:w-64 rounded-[28px] bg-white/85 lg:bg-white/72 backdrop-blur-2xl border border-white/90 shadow-[0_24px_60px_rgba(30,34,90,0.18)] flex flex-col overflow-hidden animate-fade-slide">
             <div className="p-3.5 flex items-center justify-between border-b border-black/[0.05]">
               <span className="text-xs font-semibold text-[#111113]">
-                {activeDrawerTab === 'history' ? 'Recent Chats' : 'Quick Launch'}
+                {drawerTitles[activeDrawerTab]}
               </span>
               <button
                 type="button"
                 onClick={onCloseDrawer}
+                aria-label="Close drawer"
                 className="p-1.5 rounded-full hover:bg-black/[0.05] text-[#6E6E77] cursor-pointer"
               >
                 <X className="w-3.5 h-3.5" />
               </button>
             </div>
 
-            {activeDrawerTab === 'history' ? (
+            {activeDrawerTab === 'settings' ? (
+              <div className="space-y-4 overflow-y-auto p-3.5">
+                <label className="block space-y-2 text-xs font-medium">
+                  <span>Prompt mode</span>
+                  <select
+                    value={promptMode}
+                    onChange={(event) => onPromptModeChange(event.target.value === 'diligence' ? 'diligence' : 'chat')}
+                    className="w-full rounded-xl border border-black/10 bg-white/85 px-3 py-2"
+                  >
+                    <option value="chat">Chat</option>
+                    <option value="diligence">Due diligence</option>
+                  </select>
+                </label>
+                <div className="space-y-2 border-t border-black/[0.06] pt-3 text-xs">
+                  <p className="font-medium">Account</p>
+                  {user ? <p className="break-words text-[#4A4A58]">Signed in as {user.name}</p> : (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        onCloseDrawer();
+                        onOpenLogin();
+                      }}
+                      className="rounded-xl border border-black/10 bg-white/85 px-3 py-2 font-medium"
+                    >
+                      Sign in
+                    </button>
+                  )}
+                </div>
+              </div>
+            ) : activeDrawerTab === 'history' ? (
               <>
                 <div className="p-2.5">
                   <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#F3F4FA] border border-black/[0.05]">
@@ -224,8 +260,10 @@ export function ChatSidebar({
         <div className="flex flex-col items-center gap-2">
           <button
             type="button"
-            onClick={() => openTab('presets')}
+            onClick={() => openTab('settings')}
             title="Workspace Settings"
+            aria-label="Workspace Settings"
+            aria-expanded={open && activeDrawerTab === 'settings'}
             className="w-9 h-9 rounded-full hover:bg-white/70 text-[#111113]/80 hover:text-[#111113] flex items-center justify-center transition cursor-pointer"
           >
             <Settings className="w-4 h-4" />

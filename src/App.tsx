@@ -201,7 +201,7 @@ export default function App() {
     catch { return ''; }
   });
   const requestToken = () => (manualToken || apiToken).trim();
-  const [promptMode] = useState<'chat' | 'diligence'>('chat');
+  const [promptMode, setPromptMode] = useState<'chat' | 'diligence'>('chat');
   const activeRequest = useRef<AbortController | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -1100,6 +1100,8 @@ export default function App() {
           threads={threads}
           activeThreadId={activeThreadId}
           user={user}
+          promptMode={promptMode}
+          onPromptModeChange={setPromptMode}
           onSelectThread={(id) => setActiveThreadId(id)}
           onNewChat={handleNewChat}
           onSelectPreset={(preset) => void sendMessage(preset)}
