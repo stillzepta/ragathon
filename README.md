@@ -1,6 +1,6 @@
-# Ragathon
+# Diablo
 
-AgentVerse turns a startup due-diligence question into a memo with source excerpts, reviewed drafts, and a recorded follow-up decision. The connected workflow runs planning, research, analysis, and review in sequence. The separate Studio simulation showcases additional example workflows.
+Diablo is a research workspace with chat, document retrieval, and a multi-agent due-diligence workflow. Investigations produce a memo with source excerpts, draft reviews, and a recorded follow-up decision.
 
 ## Run locally
 
