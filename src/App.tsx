@@ -1,5 +1,5 @@
 import { ArrowUp, Paperclip, X } from 'lucide-react';
-import { ChangeEvent, ClipboardEvent, useEffect, useRef, useState } from 'react';
+import { ChangeEvent, ClipboardEvent, useCallback, useEffect, useRef, useState } from 'react';
 import { ArtifactPanel } from './components/ArtifactPanel';
 import { ChatMessage } from './components/ChatMessage';
 import { ChatSidebar } from './components/ChatSidebar';
@@ -210,6 +210,30 @@ export default function App() {
   const chatInputRef = useRef<HTMLTextAreaElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const runTokenRef = useRef(0);
+  const historyOwner = useRef<string | null>(null);
+  const historyGeneration = useRef(0);
+  const signingOut = useRef(false);
+
+  const resetChat = useCallback(() => {
+    runTokenRef.current++;
+    activeRequest.current?.abort();
+    activeRequest.current = null;
+    setIsRunning(false);
+    setActiveThreadId(null);
+    setSelectedArtifactMsgId(null);
+    setInput('');
+    setHeroInput('');
+    setAttachedFile(null);
+  }, []);
+
+  const clearChatHistory = useCallback(() => {
+    historyGeneration.current++;
+    resetChat();
+    setThreads([]);
+    setBlankChatOpen(false);
+    setSidebarOpen(false);
+  }, [resetChat]);
+
 
   const activeThread = threads.find((t) => t.id === activeThreadId) ?? null;
   const activeShowcase = SHOWCASE_ITEMS[activeShowcaseIdx] ?? SHOWCASE_ITEMS[0];
@@ -235,9 +259,11 @@ export default function App() {
       return;
     }
     let mounted = true;
+    let authEventReceived = false;
     client.auth.getSession().then(({ data }) => {
-      if (!mounted) return;
+      if (!mounted || authEventReceived) return;
       const sessionUser = data.session?.user;
+      historyOwner.current = sessionUser?.id ?? null;
       setApiToken(data.session?.access_token ?? '');
       if (sessionUser) {
         void client.from('profiles').upsert({
@@ -253,7 +279,13 @@ export default function App() {
       setAuthReady(true);
     });
     const { data: listener } = client.auth.onAuthStateChange((_event, session) => {
+      authEventReceived = true;
+      if (signingOut.current && session) return;
       const sessionUser = session?.user;
+      const previousOwner = historyOwner.current;
+      historyOwner.current = sessionUser?.id ?? null;
+      if (previousOwner && previousOwner !== historyOwner.current) clearChatHistory();
+      setAuthReady(true);
       setApiToken(session?.access_token ?? '');
       if (sessionUser) {
         void client.from('profiles').upsert({
@@ -272,21 +304,25 @@ export default function App() {
       mounted = false;
       listener.subscription.unsubscribe();
     };
-  }, []);
+  }, [clearChatHistory]);
 
   useEffect(() => {
     const client = supabase;
-    if (!client || !apiToken) return;
+    const owner = historyOwner.current;
+    const generation = historyGeneration.current;
+    if (!client || !apiToken || !owner) return;
     let cancelled = false;
+    const isCurrent = () => !cancelled && historyOwner.current === owner &&
+      historyGeneration.current === generation;
     const loadChats = async () => {
       const { data: threadRows, error: threadError } = await client
-        .from('chat_threads').select('id,title,updated_at').order('updated_at', { ascending: false });
-      if (threadError || !threadRows?.length || cancelled) return;
+        .from('chat_threads').select('id,title,updated_at').eq('user_id', owner).order('updated_at', { ascending: false });
+      if (threadError || !threadRows?.length || !isCurrent()) return;
       const ids = threadRows.map((row) => row.id as string);
       const { data: messageRows, error: messageError } = await client
         .from('chat_messages').select('id,thread_id,role,content,created_at')
         .in('thread_id', ids).order('created_at', { ascending: true });
-      if (messageError || cancelled) return;
+      if (messageError || !isCurrent()) return;
       const restored: ChatThread[] = threadRows.map((row) => ({
         id: row.id as string,
         title: row.title as string,
@@ -299,6 +335,7 @@ export default function App() {
         })),
       }));
       setThreads((current) => {
+        if (!isCurrent()) return current;
         const unsaved = current.filter((thread) => !restored.some((saved) => saved.id === thread.id));
         return [...unsaved, ...restored];
       });
@@ -684,17 +721,6 @@ export default function App() {
     return () => window.removeEventListener('paste', onWindowPaste);
   }, [isHome]);
 
-  const resetChat = () => {
-    runTokenRef.current++;
-    activeRequest.current?.abort();
-    activeRequest.current = null;
-    setIsRunning(false);
-    setActiveThreadId(null);
-    setInput('');
-    setHeroInput('');
-    setAttachedFile(null);
-  };
-
   const handleHome = () => {
     resetChat();
     setBlankChatOpen(false);
@@ -1075,7 +1101,12 @@ export default function App() {
           onOpenLogin={() => setLoginOpen(true)}
           onOpenEmail={() => setEmailOpen(true)}
           onLogout={() => {
+            signingOut.current = true;
+            historyOwner.current = null;
+            clearChatHistory();
+            setEmailOpen(false);
             void supabase?.auth.signOut().finally(() => {
+              signingOut.current = false;
               setUser(null);
               setHasUnlocked(false);
               setApiToken('');
