@@ -130,7 +130,7 @@ async def authorize(request: Request, authorization: Annotated[str | None, Heade
                     os.getenv('SUPABASE_URL', 'https://qnoaezyqryizzblqxjmz.supabase.co').rstrip('/') + '/auth/v1/user',
                     headers={
                         'Authorization': f'Bearer {provided}',
-                        'apikey': os.getenv('SUPABASE_PUBLISHABLE_KEY', 'sb_publishable_UAGMGXkmbyE0WUA6vuO45w_SOIsD_c6'),
+                        'apikey': os.getenv('SUPABASE_PUBLISHABLE_KEY', ''),
                     },
                 )
                 valid_supabase_token = response.status_code == 200 and bool(response.json().get('id'))

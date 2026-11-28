@@ -77,6 +77,13 @@ VITE_SUPABASE_PUBLISHABLE_KEY=<Supabase-publishable-key>
 VITE_AUTH_REDIRECT_URL=https://<your-vercel-domain>
 ```
 
+For a Vercel deployment, add `VITE_SUPABASE_URL` and
+`VITE_SUPABASE_PUBLISHABLE_KEY` in Project Settings → Environment Variables
+for Production (and Preview if needed), then redeploy. These values are the
+Supabase project's browser-safe URL and publishable key; never use a
+`service_role` or secret key in a `VITE_*` variable. A rebuild is required
+because Vite embeds `VITE_*` variables at build time.
+
 In Supabase Dashboard → Authentication → Providers, enable Google and add the Google OAuth client ID and secret. Set this callback URL in Google Cloud:
 
 ```text
